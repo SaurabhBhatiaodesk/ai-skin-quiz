@@ -73,6 +73,9 @@ export default function QuizEditor({
   const scanner = quiz.scanner || { title: "AI Skin Scan", description: "Try the skin scan demo with a live camera or photo upload.", camera: true, upload: true };
   const safeIndex = Math.min(index, Math.max(questions.length - 1, 0));
   const question = questions[safeIndex];
+  const questionPage = Math.floor(safeIndex / 5);
+  const pageStart = questionPage * 5;
+  const visibleQuestions = questions.slice(pageStart, pageStart + 5);
 
   function save() {
     // The index marker targets app._index instead of its parent app route.
@@ -114,12 +117,19 @@ export default function QuizEditor({
       : { ...quiz, deep: nextList as DeepQuestion[] });
   }
 
-  function commitTagDraft(optionIndex: number) {
+  function saveAllTags() {
     if (!question) return;
-    const key = `${kind}-${safeIndex}-${optionIndex}`;
-    const extra = (tagDrafts[key] || "").split(",").map((item) => slugTag(item)).filter(Boolean);
-    applyTags(optionIndex, [...tagsFor(question.options[optionIndex]), ...extra]);
-    setTagDrafts((current) => ({ ...current, [key]: "" }));
+    const options = question.options.map((option, optionIndex) => {
+      const key = `${kind}-${safeIndex}-${optionIndex}`;
+      const extra = (tagDrafts[key] || "").split(",").map(slugTag).filter(Boolean);
+      const tags = [...new Set([...tagsFor(option), ...extra])].slice(0, 8);
+      const dosha = tags.find(isDosha);
+      return { ...option, tags, ...(dosha ? kind === "quick" ? { tag: dosha, value: dosha } : { tag: dosha, scores: scoresForTag(dosha, "layer" in question ? question.layer : 1) } : {}) };
+    });
+    const list = kind === "quick" ? quiz.quick : quiz.deep;
+    const nextList = list.map((item, at) => at === safeIndex ? { ...item, options } : item);
+    persist(kind === "quick" ? { ...quiz, quick: nextList as QuickQuestion[] } : { ...quiz, deep: nextList as DeepQuestion[] });
+    setTagDrafts(current => Object.fromEntries(Object.entries(current).filter(([key]) => !key.startsWith(`${kind}-${safeIndex}-`))));
   }
 
   function removeOption(optionIndex: number) {
@@ -226,7 +236,7 @@ export default function QuizEditor({
         </s-stack>
         {error ? <s-banner tone="critical" heading="Could not save quiz">{error}</s-banner> : saved ? <s-banner tone="success" heading="Saved" /> : null}
         <s-query-container>
-        <s-grid gridTemplateColumns="minmax(0, 1fr)" gap="base" alignItems="start">
+        <s-grid gridTemplateColumns={tab === "tags" && showSidebar ? "minmax(240px, 1fr) minmax(0, 2fr)" : "minmax(0, 1fr)"} gap="base" alignItems="start">
           {showSidebar ? <s-section heading={tab === "content" ? "Results" : "Questions"}>
             <s-scroll-box maxBlockSize="600px" accessibilityLabel="Quiz questions and results">
               <s-stack gap="base">
@@ -239,20 +249,35 @@ export default function QuizEditor({
                     <s-option value="scan">AI Skin Scan</s-option>
                   </s-select> : null}
                   <s-text color="subdued">{kind === "scan" ? "Configure camera and photo upload for the scan block." : "Select a question to edit"}</s-text>
-                  <s-grid gridTemplateColumns="repeat(auto-fit, minmax(220px, 1fr))" gap="base">
-                  {questions.map((item, itemIndex) => <s-clickable key={`${kind}-${itemIndex}`} accessibilityLabel={`Edit question ${itemIndex + 1}: ${item.text}`} background={safeIndex === itemIndex ? "subdued" : "base"} border={safeIndex === itemIndex ? "base strong" : "base"} borderRadius="base" padding="base" onClick={() => setIndex(itemIndex)}>
-                    <s-stack gap="small">
+                  <s-grid gridTemplateColumns={tab === "tags" ? "minmax(0, 1fr)" : "repeat(auto-fit, minmax(220px, 1fr))"} gap="base">
+                  {visibleQuestions.map((item, pageIndex) => { const itemIndex = pageStart + pageIndex; return <s-clickable key={`${kind}-${itemIndex}`} accessibilityLabel={`Edit question ${itemIndex + 1}: ${item.text}`} background={safeIndex === itemIndex ? "subdued" : "base"} border={safeIndex === itemIndex ? "base strong" : "base"} borderRadius="base" padding="base" onClick={() => setIndex(itemIndex)}>
+                    {tab === "tags" ? <s-stack gap="small">
+                      <s-stack direction="inline" justifyContent="space-between" alignItems="center">
+                        <s-text color="subdued">Question {itemIndex + 1}</s-text>
+                        {safeIndex === itemIndex ? <s-icon type="check" /> : null}
+                      </s-stack>
+                      <s-paragraph><s-text type={safeIndex === itemIndex ? "strong" : "generic"}>{item.text}</s-text></s-paragraph>
+                    </s-stack> : <s-stack gap="small">
                       <s-stack direction="inline" gap="small" justifyContent="space-between" alignItems="center">
                         <s-text color="subdued">Question {itemIndex + 1}</s-text>
                         {safeIndex === itemIndex ? <s-badge tone="info">Editing</s-badge> : null}
                       </s-stack>
                       <s-text type={safeIndex === itemIndex ? "strong" : "generic"}>{item.text}</s-text>
-                    </s-stack>
-                  </s-clickable>)}
+                    </s-stack>}
+                  </s-clickable>; })}
                   </s-grid>
                 </>}
               </s-stack>
             </s-scroll-box>
+            {showQuestions && questions.length > 5 ? <s-box paddingBlockStart="base">
+              <s-stack gap="small">
+                <s-text color="subdued">Questions {pageStart + 1}–{Math.min(pageStart + 5, questions.length)} of {questions.length}</s-text>
+                <s-stack direction="inline" gap="small" justifyContent="space-between">
+                  <s-button disabled={questionPage === 0} onClick={() => setIndex(pageStart - 5)}>Previous</s-button>
+                  <s-button disabled={pageStart + 5 >= questions.length} onClick={() => setIndex(pageStart + 5)}>Next</s-button>
+                </s-stack>
+              </s-stack>
+            </s-box> : null}
           </s-section> : null}
           <s-stack gap="base">
             {showQuestions && kind === "scan" ? <s-section heading="AI Skin Scan settings">
@@ -265,7 +290,7 @@ export default function QuizEditor({
                 <s-paragraph color="subdued">Keep at least one capture method enabled. Scan results use the personalized content and product mappings configured for this quiz.</s-paragraph>
               </s-stack>
             </s-section> : null}
-            {tab !== "settings" && tab !== "branching" ? <s-section>
+            {tab !== "settings" && tab !== "branching" && tab !== "tags" ? <s-section>
               <s-stack direction="inline" gap="small" justifyContent="end">
                 {showQuestions && kind !== "scan" ? <>
                   <s-button tone="critical" variant="tertiary" onClick={removeQuestion} disabled={questions.length <= 1}>Delete question</s-button>
@@ -351,32 +376,32 @@ export default function QuizEditor({
             </s-section> : null}
             {showQuestions && question ? <s-section heading={`Question ${safeIndex + 1}`}>
               <s-stack gap="base">
-                {tab === "tags" ? <s-paragraph color="subdued">Each answer gets tags used by product mappings. Add vata, pitta or kapha when the answer should count toward that result.</s-paragraph> : null}
                 {tab === "design" ? <>
                   <s-text-field label="Section name" value={question.phase} onInput={event => patch({ phase: event.currentTarget.value })} />
                   <s-text-area label="Help text" value={question.sub} onInput={event => patch({ sub: event.currentTarget.value })} />
                 </> : null}
                 <s-text-area label="Question" rows={3} value={question.text} onInput={event => patch({ text: event.currentTarget.value })} />
-                <s-grid gridTemplateColumns="repeat(auto-fit, minmax(240px, 1fr))" gap="base">
+                <s-grid gridTemplateColumns={tab === "tags" ? "repeat(2, minmax(0, 1fr))" : "repeat(auto-fit, minmax(240px, 1fr))"} gap="base">
                   {question.options.map((option, optionIndex) => <s-box key={optionIndex} border="base" borderRadius="base" padding="base">
                     <s-stack gap="small">
-                      <s-text-field label={`Answer ${optionIndex + 1}`} value={option.label} onInput={event => patchOption(optionIndex, { label: event.currentTarget.value })} />
-                      <s-button variant="tertiary" tone="critical" disabled={question.options.length <= 2} onClick={() => removeOption(optionIndex)}>Delete answer</s-button>
+                      {tab === "tags" ? <s-text type="strong">{option.label}</s-text> : <>
+                        <s-text-field label={`Answer ${optionIndex + 1}`} value={option.label} onInput={event => patchOption(optionIndex, { label: event.currentTarget.value })} />
+                        <s-button variant="tertiary" tone="critical" disabled={question.options.length <= 2} onClick={() => removeOption(optionIndex)}>Delete answer</s-button>
+                      </>}
                       {tab === "tags" ? <>
                         <s-stack direction="inline" gap="small">{tagsFor(option).map(tag => <s-clickable-chip key={tag} removable accessibilityLabel={`Remove ${tag}`} onRemove={() => applyTags(optionIndex, tagsFor(option).filter(item => item !== tag))}>{tag}</s-clickable-chip>)}</s-stack>
                         <s-text-field label={`Tags for answer ${optionIndex + 1}`} placeholder="Enter tags here" details="Separate multiple tags with commas." value={tagDrafts[`${kind}-${safeIndex}-${optionIndex}`] || ""} onInput={event => { const value = event.currentTarget.value; setTagDrafts(current => ({ ...current, [`${kind}-${safeIndex}-${optionIndex}`]: value })); }} />
-                        <s-button onClick={() => commitTagDraft(optionIndex)} disabled={pending}>Save tags</s-button>
                       </> : null}
                     </s-stack>
                   </s-box>)}
                 </s-grid>
-                <s-stack direction="inline" gap="small" justifyContent="center">
+                {tab === "tags" ? <s-stack direction="inline" gap="base" justifyContent="space-between" alignItems="center"><s-text color="subdued">Multiple tags can be added by separating them with commas.</s-text><s-button variant="primary" loading={pending} onClick={saveAllTags}>Save tags</s-button></s-stack> : <s-stack direction="inline" gap="small" justifyContent="center">
                   <s-button disabled={question.options.length >= 8} onClick={() => {
                     const options = kind === "quick" ? [...question.options, { value: "balanced", tag: "balanced" as const, label: "New answer", hint: "" }] : [...(question as DeepQuestion).options, { label: "New answer", hint: "", tag: "vata" as const, scores: scoresForTag("vata", (question as DeepQuestion).layer) }];
                     patch({ options } as Partial<QuickQuestion & DeepQuestion>);
                   }}>Add answer</s-button>
                   <s-button onClick={() => { if (safeIndex < questions.length - 1) setIndex(safeIndex + 1); else if (kind === "quick" && quiz.deep.length) { setKind("deep"); setIndex(0); } }}>{question.continueLabel || "Continue"}</s-button>
-                </s-stack>
+                </s-stack>}
               </s-stack>
             </s-section> : null}
           </s-stack>

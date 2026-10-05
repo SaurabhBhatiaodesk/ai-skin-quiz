@@ -99,21 +99,23 @@
           var img = product.image ? '<img src="' + product.image + '" alt="">' : '<span class="no-img">✦</span>';
           return '<div class="product-card"><div class="pc-img">' + img + '</div><div class="pc-body"><div class="pc-name">' + product.title + '</div>' + (product.why ? '<div class="pc-why">' + product.why + '</div>' : '') + '<div class="pc-bottom"><span class="pc-price">' + (product.price || '') + '</span><a class="btn-shop" href="/products/' + product.handle + (product.variantId ? '?variant=' + encodeURIComponent(product.variantId.split('/').pop()) : '') + '">Shop Now →</a></div></div></div>';
         }).join("");
+        if (!result.products || !result.products.length) box.textContent = "No matching products are available for this result yet.";
       }
       go("result");
     }
 
     function submit(payload) {
       payload.code = quizCode;
-      fetch(PROXY + "/result", {
+      return fetch(PROXY + "/result", {
         method: "POST",
         headers: { "Content-Type": "application/json", Accept: "application/json" },
         body: JSON.stringify(payload)
       }).then(function (res) {
-        if (!res.ok) throw new Error("result");
-        return res.json();
-      }).then(paintResult).catch(function () {
-        showError("Quiz service unavailable. Refresh after the app is running.");
+        return res.json().then(function (body) { if (!res.ok) throw new Error(body.error || "Quiz service unavailable."); return body; });
+      }).then(paintResult).catch(function (error) {
+        var status = q("[data-scan-status]");
+        if (payload.path === "scan" && status) status.textContent = error.message;
+        else showError(error.message);
       });
     }
 
@@ -315,7 +317,14 @@
       err.classList.remove("show");
       if (scanMode === "camera") {
         var video = q("[data-camera-feed]");
-        if (video && video.videoWidth) captured = "1";
+        if (video && video.videoWidth) {
+          var canvas = document.createElement("canvas");
+          var scale = Math.min(1, 1024 / Math.max(video.videoWidth, video.videoHeight));
+          canvas.width = Math.round(video.videoWidth * scale);
+          canvas.height = Math.round(video.videoHeight * scale);
+          canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
+          captured = canvas.toDataURL("image/jpeg", 0.85);
+        }
       }
       stopCamera();
       if (!captured) {
@@ -325,11 +334,10 @@
       }
       var overlay = q("[data-analyzing]");
       if (overlay) overlay.classList.add("active");
-      setTimeout(function () {
+      submit({ path: "scan", image: captured, consent: true }).finally(function () {
         captured = null;
         if (overlay) overlay.classList.remove("active");
-        submit({ path: "scan" });
-      }, 1600);
+      });
     }
 
     function saveEmail() {
@@ -346,9 +354,14 @@
       fileInput.addEventListener("change", function (event) {
         var file = event.target.files && event.target.files[0];
         if (!file) return;
+        if (!/^image\/(jpeg|png|webp)$/.test(file.type) || file.size > 5 * 1024 * 1024) {
+          captured = null;
+          q("[data-scan-status]").textContent = "Upload a JPG, PNG or WebP photo under 5 MB.";
+          return;
+        }
         var reader = new FileReader();
         reader.onload = function (ev) {
-          captured = "1";
+          captured = ev.target.result;
           var preview = q("[data-upload-preview]");
           preview.src = ev.target.result;
           preview.style.display = "block";

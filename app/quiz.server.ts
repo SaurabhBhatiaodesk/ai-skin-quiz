@@ -622,21 +622,6 @@ function mappedProducts(tags: string[], mappings: ProductMapping[], products: Sh
   return found.slice(0, 8);
 }
 
-function linkedProducts(dosha: string, products: ShopProduct[], profiles: Record<string, QuizProfile>): QuizProduct[] {
-  const handles = profileFor(dosha, profiles).products;
-  return handles.flatMap((handle) => {
-    const product = products.find((item) => item.handle === handle);
-    if (!product) return [];
-    return [{
-      title: product.title,
-      price: product.price,
-      image: product.image,
-      handle: product.handle,
-      why: "Chosen for this result",
-    }];
-  }).slice(0, 4);
-}
-
 export function matchProducts(dosha: string, products: ShopProduct[]): QuizProduct[] {
   const keywords = KEYWORDS[dosha] || KEYWORDS.balanced;
   const matched = products
@@ -734,15 +719,6 @@ export async function loadStoreProducts(admin: {
   }));
 }
 
-const SCAN_MARKERS = {
-  hydration: { score: 65, label: "Good" },
-  texture: { score: 60, label: "Moderate" },
-  pigmentation: { score: 70, label: "Mostly Even" },
-  radiance: { score: 55, label: "Moderate" },
-  elasticity: { score: 60, label: "Good" },
-  barrier: { score: 65, label: "Good" },
-};
-
 export async function buildQuizResult(
   submission: { path?: string; answers?: unknown; code?: unknown },
   shop: string,
@@ -756,7 +732,7 @@ export async function buildQuizResult(
   let dosha = "balanced";
   let source = "Quick Quiz";
   let note = "";
-  let markers: QuizResult["markers"] = null;
+  const markers: QuizResult["markers"] = null;
   let showUpgrade = quiz.layout !== "single" && quiz.layout !== "scan";
 
   if (submission.path === "deep" && Array.isArray(submission.answers)) {
@@ -766,10 +742,7 @@ export async function buildQuizResult(
     source = "Deep Dosha";
     showUpgrade = false;
   } else if (submission.path === "scan") {
-    dosha = "balanced";
-    source = "AI Skin Scan";
-    markers = SCAN_MARKERS;
-    note = " Your skin shows balanced characteristics with good resilience and moderate radiance. A nourishing Ayurvedic ritual will support your natural glow.";
+    throw new Error("Real skin analysis is not configured yet. Please use the question quiz for now.");
   } else {
     const answers = (submission.answers || {}) as Record<string, string | number>;
     dosha = scoreQuick(answers, quiz.quick);
@@ -777,15 +750,15 @@ export async function buildQuizResult(
   }
 
   const profile = profileFor(dosha, quiz.profiles);
-  let products = fallbackProducts(dosha, quiz.profiles);
+  let products: QuizProduct[] = [];
   if (admin) {
     try {
       const storeProducts = await loadStoreProducts(admin);
-      const mapped = mappedProducts(chosenTags(quiz, submission), quiz.mappings, storeProducts);
-      const linked = linkedProducts(dosha, storeProducts, quiz.profiles);
-      products = mapped.length ? mapped : linked.length ? linked : matchProducts(dosha, storeProducts);
+      const tags = chosenTags(quiz, submission);
+      if (submission.path === "scan") tags.push("scan", "ai_skin_scan", dosha);
+      products = mappedProducts(tags, quiz.mappings, storeProducts);
     } catch {
-      products = fallbackProducts(dosha, quiz.profiles);
+      products = [];
     }
   }
 

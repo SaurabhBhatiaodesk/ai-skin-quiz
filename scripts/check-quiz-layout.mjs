@@ -77,12 +77,15 @@ assert.equal(variantResult.products[0].price, "$12.00");
 loaded.mappings[0].tags = ["skin", "missing"];
 await api.saveQuiz("test", loaded, loaded.handle);
 const andResult = await api.buildQuizResult({ code: loaded.handle, path: "quick", answers: { 0: 0 } }, "test", admin);
-assert.ok(andResult.products.every(item => !item.variantId));
+assert.deepEqual(andResult.products, []);
 loaded.mappings[0].grouping = "or";
 await api.saveQuiz("test", loaded, loaded.handle);
 const orResult = await api.buildQuizResult({ code: loaded.handle, path: "quick", answers: { 0: 0 } }, "test", admin);
 assert.equal(orResult.products[0].variantId, variantId);
 assert.equal((await api.loadQuiz("test", loaded.handle)).mappings[0].grouping, "or");
+const failedProducts = await api.buildQuizResult({ code: loaded.handle, path: "quick", answers: { 0: 0 } }, "test", { graphql: async () => { throw new Error("Unavailable"); } });
+assert.deepEqual(failedProducts.products, []);
+assert.deepEqual(result.products, []);
 
 async function storefront(layout) {
   const active = new Set(["entry"]);
@@ -118,7 +121,7 @@ assert.equal(scanOnly.deep.length, 0);
 await api.saveQuiz("test", scanOnly, scanOnly.handle);
 assert.equal((await api.loadQuiz("test", scanOnly.handle)).layout, "scan");
 await assert.rejects(api.buildQuizResult({ code: scanOnly.handle, path: "quick" }, "test"));
-assert.equal((await api.buildQuizResult({ code: scanOnly.handle, path: "scan" }, "test")).showUpgrade, false);
+await assert.rejects(api.buildQuizResult({ code: scanOnly.handle, path: "scan" }, "test"), /not configured/);
 const scanQuiz = await api.createQuiz("test", "Scan settings", "three");
 scanQuiz.scanner = { title: "My Skin Scan", description: "Upload a selfie for the demo.", camera: false, upload: true };
 await api.saveQuiz("test", scanQuiz, scanQuiz.handle);

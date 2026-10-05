@@ -11,6 +11,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const { admin, session } = await authenticate.public.appProxy(request);
   const shop = session?.shop || new URL(request.url).searchParams.get("shop") || "";
   const submission = await request.json();
-  const result = await buildQuizResult(submission, shop, admin);
-  return Response.json({ ok: true, result });
+  try {
+    const result = await buildQuizResult(submission, shop, admin);
+    return Response.json({ ok: true, result });
+  } catch (error) {
+    return Response.json({ ok: false, error: error instanceof Error ? error.message : "Could not complete this quiz." }, { status: 422 });
+  }
 };
