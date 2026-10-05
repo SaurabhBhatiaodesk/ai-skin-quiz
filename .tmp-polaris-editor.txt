@@ -1,219 +1,3 @@
-import { useState } from "react";
-import MappingEditor from "./MappingEditor";
-import type { MappingDraft } from "./MappingEditor";
-import { useFetcher } from "react-router";
-import { scoresForTag, slugTag } from "../quiz-shared";
-import type { DeepQuestion, ProductMapping, QuickQuestion, ResultTag, ShopProduct, StoredQuiz } from "../quiz-shared";
-
-type SaveResult = { ok: true; quiz: StoredQuiz } | { ok: false; error: string };
-type Kind = "quick" | "deep";
-type Tab = "edit" | "design" | "tags" | "products" | "content" | "branching" | "settings";
-
-const TABS: Array<{ id: Tab; label: string; icon: "edit" | "design" | "tag" | "link" | "content" | "branch" | "gear" }> = [
-  { id: "edit", label: "Quiz edit", icon: "edit" },
-  { id: "design", label: "Quiz design", icon: "design" },
-  { id: "tags", label: "Answer tags", icon: "tag" },
-  { id: "products", label: "Link product", icon: "link" },
-  { id: "content", label: "Personalized content", icon: "content" },
-  { id: "branching", label: "Branching", icon: "branch" },
-  { id: "settings", label: "Settings", icon: "gear" },
-];
-
-const RESULTS = ["vata", "pitta", "kapha", "dual-vata-pitta", "dual-vata-kapha", "dual-kapha-pitta", "balanced"] as const;
-
-function tagsFor(option: { tags?: string[]; label: string }) {
-  if (option.tags?.length) return option.tags;
-  const slug = slugTag(option.label);
-  return slug ? [slug] : [];
-}
-
-function collectTags(quiz: StoredQuiz) {
-  const tags = new Set<string>();
-  for (const question of [...quiz.quick, ...quiz.deep]) {
-    for (const option of question.options) tagsFor(option).forEach((tag) => tags.add(tag));
-  }
-  return [...tags];
-}
-
-function selectableTags(quiz: StoredQuiz, products: ShopProduct[]) {
-  const tags = new Set(collectTags(quiz));
-  products.forEach((product) => product.tags.forEach((tag) => {
-    const slug = slugTag(tag);
-    if (slug) tags.add(slug);
-  }));
-  return [...tags];
-}
-
-function isDosha(tag: string): tag is ResultTag {
-  return tag === "vata" || tag === "pitta" || tag === "kapha" || tag === "balanced";
-}
-
-export default function QuizEditor({
-  initial,
-  products,
-  code,
-}: {
-  initial: StoredQuiz;
-  shop: string;
-  products: ShopProduct[];
-  code: string;
-}) {
-  const fetcher = useFetcher<SaveResult>();
-  const [quiz, setQuiz] = useState(initial);
-  const [kind, setKind] = useState<Kind>("quick");
-  const [index, setIndex] = useState(0);
-  const [tab, setTab] = useState<Tab>("edit");
-  const [resultKey, setResultKey] = useState<(typeof RESULTS)[number]>("vata");
-  const [tagDrafts, setTagDrafts] = useState<Record<string, string>>({});
-  const [mappingDraft, setMappingDraft] = useState<MappingDraft | null>(null);
-  const [pickedRows, setPickedRows] = useState<string[]>([]);
-
-  const pending = fetcher.state !== "idle";
-  const questions = kind === "quick" ? quiz.quick : quiz.deep;
-  const safeIndex = Math.min(index, Math.max(questions.length - 1, 0));
-  const question = questions[safeIndex];
-
-  function save() {
-    fetcher.submit(quiz, { method: "POST", encType: "application/json", action: `/app?quiz=${code}` });
-  }
-
-  function patch(partial: Partial<QuickQuestion & DeepQuestion>) {
-    setQuiz((current) => {
-      const list = kind === "quick" ? current.quick : current.deep;
-      const next = list.map((item, itemIndex) => (itemIndex === safeIndex ? { ...item, ...partial } : item));
-      return kind === "quick" ? { ...current, quick: next as QuickQuestion[] } : { ...current, deep: next as DeepQuestion[] };
-    });
-  }
-
-  function patchOption(optionIndex: number, partial: Record<string, unknown>) {
-    if (!question) return;
-    const options = question.options.map((option, itemIndex) =>
-      itemIndex === optionIndex ? { ...option, ...partial } : option,
-    );
-    patch({ options } as Partial<QuickQuestion & DeepQuestion>);
-  }
-
-  function applyTags(optionIndex: number, tags: string[]) {
-    if (!question) return;
-    const fallback = slugTag(question.options[optionIndex]?.label || "") || "tag";
-    const unique = [...new Set(tags.map((tag) => slugTag(tag)).filter(Boolean))].slice(0, 8);
-    const stored = unique.length ? unique : [fallback];
-    const dosha = unique.find(isDosha);
-    const options = question.options.map((option, itemIndex) => {
-      if (itemIndex !== optionIndex) return option;
-      if (kind === "quick") return { ...option, tags: stored, ...(dosha ? { tag: dosha, value: dosha } : {}) };
-      if (dosha) return { ...option, tags: stored, tag: dosha, scores: scoresForTag(dosha, "layer" in question ? question.layer : 1) };
-      return { ...option, tags: stored };
-    });
-    const list = kind === "quick" ? quiz.quick : quiz.deep;
-    const nextList = list.map((item, itemIndex) => (itemIndex === safeIndex ? { ...item, options } : item));
-    persist(kind === "quick"
-      ? { ...quiz, quick: nextList as QuickQuestion[] }
-      : { ...quiz, deep: nextList as DeepQuestion[] });
-  }
-
-  function commitTagDraft(optionIndex: number) {
-    if (!question) return;
-    const key = `${kind}-${safeIndex}-${optionIndex}`;
-    const extra = (tagDrafts[key] || "").split(",").map((item) => slugTag(item)).filter(Boolean);
-    applyTags(optionIndex, [...tagsFor(question.options[optionIndex]), ...extra]);
-    setTagDrafts((current) => ({ ...current, [key]: "" }));
-  }
-
-  function removeOption(optionIndex: number) {
-    if (!question || question.options.length <= 2) return;
-    patch({
-      options: question.options.filter((_, itemIndex) => itemIndex !== optionIndex),
-    } as Partial<QuickQuestion & DeepQuestion>);
-  }
-
-  function addQuestion() {
-    if (questions.length >= (kind === "deep" || quiz.layout === "single" ? 40 : 12)) return;
-    setQuiz((current) => {
-      if (kind === "quick") {
-        const quick = [
-          ...current.quick,
-          {
-            phase: "New question",
-            text: "New question",
-            sub: "",
-            continueLabel: "Continue",
-            options: [
-              { value: "vata", label: "Answer 1", hint: "" },
-              { value: "pitta", label: "Answer 2", hint: "" },
-            ],
-          },
-        ];
-        setIndex(quick.length - 1);
-        return { ...current, quick };
-      }
-      const deep = [
-        ...current.deep,
-        {
-          layer: 1,
-          phase: "Prakriti · Your baseline nature",
-          text: "New question",
-          sub: "",
-          continueLabel: "Continue",
-          options: [
-            { label: "Answer 1", hint: "", scores: { V: 3 } },
-            { label: "Answer 2", hint: "", scores: { P: 3 } },
-          ],
-        },
-      ];
-      setIndex(deep.length - 1);
-      return { ...current, deep };
-    });
-  }
-
-  function removeQuestion() {
-    setQuiz((current) => {
-      const list = kind === "quick" ? current.quick : current.deep;
-      if (list.length <= 1) return current;
-      const next = list.filter((_, itemIndex) => itemIndex !== safeIndex);
-      setIndex(Math.max(0, safeIndex - 1));
-      return kind === "quick"
-        ? { ...current, quick: next as QuickQuestion[] }
-        : { ...current, deep: next as DeepQuestion[] };
-    });
-  }
-
-  function persist(next: StoredQuiz) {
-    setQuiz(next);
-    fetcher.submit(next, { method: "POST", encType: "application/json", action: `/app?quiz=${code}` });
-  }
-
-  function commitMapping() {
-    if (!mappingDraft || !mappingDraft.tags.length || !mappingDraft.productHandle) return;
-    const mappings = [...(quiz.mappings || [])];
-    const id = mappingDraft.id || `m${Date.now().toString(36)}${Math.floor(Math.random() * 1000)}`;
-    const row: ProductMapping = { id, tags: mappingDraft.tags, productHandle: mappingDraft.productHandle, grouping: mappingDraft.grouping, variantId: mappingDraft.variantId };
-    const at = mappings.findIndex((item) => item.id === id);
-    if (at >= 0) mappings[at] = row;
-    else mappings.push(row);
-    setMappingDraft(null);
-    persist({ ...quiz, mappings });
-  }
-
-  function deleteMappings(ids: string[]) {
-    const drop = new Set(ids);
-    setPickedRows((current) => current.filter((id) => !drop.has(id)));
-
-    persist({ ...quiz, mappings: (quiz.mappings || []).filter((item) => !drop.has(item.id)) });
-  }
-
-  function patchProfile(partial: Partial<(typeof quiz.profiles)[string]>) {
-    setQuiz((current) => ({
-      ...current,
-      profiles: { ...current.profiles, [resultKey]: { ...current.profiles[resultKey], ...partial } },
-    }));
-  }
-
-  const saved = fetcher.data?.ok === true;
-  const error = fetcher.data && !fetcher.data.ok ? fetcher.data.error : "";
-  const result = quiz.profiles[resultKey];
-  const showQuestions = tab !== "products" && tab !== "content";
-
   return (
     <s-page heading="Quiz editor" inlineSize="large">
       <s-button slot="primary-action" variant="primary" loading={pending} onClick={save}>Save</s-button>
@@ -224,7 +8,7 @@ export default function QuizEditor({
         {error ? <s-banner tone="critical" heading="Could not save quiz">{error}</s-banner> : saved ? <s-banner tone="success" heading="Saved" /> : null}
         <s-grid gridTemplateColumns={tab === "products" ? "1fr" : "@container (inline-size > 860px) 280px 1fr, 1fr"} gap="base" alignItems="start">
           {tab !== "products" ? <s-section heading={TABS.find(item => item.id === tab)?.label}>
-            <s-scroll-box maxBlockSize="600px" accessibilityLabel="Quiz questions and results">
+            <s-box maxBlockSize="65vh" overflow="auto">
               <s-stack gap="base">
                 {tab === "content" ? <s-choice-list label="Personalized results" values={[resultKey]} onChange={event => setResultKey(event.currentTarget.values[0] as typeof resultKey)}>
                   {RESULTS.map(key => <s-choice key={key} value={key}>{quiz.profiles[key].name}</s-choice>)}
@@ -239,7 +23,7 @@ export default function QuizEditor({
                   </s-choice-list> : null}
                 </>}
               </s-stack>
-            </s-scroll-box>
+            </s-box>
           </s-section> : null}
           <s-stack gap="base">
             <s-section>
@@ -272,7 +56,7 @@ export default function QuizEditor({
                       const variant = product?.variants?.find(item => item.id === mapping.variantId);
                       const title = `${product?.title || mapping.productHandle}${variant ? ` — ${variant.title}` : ""}`;
                       return <s-table-row key={mapping.id}>
-                        <s-table-cell><s-checkbox label={`Select ${title}`} checked={pickedRows.includes(mapping.id)} onChange={event => { const checked = event.currentTarget.checked; setPickedRows(current => checked ? [...current, mapping.id] : current.filter(id => id !== mapping.id)); }} /></s-table-cell>
+                        <s-table-cell><s-checkbox label={`Select ${title}`} checked={pickedRows.includes(mapping.id)} onChange={event => setPickedRows(current => event.currentTarget.checked ? [...current, mapping.id] : current.filter(id => id !== mapping.id))} /></s-table-cell>
                         <s-table-cell><s-stack direction="inline" gap="small">{mapping.tags.map((tag, tagIndex) => <s-stack key={tag} direction="inline" gap="small" alignItems="center">{tagIndex > 0 ? <s-text color="subdued">{(mapping.grouping || "or").toUpperCase()}</s-text> : null}<s-chip>{tag}</s-chip></s-stack>)}</s-stack></s-table-cell>
                         <s-table-cell><s-badge>{mapping.variantId ? "Variant" : "Product"}</s-badge></s-table-cell><s-table-cell>{title}</s-table-cell>
                         <s-table-cell><s-stack direction="inline" gap="small">
