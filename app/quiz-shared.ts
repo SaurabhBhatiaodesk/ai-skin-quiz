@@ -35,6 +35,7 @@ export type ProductMapping = { id: string; tags: string[]; productHandle: string
 export type StoredQuiz = {
   layout?: "three" | "single" | "scan";
   scanner?: { title: string; description: string; camera: boolean; upload: boolean };
+  scanIntegration?: { provider: string; endpoint: string; documentation: string };
   design?: { background: string; text: string; accent: string; buttonText: string; font: "classic" | "sans"; radius: "square" | "rounded" | "pill" };
   quick: QuickQuestion[];
   deep: DeepQuestion[];

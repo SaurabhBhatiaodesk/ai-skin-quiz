@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import MappingEditor from "./MappingEditor";
 import type { MappingDraft } from "./MappingEditor";
 import { useFetcher } from "react-router";
@@ -51,11 +51,13 @@ function isDosha(tag: string): tag is ResultTag {
 export default function QuizEditor({
   initial,
   shop,
+  scanKeyPresent = false,
   products,
   code,
 }: {
   initial: StoredQuiz;
   shop: string;
+  scanKeyPresent?: boolean;
   products: ShopProduct[];
   code: string;
 }) {
@@ -67,7 +69,13 @@ export default function QuizEditor({
   const [resultKey, setResultKey] = useState<(typeof RESULTS)[number]>("vata");
   const [tagDrafts, setTagDrafts] = useState<Record<string, string>>({});
   const [mappingDraft, setMappingDraft] = useState<MappingDraft | null>(null);
+  const mappingModal = useRef<HTMLElementTagNameMap["s-modal"]>(null);
+  const editingMappingId = mappingDraft?.id;
+  useEffect(() => {
+    if (editingMappingId) mappingModal.current?.showOverlay();
+  }, [editingMappingId]);
   const [pickedRows, setPickedRows] = useState<string[]>([]);
+  const draggedMapping = useRef<string | null>(null);
 
   const pending = fetcher.state !== "idle";
   const questions = kind === "scan" ? [] : kind === "quick" ? quiz.quick : quiz.deep;
@@ -215,6 +223,19 @@ export default function QuizEditor({
     persist({ ...quiz, mappings: (quiz.mappings || []).filter((item) => !drop.has(item.id)) });
   }
 
+  function moveMapping(id: string, targetId: string) {
+    if (pending || id === targetId) return;
+    setQuiz(current => {
+      const mappings = [...current.mappings];
+      const from = mappings.findIndex(item => item.id === id);
+      const to = mappings.findIndex(item => item.id === targetId);
+      if (from < 0 || to < 0) return current;
+      const [row] = mappings.splice(from, 1);
+      mappings.splice(to, 0, row);
+      return { ...current, mappings };
+    });
+  }
+
   function patchProfile(partial: Partial<(typeof quiz.profiles)[string]>) {
     setQuiz((current) => ({
       ...current,
@@ -328,6 +349,21 @@ export default function QuizEditor({
                 <s-stack direction="inline" gap="small"><s-button href="/app/blocks">Open Blocks</s-button><s-button variant="primary" loading={pending} onClick={save}>Save quiz</s-button></s-stack>
               </s-stack>
             </s-section> : null}
+            {tab === "settings" && quiz.layout !== "single" ? <s-section heading="AI Skin Scan provider setup">
+              <s-stack gap="base">
+                <s-banner heading="Provider integration pending">Save your provider details here. Real analysis needs a provider-specific integration; saving these fields does not activate scanning.</s-banner>
+                <s-paragraph><s-text type="strong">Which API key do I need?</s-text> {quiz.scanIntegration?.provider?.trim()
+                  ? `Use an API key issued by ${quiz.scanIntegration.provider.trim()} for its skin-analysis API. Get it from that provider's developer dashboard.`
+                  : "No AI provider is connected yet. Enter your skin-analysis provider's name first; you will need an API key from that same provider."}</s-paragraph>
+                <s-paragraph color="subdued">OpenAI, Gemini and other provider keys are not interchangeable. This app does not currently include an adapter for any provider.</s-paragraph>
+                <s-text-field label="Provider name" placeholder="Your skin-analysis provider" value={quiz.scanIntegration?.provider || ""} onInput={event => { const provider = event.currentTarget.value; setQuiz(current => ({ ...current, scanIntegration: { endpoint: "", documentation: "", ...current.scanIntegration, provider } })); }} />
+                <s-text-field label="API endpoint" placeholder="https://api.example.com/analyze" details="Do not include API keys or other secrets in this URL." value={quiz.scanIntegration?.endpoint || ""} onInput={event => { const endpoint = event.currentTarget.value; setQuiz(current => ({ ...current, scanIntegration: { provider: "", documentation: "", ...current.scanIntegration, endpoint } })); }} />
+                <s-text-field label="API documentation URL" placeholder="https://example.com/docs" value={quiz.scanIntegration?.documentation || ""} onInput={event => { const documentation = event.currentTarget.value; setQuiz(current => ({ ...current, scanIntegration: { provider: "", endpoint: "", ...current.scanIntegration, documentation } })); }} />
+                <s-badge tone={scanKeyPresent ? "success" : "warning"}>{scanKeyPresent ? "Server API key present" : "Server API key missing"}</s-badge>
+                <s-paragraph>Set the API key from your selected provider as SKIN_ANALYSIS_API_KEY in the server environment. The secret is never displayed here. A key being present does not verify the provider connection.</s-paragraph>
+                <s-stack direction="inline" justifyContent="end"><s-button variant="primary" loading={pending} onClick={save}>Save provider settings</s-button></s-stack>
+              </s-stack>
+            </s-section> : null}
             {tab === "branching" ? <s-section heading="Quiz flow">
               <s-stack gap="base">
                 <s-banner heading="Questions follow a fixed order">Answer-based branching is not available yet. Customers continue through the questions in their selected quiz flow.</s-banner>
@@ -353,19 +389,39 @@ export default function QuizEditor({
               </s-stack>
             </s-section> : null}
             {tab === "products" ? <>
-              {mappingDraft ? <MappingEditor key={mappingDraft.id || "new"} draft={mappingDraft} products={products} tags={selectableTags(quiz, products)} onChange={setMappingDraft} onSave={commitMapping} onCancel={() => setMappingDraft(null)} pending={pending} /> : null}
+              {mappingDraft?.id ? <s-modal ref={mappingModal} id="edit-content-mapping" heading="Edit content mapping" onAfterHide={() => setMappingDraft(current => current?.id ? null : current)}>
+                <MappingEditor key={mappingDraft.id} draft={mappingDraft} products={products} tags={selectableTags(quiz, products)} onChange={setMappingDraft} onSave={commitMapping} onCancel={() => setMappingDraft(null)} pending={pending} compact />
+                <s-button slot="primary-action" variant="primary" loading={pending} disabled={!mappingDraft.tags.length || !mappingDraft.productHandle} onClick={commitMapping}>Save mapping</s-button>
+              </s-modal> : mappingDraft ? <MappingEditor key="new" draft={mappingDraft} products={products} tags={selectableTags(quiz, products)} onChange={setMappingDraft} onSave={commitMapping} onCancel={() => setMappingDraft(null)} pending={pending} /> : null}
               <s-section heading="Product mappings" padding="none">
                 {(quiz.mappings || []).length ? <s-table>
                   <s-table-header-row>
+                    <s-table-header>Order</s-table-header>
                     <s-table-header><s-checkbox label="Select all mappings" checked={pickedRows.length === quiz.mappings.length} indeterminate={pickedRows.length > 0 && pickedRows.length < quiz.mappings.length} onChange={event => setPickedRows(event.currentTarget.checked ? quiz.mappings.map(item => item.id) : [])} /></s-table-header>
                     <s-table-header>Selected tags</s-table-header><s-table-header>Resource type</s-table-header><s-table-header listSlot="primary">Resource name</s-table-header><s-table-header>Actions</s-table-header>
                   </s-table-header-row>
                   <s-table-body>
-                    {quiz.mappings.map(mapping => {
+                    {quiz.mappings.map((mapping, mappingIndex) => {
                       const product = products.find(item => item.handle === mapping.productHandle);
                       const variant = product?.variants?.find(item => item.id === mapping.variantId);
                       const title = `${product?.title || mapping.productHandle}${variant ? ` - ${variant.title}` : ""}`;
-                      return <s-table-row key={mapping.id}>
+                      return <s-table-row key={mapping.id} ref={row => {
+                        if (!row) return;
+                        row.ondragover = event => { if (draggedMapping.current && !pending) { event.preventDefault(); if (event.dataTransfer) event.dataTransfer.dropEffect = "move"; } };
+                        row.ondrop = event => { event.preventDefault(); if (draggedMapping.current) moveMapping(draggedMapping.current, mapping.id); draggedMapping.current = null; };
+                      }}>
+                        <s-table-cell>
+                          <s-button variant="tertiary" accessibilityLabel={`Drag to move ${title}`} disabled={pending} ref={handle => {
+                            if (!handle) return;
+                            handle.draggable = !pending;
+                            handle.ondragstart = event => { draggedMapping.current = mapping.id; if (event.dataTransfer) { event.dataTransfer.effectAllowed = "move"; event.dataTransfer.setData("text/plain", mapping.id); } };
+                            handle.ondragend = () => { draggedMapping.current = null; };
+                            handle.onkeydown = event => {
+                              const nextIndex = event.key === "ArrowUp" ? mappingIndex - 1 : event.key === "ArrowDown" ? mappingIndex + 1 : -1;
+                              if (nextIndex >= 0 && nextIndex < quiz.mappings.length) { event.preventDefault(); moveMapping(mapping.id, quiz.mappings[nextIndex].id); }
+                            };
+                          }}>⠿</s-button>
+                        </s-table-cell>
                         <s-table-cell><s-checkbox label={`Select ${title}`} checked={pickedRows.includes(mapping.id)} onChange={event => { const checked = event.currentTarget.checked; setPickedRows(current => checked ? [...current, mapping.id] : current.filter(id => id !== mapping.id)); }} /></s-table-cell>
                         <s-table-cell><s-stack direction="inline" gap="small">{mapping.tags.map((tag, tagIndex) => <s-stack key={tag} direction="inline" gap="small" alignItems="center">{tagIndex > 0 ? <s-text color="subdued">{(mapping.grouping || "or").toUpperCase()}</s-text> : null}<s-chip>{tag}</s-chip></s-stack>)}</s-stack></s-table-cell>
                         <s-table-cell><s-badge>{mapping.variantId ? "Variant" : "Product"}</s-badge></s-table-cell><s-table-cell>{title}</s-table-cell>

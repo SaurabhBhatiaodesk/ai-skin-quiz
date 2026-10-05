@@ -15,7 +15,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   } catch {
     products = [];
   }
-  return { shop: session.shop, quiz, products };
+  return { shop: session.shop, quiz, products, scanKeyPresent: Boolean(process.env.SKIN_ANALYSIS_API_KEY) };
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -33,8 +33,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 export default function Index() {
-  const { shop, quiz, products } = useLoaderData<typeof loader>();
-  return <QuizEditor initial={quiz} shop={shop} products={products} code={quiz.handle} />;
+  const { shop, quiz, products, scanKeyPresent } = useLoaderData<typeof loader>();
+  return <QuizEditor initial={quiz} shop={shop} products={products} code={quiz.handle} scanKeyPresent={scanKeyPresent} />;
 }
 
 export const headers: HeadersFunction = (headersArgs) => {

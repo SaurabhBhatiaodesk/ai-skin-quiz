@@ -345,7 +345,16 @@ export function normalizeQuiz(input: unknown): StoredQuiz {
     font: suppliedDesign?.font === "sans" ? "sans" : "classic",
     radius: suppliedDesign?.radius === "square" ? "square" : suppliedDesign?.radius === "pill" ? "pill" : "rounded",
   };
-  return { layout, scanner, design, quick: layout === "scan" ? [] : quick, deep: layout === "three" ? deep : [], profiles: normalizeProfiles(source.profiles), mappings: normalizeMappings(source.mappings) };
+  const suppliedIntegration = (input as StoredQuiz)?.scanIntegration;
+  const scanIntegration = { provider: clip(suppliedIntegration?.provider, 80), endpoint: clip(suppliedIntegration?.endpoint, 500), documentation: clip(suppliedIntegration?.documentation, 500) };
+  for (const value of [scanIntegration.endpoint, scanIntegration.documentation]) {
+    if (value) {
+      let url: URL;
+      try { url = new URL(value); } catch { throw new Error("Use a valid HTTPS URL for the scan provider."); }
+      if (url.protocol !== "https:" || url.username || url.password) throw new Error("Use HTTPS URLs without embedded credentials.");
+    }
+  }
+  return { layout, scanner, design, scanIntegration, quick: layout === "scan" ? [] : quick, deep: layout === "three" ? deep : [], profiles: normalizeProfiles(source.profiles), mappings: normalizeMappings(source.mappings) };
 }
 
 function normalizeMappings(value: unknown): ProductMapping[] {
