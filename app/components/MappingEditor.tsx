@@ -16,9 +16,9 @@ export default function MappingEditor({ draft, products, tags, onChange, onSave,
   const variant = product?.variants?.find(item => item.id === draft.variantId);
   const resourceName = product ? `${product.title}${variant ? ` — ${variant.title}` : ""}` : draft.productHandle;
   const filteredTags = tags.filter(tag => tag.toLowerCase().includes(tagQuery.trim().toLowerCase()));
-  const resources = products.flatMap<{ handle: string; variantId?: string; title: string }>(item => resourceType === "variant"
-    ? (item.variants || []).map(value => ({ handle: item.handle, variantId: value.id, title: `${item.title} — ${value.title}` }))
-    : [{ handle: item.handle, title: item.title }]).filter(item => item.title.toLowerCase().includes(resourceQuery.trim().toLowerCase()));
+  const resources = products.flatMap<{ handle: string; variantId?: string; title: string; image: string; price: string }>(item => resourceType === "variant"
+    ? (item.variants || []).map(value => ({ handle: item.handle, variantId: value.id, title: `${item.title} - ${value.title}`, image: value.image || item.image, price: value.price }))
+    : [{ handle: item.handle, title: item.title, image: item.image, price: item.price }]).filter(item => item.title.toLowerCase().includes(resourceQuery.trim().toLowerCase()));
 
   function openResources(type: "product" | "variant") {
     setResourceType(type); setResourceQuery(""); modal.current?.showOverlay();
@@ -72,7 +72,13 @@ export default function MappingEditor({ draft, products, tags, onChange, onSave,
           <s-search-field label={`Search ${resourceType}`} value={resourceQuery} onInput={event => setResourceQuery(event.currentTarget.value)} />
           <s-scroll-box maxBlockSize="400px" accessibilityLabel="Available resources">
             <s-stack gap="small">
-              {resources.map(item => <s-button key={item.variantId || item.handle} inlineSize="fill" onClick={() => { onChange({ ...draft, productHandle: item.handle, variantId: item.variantId }); modal.current?.hideOverlay(); }}>{item.title}</s-button>)}
+              {resources.map(item => <s-clickable key={item.variantId || item.handle} accessibilityLabel={`Select ${item.title}`} border="base" borderRadius="base" padding="small" onClick={() => { onChange({ ...draft, productHandle: item.handle, variantId: item.variantId }); modal.current?.hideOverlay(); }}>
+                <s-grid gridTemplateColumns="48px minmax(0, 1fr) auto" gap="base" alignItems="center">
+                  {item.image ? <s-thumbnail src={item.image} alt={item.title} /> : <s-icon type="product" />}
+                  <s-stack gap="small"><s-text type="strong">{item.title}</s-text><s-text color="subdued">{item.price}</s-text></s-stack>
+                  <s-icon type="chevron-right" />
+                </s-grid>
+              </s-clickable>)}
               {!resources.length ? <s-paragraph color="subdued">{products.length ? "No matching resources." : "No products loaded. Check the store products and refresh."}</s-paragraph> : null}
             </s-stack>
           </s-scroll-box>

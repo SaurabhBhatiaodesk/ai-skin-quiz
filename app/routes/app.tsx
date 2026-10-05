@@ -20,6 +20,7 @@ export default function App() {
       <s-app-nav>
         <s-link href="/app">Quiz</s-link>
         <s-link href="/app/blocks">Blocks</s-link>
+        <s-link href="/app/documentation">Documentation</s-link>
       </s-app-nav>
       <Outlet />
     </AppProvider>

@@ -372,6 +372,15 @@
       });
     }
     loadQuiz().then(function (data) {
+      if (data.design) {
+        var design = data.design;
+        root.style.setProperty("--canvas", design.background);
+        root.style.setProperty("--ink", design.text);
+        root.style.setProperty("--gold", design.accent);
+        root.style.setProperty("--button-text", design.buttonText);
+        root.style.setProperty("--button-radius", design.radius === "pill" ? "999px" : design.radius === "square" ? "0px" : "8px");
+        if (design.font === "sans") root.setAttribute("data-font", "sans");
+      }
       var scanner = data.scanner || { title: "AI Skin Scan", description: "Try the skin scan demo with a live camera or photo upload.", camera: true, upload: true };
       var scanCard = q('[data-goto="scanner"].entry-card');
       if (scanCard) {

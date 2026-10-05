@@ -333,7 +333,19 @@ export function normalizeQuiz(input: unknown): StoredQuiz {
     upload: scan?.upload !== false,
   };
   if (!scanner.camera && !scanner.upload) throw new Error("Enable camera or photo upload for Skin Scan.");
-  return { layout, scanner, quick: layout === "scan" ? [] : quick, deep: layout === "three" ? deep : [], profiles: normalizeProfiles(source.profiles), mappings: normalizeMappings(source.mappings) };
+  const suppliedDesign = (input as StoredQuiz)?.design;
+  function color(value: unknown, fallback: string) {
+    if (value === undefined) return fallback;
+    if (typeof value !== "string" || !/^#[0-9a-f]{6}$/i.test(value)) throw new Error("Use six-digit hex colors in Quiz design.");
+    return value;
+  }
+  const design: NonNullable<StoredQuiz["design"]> = {
+    background: color(suppliedDesign?.background, "#faf7f2"), text: color(suppliedDesign?.text, "#1a1208"),
+    accent: color(suppliedDesign?.accent, "#b07d3a"), buttonText: color(suppliedDesign?.buttonText, "#ffffff"),
+    font: suppliedDesign?.font === "sans" ? "sans" : "classic",
+    radius: suppliedDesign?.radius === "square" ? "square" : suppliedDesign?.radius === "pill" ? "pill" : "rounded",
+  };
+  return { layout, scanner, design, quick: layout === "scan" ? [] : quick, deep: layout === "three" ? deep : [], profiles: normalizeProfiles(source.profiles), mappings: normalizeMappings(source.mappings) };
 }
 
 function normalizeMappings(value: unknown): ProductMapping[] {
@@ -485,6 +497,7 @@ export async function publicQuiz(shop: string, code?: unknown) {
   return {
     layout: quiz.layout || "three",
     scanner: quiz.scanner,
+    design: quiz.design,
     quick: quiz.quick,
     deep: quiz.deep.map((question) => ({
       layer: question.layer,

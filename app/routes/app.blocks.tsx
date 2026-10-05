@@ -17,7 +17,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       name: quiz.name,
       layout: quiz.layout || "three",
       questions: quiz.quick.length + quiz.deep.length,
-      scanUrl: `https://${session.shop}/?dosha_scan=${encodeURIComponent(quiz.handle)}`,
       addUrl: `https://admin.shopify.com/store/${store}/themes/current/editor?template=index&addAppBlockId=${apiKey}/dosha-quiz&target=newAppsSection`,
     })),
   };
@@ -71,14 +70,13 @@ export default function Blocks() {
         {quizzes.map(quiz => <s-section key={quiz.handle} heading={quiz.name}>
           <s-stack gap="base">
             <s-stack direction="inline" gap="small"><s-badge>{quiz.layout === "scan" ? "AI Skin Scan" : quiz.layout === "single" ? "Single-block quiz" : "3-block quiz"}</s-badge>{quiz.layout !== "scan" ? <s-text color="subdued">{quiz.questions} questions</s-text> : <s-text color="subdued">Camera / photo upload</s-text>}</s-stack>
-            <s-text-field label="Quiz code" readOnly value={quiz.handle} />
+            <s-text-field label="Shopify widget code" readOnly value={quiz.handle} />
             <s-stack direction="inline" gap="small">
               <s-button variant="primary" href={quiz.addUrl} target="_top">Add block</s-button>
               <s-button href={`/app?quiz=${quiz.handle}`}>Edit quiz</s-button>
-              {quiz.layout !== "single" ? <s-button href={quiz.scanUrl} target="_blank">Start scan</s-button> : null}
               {quizzes.length > 1 ? <s-button tone="critical" disabled={pending} onClick={() => submit({ intent: "delete", handle: quiz.handle }, { method: "post" })}>Delete</s-button> : null}
             </s-stack>
-            <s-paragraph color="subdued">{quiz.handle === "dosha-quiz" ? "This block already uses the code dosha-quiz. You do not need to paste anything." : `After the block is added, paste ${quiz.handle} into the block setting Quiz code.`}</s-paragraph>
+            <s-paragraph color="subdued">{quiz.handle === "dosha-quiz" ? "This block already uses the widget code dosha-quiz. You do not need to paste anything." : `After the block is added, paste ${quiz.handle} into the block setting Shopify widget code.`}</s-paragraph>
           </s-stack>
         </s-section>)}
       </s-stack>

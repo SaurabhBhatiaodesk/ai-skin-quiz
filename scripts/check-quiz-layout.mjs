@@ -127,5 +127,9 @@ scanQuiz.scanner = { title: "My Skin Scan", description: "Upload a selfie for th
 await api.saveQuiz("test", scanQuiz, scanQuiz.handle);
 assert.deepEqual((await api.loadQuiz("test", scanQuiz.handle)).scanner, scanQuiz.scanner);
 assert.deepEqual((await api.publicQuiz("test", scanQuiz.handle)).scanner, scanQuiz.scanner);
+scanQuiz.design = { background: "#ffffff", text: "#111111", accent: "#123456", buttonText: "#ffffff", font: "sans", radius: "pill" };
+await api.saveQuiz("test", scanQuiz, scanQuiz.handle);
+assert.deepEqual((await api.publicQuiz("test", scanQuiz.handle)).design, scanQuiz.design);
+assert.throws(() => api.normalizeQuiz({ ...scanQuiz, design: { ...scanQuiz.design, accent: "bad" } }), /hex colors/);
 assert.throws(() => api.normalizeQuiz({ ...scanQuiz, scanner: { ...scanQuiz.scanner, upload: false } }), /Enable camera or photo upload/);
 console.log("Passed: layout creation, save/reload, legacy defaults, question validation, 40-question single flow, result restrictions, storefront startup, AND/OR mapping and variant recommendations.");

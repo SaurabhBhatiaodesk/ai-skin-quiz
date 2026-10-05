@@ -50,6 +50,7 @@ function isDosha(tag: string): tag is ResultTag {
 
 export default function QuizEditor({
   initial,
+  shop,
   products,
   code,
 }: {
@@ -224,7 +225,8 @@ export default function QuizEditor({
   const saved = fetcher.data?.ok === true;
   const error = fetcher.data && !fetcher.data.ok ? fetcher.data.error : "";
   const result = quiz.profiles[resultKey];
-  const showQuestions = tab === "edit" || tab === "design" || tab === "tags";
+  const showQuestions = tab === "edit" || tab === "tags";
+  const design = quiz.design || { background: "#faf7f2", text: "#1a1208", accent: "#b07d3a", buttonText: "#ffffff", font: "classic" as const, radius: "rounded" as const };
   const showSidebar = (showQuestions && quiz.layout !== "scan") || tab === "content";
 
   return (
@@ -280,9 +282,21 @@ export default function QuizEditor({
             </s-box> : null}
           </s-section> : null}
           <s-stack gap="base">
+            {tab === "design" ? <s-section heading="Quiz design">
+              <s-stack gap="base">
+                <s-paragraph color="subdued">Customize the appearance of this quiz on your storefront.</s-paragraph>
+                <s-grid gridTemplateColumns="repeat(auto-fit, minmax(240px, 1fr))" gap="base">
+                  {([{ key: "background", label: "Background color" }, { key: "text", label: "Text color" }, { key: "accent", label: "Button and accent color" }, { key: "buttonText", label: "Button text color" }] as const).map(field => <s-color-field key={field.key} label={field.label} value={design[field.key]} onInput={event => { const value = event.currentTarget.value; setQuiz(current => ({ ...current, design: { ...design, [field.key]: value } })); }} />)}
+                  <s-select label="Font style" value={design.font} onChange={event => { const font = event.currentTarget.value === "sans" ? "sans" : "classic"; setQuiz(current => ({ ...current, design: { ...design, font } })); }}><s-option value="classic">Classic serif headings</s-option><s-option value="sans">Sans serif</s-option></s-select>
+                  <s-select label="Button shape" value={design.radius} onChange={event => { const radius = event.currentTarget.value === "square" ? "square" : event.currentTarget.value === "pill" ? "pill" : "rounded"; setQuiz(current => ({ ...current, design: { ...design, radius } })); }}><s-option value="square">Square</s-option><s-option value="rounded">Rounded</s-option><s-option value="pill">Pill</s-option></s-select>
+                </s-grid>
+                <s-stack direction="inline" justifyContent="end"><s-button variant="primary" loading={pending} onClick={save}>Save design</s-button></s-stack>
+              </s-stack>
+            </s-section> : null}
             {showQuestions && kind === "scan" ? <s-section heading="AI Skin Scan settings">
               <s-stack gap="base">
-                <s-banner heading="Demo mode">Camera and photo upload are available. Results currently use demo data; photos are not analysed by an AI service yet.</s-banner>
+                <s-banner heading="Analysis setup required">Camera and photo upload are available. Real skin analysis is not configured yet.</s-banner>
+                <s-stack direction="inline"><s-button href={`https://${shop}/?dosha_scan=${encodeURIComponent(code)}`} target="_blank">Start scan</s-button></s-stack>
                 <s-text-field label="Scan title" value={scanner.title} onInput={event => { const title = event.currentTarget.value; setQuiz(current => ({ ...current, scanner: { ...scanner, title } })); }} />
                 <s-text-area label="Scan description" value={scanner.description} onInput={event => { const description = event.currentTarget.value; setQuiz(current => ({ ...current, scanner: { ...scanner, description } })); }} />
                 <s-checkbox label="Allow live camera" checked={scanner.camera} onChange={event => { const camera = event.currentTarget.checked; setQuiz(current => ({ ...current, scanner: { ...scanner, camera } })); }} />
@@ -290,7 +304,7 @@ export default function QuizEditor({
                 <s-paragraph color="subdued">Keep at least one capture method enabled. Scan results use the personalized content and product mappings configured for this quiz.</s-paragraph>
               </s-stack>
             </s-section> : null}
-            {tab !== "settings" && tab !== "branching" && tab !== "tags" ? <s-section>
+            {tab !== "settings" && tab !== "branching" && tab !== "tags" && tab !== "design" ? <s-section>
               <s-stack direction="inline" gap="small" justifyContent="end">
                 {showQuestions && kind !== "scan" ? <>
                   <s-button tone="critical" variant="tertiary" onClick={removeQuestion} disabled={questions.length <= 1}>Delete question</s-button>
@@ -309,8 +323,7 @@ export default function QuizEditor({
             {tab === "settings" ? <s-section heading="Quiz settings">
           <s-stack gap="base">
                 <s-badge>{quiz.layout === "scan" ? "AI Skin Scan" : quiz.layout === "single" ? "Single-block quiz" : "3-block quiz"}</s-badge>
-                <s-text-field label="Quiz code" readOnly value={code} />
-                <s-text-field label="Shortcode" readOnly value={`[dosha-quiz:${code}]`} />
+                <s-text-field label="Shopify widget code" readOnly value={code} />
                 <s-paragraph color="subdued">Add this quiz to your storefront from Blocks. Paste the quiz code into the theme block, then save the theme.</s-paragraph>
                 <s-stack direction="inline" gap="small"><s-button href="/app/blocks">Open Blocks</s-button><s-button variant="primary" loading={pending} onClick={save}>Save quiz</s-button></s-stack>
               </s-stack>
@@ -376,10 +389,6 @@ export default function QuizEditor({
             </s-section> : null}
             {showQuestions && question ? <s-section heading={`Question ${safeIndex + 1}`}>
               <s-stack gap="base">
-                {tab === "design" ? <>
-                  <s-text-field label="Section name" value={question.phase} onInput={event => patch({ phase: event.currentTarget.value })} />
-                  <s-text-area label="Help text" value={question.sub} onInput={event => patch({ sub: event.currentTarget.value })} />
-                </> : null}
                 <s-text-area label="Question" rows={3} value={question.text} onInput={event => patch({ text: event.currentTarget.value })} />
                 <s-grid gridTemplateColumns={tab === "tags" ? "repeat(2, minmax(0, 1fr))" : "repeat(auto-fit, minmax(240px, 1fr))"} gap="base">
                   {question.options.map((option, optionIndex) => <s-box key={optionIndex} border="base" borderRadius="base" padding="base">
