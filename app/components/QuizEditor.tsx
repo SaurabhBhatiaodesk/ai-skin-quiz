@@ -63,8 +63,16 @@ export default function QuizEditor({
 }) {
   const fetcher = useFetcher<SaveResult>();
   const [quiz, setQuiz] = useState(initial);
+  const [apiKeyDraft, setApiKeyDraft] = useState("");
+  const [showApiKey, setShowApiKey] = useState(false);
+  const [keyCopyStatus, setKeyCopyStatus] = useState("");
   const [kind, setKind] = useState<Kind>(initial.layout === "scan" ? "scan" : "quick");
   const [index, setIndex] = useState(0);
+  const [questionOpen, setQuestionOpen] = useState(false);
+  const questionModal = useRef<HTMLElementTagNameMap["s-modal"]>(null);
+  useEffect(() => {
+    if (questionOpen) questionModal.current?.showOverlay();
+  }, [questionOpen]);
   const [tab, setTab] = useState<Tab>("edit");
   const [resultKey, setResultKey] = useState<(typeof RESULTS)[number]>("vata");
   const [tagDrafts, setTagDrafts] = useState<Record<string, string>>({});
@@ -75,7 +83,9 @@ export default function QuizEditor({
     if (editingMappingId) mappingModal.current?.showOverlay();
   }, [editingMappingId]);
   const [pickedRows, setPickedRows] = useState<string[]>([]);
-  const draggedMapping = useRef<string | null>(null);
+  const mappingRows = useRef(new Map<string, HTMLElement>());
+  const dragCleanup = useRef<(() => void) | null>(null);
+  useEffect(() => () => dragCleanup.current?.(), []);
 
   const pending = fetcher.state !== "idle";
   const questions = kind === "scan" ? [] : kind === "quick" ? quiz.quick : quiz.deep;
@@ -246,6 +256,7 @@ export default function QuizEditor({
   const saved = fetcher.data?.ok === true;
   const error = fetcher.data && !fetcher.data.ok ? fetcher.data.error : "";
   const result = quiz.profiles[resultKey];
+  const QuestionContainer = tab === "edit" ? "s-modal" : "s-section";
   const showQuestions = tab === "edit" || tab === "tags";
   const design = quiz.design || { background: "#faf7f2", text: "#1a1208", accent: "#b07d3a", buttonText: "#ffffff", font: "classic" as const, radius: "rounded" as const };
   const showSidebar = (showQuestions && quiz.layout !== "scan") || tab === "content";
@@ -263,9 +274,12 @@ export default function QuizEditor({
           {showSidebar ? <s-section heading={tab === "content" ? "Results" : "Questions"}>
             <s-scroll-box maxBlockSize="600px" accessibilityLabel="Quiz questions and results">
               <s-stack gap="base">
-                {tab === "content" ? <s-choice-list label="Personalized results" values={[resultKey]} onChange={event => setResultKey(event.currentTarget.values[0] as typeof resultKey)}>
-                  {RESULTS.map(key => <s-choice key={key} value={key}>{quiz.profiles[key].name}</s-choice>)}
-                </s-choice-list> : <>
+                {tab === "content" ? <>
+                  <s-text color="subdued">Select a personalized result to edit</s-text>
+                  <s-stack direction="inline" gap="small">
+                    {RESULTS.map(key => <s-button key={key} variant={resultKey === key ? "primary" : "secondary"} accessibilityLabel={`Edit ${quiz.profiles[key].name} result`} onClick={() => setResultKey(key)}>{quiz.profiles[key].name}</s-button>)}
+                  </s-stack>
+                </> : <>
                   {quiz.layout !== "single" ? <s-select label="Quiz flow" value={kind} onChange={event => { setKind(event.currentTarget.value === "scan" ? "scan" : event.currentTarget.value === "deep" ? "deep" : "quick"); setIndex(0); }}>
                     <s-option value="quick">Quick Quiz ({quiz.quick.length} questions)</s-option>
                     <s-option value="deep">Deep Quiz ({quiz.deep.length} questions)</s-option>
@@ -273,20 +287,18 @@ export default function QuizEditor({
                   </s-select> : null}
                   <s-text color="subdued">{kind === "scan" ? "Configure camera and photo upload for the scan block." : "Select a question to edit"}</s-text>
                   <s-grid gridTemplateColumns={tab === "tags" ? "minmax(0, 1fr)" : "repeat(auto-fit, minmax(220px, 1fr))"} gap="base">
-                  {visibleQuestions.map((item, pageIndex) => { const itemIndex = pageStart + pageIndex; return <s-clickable key={`${kind}-${itemIndex}`} accessibilityLabel={`Edit question ${itemIndex + 1}: ${item.text}`} background={safeIndex === itemIndex ? "subdued" : "base"} border={safeIndex === itemIndex ? "base strong" : "base"} borderRadius="base" padding="base" onClick={() => setIndex(itemIndex)}>
+                  {visibleQuestions.map((item, pageIndex) => { const itemIndex = pageStart + pageIndex; return <s-clickable key={`${kind}-${itemIndex}`} accessibilityLabel={`Edit question ${itemIndex + 1}: ${item.text}`} background={safeIndex === itemIndex ? "subdued" : "base"} border={safeIndex === itemIndex ? "base strong" : "base"} borderRadius="base" padding="base" onClick={() => { setIndex(itemIndex); if (tab === "edit") setQuestionOpen(true); }}>
                     {tab === "tags" ? <s-stack gap="small">
                       <s-stack direction="inline" justifyContent="space-between" alignItems="center">
                         <s-text color="subdued">Question {itemIndex + 1}</s-text>
                         {safeIndex === itemIndex ? <s-icon type="check" /> : null}
                       </s-stack>
                       <s-paragraph><s-text type={safeIndex === itemIndex ? "strong" : "generic"}>{item.text}</s-text></s-paragraph>
-                    </s-stack> : <s-stack gap="small">
-                      <s-stack direction="inline" gap="small" justifyContent="space-between" alignItems="center">
-                        <s-text color="subdued">Question {itemIndex + 1}</s-text>
-                        {safeIndex === itemIndex ? <s-badge tone="info">Editing</s-badge> : null}
-                      </s-stack>
-                      <s-text type={safeIndex === itemIndex ? "strong" : "generic"}>{item.text}</s-text>
-                    </s-stack>}
+                    </s-stack> : <s-grid gridTemplateColumns="auto minmax(0, 1fr) auto" gap="base" alignItems="center">
+                      <s-badge tone={safeIndex === itemIndex ? "info" : "auto"}>{String(itemIndex + 1).padStart(2, "0")}</s-badge>
+                      <s-paragraph><s-text type={safeIndex === itemIndex ? "strong" : "generic"}>{item.text}</s-text></s-paragraph>
+                      {safeIndex === itemIndex ? <s-icon type="check" /> : <s-icon type="chevron-right" />}
+                    </s-grid>}
                   </s-clickable>; })}
                   </s-grid>
                 </>}
@@ -352,15 +364,25 @@ export default function QuizEditor({
             {tab === "settings" && quiz.layout !== "single" ? <s-section heading="AI Skin Scan provider setup">
               <s-stack gap="base">
                 <s-banner heading="Provider integration pending">Save your provider details here. Real analysis needs a provider-specific integration; saving these fields does not activate scanning.</s-banner>
-                <s-paragraph><s-text type="strong">Which API key do I need?</s-text> {quiz.scanIntegration?.provider?.trim()
-                  ? `Use an API key issued by ${quiz.scanIntegration.provider.trim()} for its skin-analysis API. Get it from that provider's developer dashboard.`
-                  : "No AI provider is connected yet. Enter your skin-analysis provider's name first; you will need an API key from that same provider."}</s-paragraph>
-                <s-paragraph color="subdued">OpenAI, Gemini and other provider keys are not interchangeable. This app does not currently include an adapter for any provider.</s-paragraph>
+                <s-paragraph><s-text type="strong">Required for the planned OpenAI integration: an OpenAI API key.</s-text> Create a project API key in the OpenAI dashboard and set OPENAI_API_KEY on your server.</s-paragraph>
+                <s-link href="https://platform.openai.com/api-keys" target="_blank">Create an OpenAI API key</s-link>
+                <s-paragraph color="subdued">The OpenAI scan integration is still pending. Adding a key alone does not activate real analysis.</s-paragraph>
                 <s-text-field label="Provider name" placeholder="Your skin-analysis provider" value={quiz.scanIntegration?.provider || ""} onInput={event => { const provider = event.currentTarget.value; setQuiz(current => ({ ...current, scanIntegration: { endpoint: "", documentation: "", ...current.scanIntegration, provider } })); }} />
                 <s-text-field label="API endpoint" placeholder="https://api.example.com/analyze" details="Do not include API keys or other secrets in this URL." value={quiz.scanIntegration?.endpoint || ""} onInput={event => { const endpoint = event.currentTarget.value; setQuiz(current => ({ ...current, scanIntegration: { provider: "", documentation: "", ...current.scanIntegration, endpoint } })); }} />
                 <s-text-field label="API documentation URL" placeholder="https://example.com/docs" value={quiz.scanIntegration?.documentation || ""} onInput={event => { const documentation = event.currentTarget.value; setQuiz(current => ({ ...current, scanIntegration: { provider: "", endpoint: "", ...current.scanIntegration, documentation } })); }} />
-                <s-badge tone={scanKeyPresent ? "success" : "warning"}>{scanKeyPresent ? "Server API key present" : "Server API key missing"}</s-badge>
-                <s-paragraph>Set the API key from your selected provider as SKIN_ANALYSIS_API_KEY in the server environment. The secret is never displayed here. A key being present does not verify the provider connection.</s-paragraph>
+                <s-badge tone={scanKeyPresent ? "success" : "warning"}>{scanKeyPresent ? "OpenAI API key present" : "OpenAI API key missing"}</s-badge>
+                <s-grid gridTemplateColumns="minmax(0, 1fr) auto auto" gap="small" alignItems="end">
+                  {showApiKey ? <s-text-field label="OpenAI API key (temporary)" value={apiKeyDraft} onInput={event => { setApiKeyDraft(event.currentTarget.value); setKeyCopyStatus(""); }} /> : <s-password-field label="OpenAI API key (temporary)" value={apiKeyDraft} onInput={event => { setApiKeyDraft(event.currentTarget.value); setKeyCopyStatus(""); }} />}
+                  <s-button icon={showApiKey ? "hide" : "view"} accessibilityLabel={showApiKey ? "Hide API key" : "Show API key"} onClick={() => setShowApiKey(current => !current)} />
+                  <s-button icon="clipboard" accessibilityLabel="Copy API key" disabled={!apiKeyDraft} onClick={async () => {
+                    try { await navigator.clipboard.writeText(apiKeyDraft); setKeyCopyStatus("API key copied."); }
+                    catch { setKeyCopyStatus("Copy failed. Use Show API key and copy manually."); }
+                  }} />
+                </s-grid>
+                {keyCopyStatus ? <s-text color="subdued">{keyCopyStatus}</s-text> : null}
+                <s-paragraph color="subdued">This temporary field helps you copy a new key to your server configuration. It is not saved or connected by Save provider settings. Clear it after copying.</s-paragraph>
+                <s-stack direction="inline"><s-button variant="tertiary" disabled={!apiKeyDraft} onClick={() => { setApiKeyDraft(""); setShowApiKey(false); setKeyCopyStatus(""); }}>Clear key</s-button></s-stack>
+                <s-paragraph>OPENAI_API_KEY is checked on the server. The secret is never displayed here. Key presence does not verify the connection.</s-paragraph>
                 <s-stack direction="inline" justifyContent="end"><s-button variant="primary" loading={pending} onClick={save}>Save provider settings</s-button></s-stack>
               </s-stack>
             </s-section> : null}
@@ -406,16 +428,64 @@ export default function QuizEditor({
                       const variant = product?.variants?.find(item => item.id === mapping.variantId);
                       const title = `${product?.title || mapping.productHandle}${variant ? ` - ${variant.title}` : ""}`;
                       return <s-table-row key={mapping.id} ref={row => {
-                        if (!row) return;
-                        row.ondragover = event => { if (draggedMapping.current && !pending) { event.preventDefault(); if (event.dataTransfer) event.dataTransfer.dropEffect = "move"; } };
-                        row.ondrop = event => { event.preventDefault(); if (draggedMapping.current) moveMapping(draggedMapping.current, mapping.id); draggedMapping.current = null; };
+                        if (row) mappingRows.current.set(mapping.id, row);
+                        else mappingRows.current.delete(mapping.id);
                       }}>
                         <s-table-cell>
                           <s-button variant="tertiary" accessibilityLabel={`Drag to move ${title}`} disabled={pending} ref={handle => {
                             if (!handle) return;
-                            handle.draggable = !pending;
-                            handle.ondragstart = event => { draggedMapping.current = mapping.id; if (event.dataTransfer) { event.dataTransfer.effectAllowed = "move"; event.dataTransfer.setData("text/plain", mapping.id); } };
-                            handle.ondragend = () => { draggedMapping.current = null; };
+                            handle.draggable = false;
+                            handle.style.cursor = "grab";
+                            handle.style.touchAction = "none";
+                            const beginDrag = (event: PointerEvent) => {
+                              if (pending || event.button !== 0) return;
+                              event.preventDefault();
+                              dragCleanup.current?.();
+                              const startY = event.clientY;
+                              const source = mappingRows.current.get(mapping.id);
+                              const previousSelection = document.body.style.userSelect;
+                              document.body.style.userSelect = "none";
+                              handle.style.cursor = "grabbing";
+                              if (source) source.style.opacity = "0.5";
+                              const clean = () => {
+                                document.removeEventListener("pointerup", finish, true);
+                                document.removeEventListener("pointermove", track, true);
+                                document.removeEventListener("pointercancel", clean, true);
+                                for (const row of mappingRows.current.values()) for (const cell of row.children) (cell as HTMLElement).style.backgroundColor = "";
+                                document.body.style.userSelect = previousSelection;
+                                handle.style.cursor = "grab";
+                                if (source) source.style.opacity = "";
+                                dragCleanup.current = null;
+                              };
+                              let target: string | null = null;
+                              const track = (move: PointerEvent) => {
+                                move.preventDefault();
+                                target = null;
+                                for (const [targetId, row] of mappingRows.current) {
+                                  // Polaris table rows may use display:contents; measure rendered cells.
+                                  const cells = Array.from(row.children) as HTMLElement[];
+                                  const bounds = cells.map(cell => cell.getBoundingClientRect()).filter(rect => rect.height > 0);
+                                  const over = bounds.some(rect => move.clientY >= rect.top && move.clientY <= rect.bottom);
+                                  for (const cell of cells) cell.style.backgroundColor = over && targetId !== mapping.id ? "#eaf4ff" : "";
+                                  if (over) target = targetId;
+                                }
+                              };
+                              const finish = (up: PointerEvent) => {
+                                track(up);
+                                const destination = target;
+                                clean();
+                                if (Math.abs(up.clientY - startY) >= 4 && destination) moveMapping(mapping.id, destination);
+                              };
+                              dragCleanup.current = clean;
+                              document.addEventListener("pointerup", finish, true);
+                              document.addEventListener("pointermove", track, { capture: true, passive: false });
+                              document.addEventListener("pointercancel", clean, true);
+                            };
+                            // Capture before the component's internal button handles the event.
+                            const previous = (handle as typeof handle & { dragStart?: (event: PointerEvent) => void }).dragStart;
+                            if (previous) handle.removeEventListener("pointerdown", previous, true);
+                            handle.addEventListener("pointerdown", beginDrag, true);
+                            (handle as typeof handle & { dragStart?: (event: PointerEvent) => void }).dragStart = beginDrag;
                             handle.onkeydown = event => {
                               const nextIndex = event.key === "ArrowUp" ? mappingIndex - 1 : event.key === "ArrowDown" ? mappingIndex + 1 : -1;
                               if (nextIndex >= 0 && nextIndex < quiz.mappings.length) { event.preventDefault(); moveMapping(mapping.id, quiz.mappings[nextIndex].id); }
@@ -443,7 +513,7 @@ export default function QuizEditor({
                 <s-text-area label="Full reading" value={result.insight} rows={5} onInput={event => patchProfile({ insight: event.currentTarget.value })} />
               </s-stack>
             </s-section> : null}
-            {showQuestions && question ? <s-section heading={`Question ${safeIndex + 1}`}>
+            {showQuestions && question && (tab !== "edit" || questionOpen) ? <QuestionContainer heading={`Question ${safeIndex + 1}`} {...(tab === "edit" ? { ref: questionModal, onAfterHide: () => setQuestionOpen(false) } : {})}>
               <s-stack gap="base">
                 <s-text-area label="Question" rows={3} value={question.text} onInput={event => patch({ text: event.currentTarget.value })} />
                 <s-grid gridTemplateColumns={tab === "tags" ? "repeat(2, minmax(0, 1fr))" : "repeat(auto-fit, minmax(240px, 1fr))"} gap="base">
@@ -468,7 +538,7 @@ export default function QuizEditor({
                   <s-button onClick={() => { if (safeIndex < questions.length - 1) setIndex(safeIndex + 1); else if (kind === "quick" && quiz.deep.length) { setKind("deep"); setIndex(0); } }}>{question.continueLabel || "Continue"}</s-button>
                 </s-stack>}
               </s-stack>
-            </s-section> : null}
+            </QuestionContainer> : null}
           </s-stack>
         </s-grid>
         </s-query-container>

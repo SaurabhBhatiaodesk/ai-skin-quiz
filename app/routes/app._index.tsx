@@ -15,7 +15,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   } catch {
     products = [];
   }
-  return { shop: session.shop, quiz, products, scanKeyPresent: Boolean(process.env.SKIN_ANALYSIS_API_KEY) };
+  return { shop: session.shop, quiz, products, scanKeyPresent: Boolean(process.env.OPENAI_API_KEY) };
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
