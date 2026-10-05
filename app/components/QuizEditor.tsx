@@ -6,7 +6,7 @@ import { scoresForTag, slugTag } from "../quiz-shared";
 import type { DeepQuestion, ProductMapping, QuickQuestion, ResultTag, ShopProduct, StoredQuiz } from "../quiz-shared";
 
 type SaveResult = { ok: true; quiz: StoredQuiz } | { ok: false; error: string };
-type Kind = "quick" | "deep";
+type Kind = "quick" | "deep" | "scan";
 type Tab = "edit" | "design" | "tags" | "products" | "content" | "branching" | "settings";
 
 const TABS: Array<{ id: Tab; label: string; icon: "edit" | "design" | "tag" | "link" | "content" | "branch" | "gear" }> = [
@@ -60,7 +60,7 @@ export default function QuizEditor({
 }) {
   const fetcher = useFetcher<SaveResult>();
   const [quiz, setQuiz] = useState(initial);
-  const [kind, setKind] = useState<Kind>("quick");
+  const [kind, setKind] = useState<Kind>(initial.layout === "scan" ? "scan" : "quick");
   const [index, setIndex] = useState(0);
   const [tab, setTab] = useState<Tab>("edit");
   const [resultKey, setResultKey] = useState<(typeof RESULTS)[number]>("vata");
@@ -69,12 +69,14 @@ export default function QuizEditor({
   const [pickedRows, setPickedRows] = useState<string[]>([]);
 
   const pending = fetcher.state !== "idle";
-  const questions = kind === "quick" ? quiz.quick : quiz.deep;
+  const questions = kind === "scan" ? [] : kind === "quick" ? quiz.quick : quiz.deep;
+  const scanner = quiz.scanner || { title: "AI Skin Scan", description: "Try the skin scan demo with a live camera or photo upload.", camera: true, upload: true };
   const safeIndex = Math.min(index, Math.max(questions.length - 1, 0));
   const question = questions[safeIndex];
 
   function save() {
-    fetcher.submit(quiz, { method: "POST", encType: "application/json", action: `/app?quiz=${code}` });
+    // The index marker targets app._index instead of its parent app route.
+    fetcher.submit(quiz, { method: "POST", encType: "application/json", action: `/app?index&quiz=${encodeURIComponent(code)}` });
   }
 
   function patch(partial: Partial<QuickQuestion & DeepQuestion>) {
@@ -151,7 +153,7 @@ export default function QuizEditor({
         ...current.deep,
         {
           layer: 1,
-          phase: "Prakriti · Your baseline nature",
+          phase: "Prakriti Â· Your baseline nature",
           text: "New question",
           sub: "",
           continueLabel: "Continue",
@@ -180,7 +182,7 @@ export default function QuizEditor({
 
   function persist(next: StoredQuiz) {
     setQuiz(next);
-    fetcher.submit(next, { method: "POST", encType: "application/json", action: `/app?quiz=${code}` });
+    fetcher.submit(next, { method: "POST", encType: "application/json", action: `/app?index&quiz=${encodeURIComponent(code)}` });
   }
 
   function commitMapping() {
@@ -212,7 +214,8 @@ export default function QuizEditor({
   const saved = fetcher.data?.ok === true;
   const error = fetcher.data && !fetcher.data.ok ? fetcher.data.error : "";
   const result = quiz.profiles[resultKey];
-  const showQuestions = tab !== "products" && tab !== "content";
+  const showQuestions = tab === "edit" || tab === "design" || tab === "tags";
+  const showSidebar = (showQuestions && quiz.layout !== "scan") || tab === "content";
 
   return (
     <s-page heading="Quiz editor" inlineSize="large">
@@ -222,29 +225,49 @@ export default function QuizEditor({
           {TABS.map(item => <s-button key={item.id} variant={tab === item.id ? "primary" : "tertiary"} onClick={() => setTab(item.id)}>{item.label}</s-button>)}
         </s-stack>
         {error ? <s-banner tone="critical" heading="Could not save quiz">{error}</s-banner> : saved ? <s-banner tone="success" heading="Saved" /> : null}
-        <s-grid gridTemplateColumns={tab === "products" ? "1fr" : "@container (inline-size > 860px) 280px 1fr, 1fr"} gap="base" alignItems="start">
-          {tab !== "products" ? <s-section heading={TABS.find(item => item.id === tab)?.label}>
+        <s-query-container>
+        <s-grid gridTemplateColumns="minmax(0, 1fr)" gap="base" alignItems="start">
+          {showSidebar ? <s-section heading={tab === "content" ? "Results" : "Questions"}>
             <s-scroll-box maxBlockSize="600px" accessibilityLabel="Quiz questions and results">
               <s-stack gap="base">
                 {tab === "content" ? <s-choice-list label="Personalized results" values={[resultKey]} onChange={event => setResultKey(event.currentTarget.values[0] as typeof resultKey)}>
                   {RESULTS.map(key => <s-choice key={key} value={key}>{quiz.profiles[key].name}</s-choice>)}
                 </s-choice-list> : <>
-                  <s-choice-list label={`${quiz.layout === "single" ? "Single quiz" : "Quick"} · ${quiz.quick.length}`} values={kind === "quick" ? [String(safeIndex)] : []}
-                    onChange={event => { setKind("quick"); setIndex(Number(event.currentTarget.values[0])); }}>
-                    {quiz.quick.map((item, itemIndex) => <s-choice key={itemIndex} value={String(itemIndex)}>Question {itemIndex + 1}: {item.text}</s-choice>)}
-                  </s-choice-list>
-                  {quiz.layout !== "single" ? <s-choice-list label={`Deep · ${quiz.deep.length}`} values={kind === "deep" ? [String(safeIndex)] : []}
-                    onChange={event => { setKind("deep"); setIndex(Number(event.currentTarget.values[0])); }}>
-                    {quiz.deep.map((item, itemIndex) => <s-choice key={itemIndex} value={String(itemIndex)}>Question {itemIndex + 1}: {item.text}</s-choice>)}
-                  </s-choice-list> : null}
+                  {quiz.layout !== "single" ? <s-select label="Quiz flow" value={kind} onChange={event => { setKind(event.currentTarget.value === "scan" ? "scan" : event.currentTarget.value === "deep" ? "deep" : "quick"); setIndex(0); }}>
+                    <s-option value="quick">Quick Quiz ({quiz.quick.length} questions)</s-option>
+                    <s-option value="deep">Deep Quiz ({quiz.deep.length} questions)</s-option>
+                    <s-option value="scan">AI Skin Scan</s-option>
+                  </s-select> : null}
+                  <s-text color="subdued">{kind === "scan" ? "Configure camera and photo upload for the scan block." : "Select a question to edit"}</s-text>
+                  <s-grid gridTemplateColumns="repeat(auto-fit, minmax(220px, 1fr))" gap="base">
+                  {questions.map((item, itemIndex) => <s-clickable key={`${kind}-${itemIndex}`} accessibilityLabel={`Edit question ${itemIndex + 1}: ${item.text}`} background={safeIndex === itemIndex ? "subdued" : "base"} border={safeIndex === itemIndex ? "base strong" : "base"} borderRadius="base" padding="base" onClick={() => setIndex(itemIndex)}>
+                    <s-stack gap="small">
+                      <s-stack direction="inline" gap="small" justifyContent="space-between" alignItems="center">
+                        <s-text color="subdued">Question {itemIndex + 1}</s-text>
+                        {safeIndex === itemIndex ? <s-badge tone="info">Editing</s-badge> : null}
+                      </s-stack>
+                      <s-text type={safeIndex === itemIndex ? "strong" : "generic"}>{item.text}</s-text>
+                    </s-stack>
+                  </s-clickable>)}
+                  </s-grid>
                 </>}
               </s-stack>
             </s-scroll-box>
           </s-section> : null}
           <s-stack gap="base">
-            <s-section>
+            {showQuestions && kind === "scan" ? <s-section heading="AI Skin Scan settings">
+              <s-stack gap="base">
+                <s-banner heading="Demo mode">Camera and photo upload are available. Results currently use demo data; photos are not analysed by an AI service yet.</s-banner>
+                <s-text-field label="Scan title" value={scanner.title} onInput={event => { const title = event.currentTarget.value; setQuiz(current => ({ ...current, scanner: { ...scanner, title } })); }} />
+                <s-text-area label="Scan description" value={scanner.description} onInput={event => { const description = event.currentTarget.value; setQuiz(current => ({ ...current, scanner: { ...scanner, description } })); }} />
+                <s-checkbox label="Allow live camera" checked={scanner.camera} onChange={event => { const camera = event.currentTarget.checked; setQuiz(current => ({ ...current, scanner: { ...scanner, camera } })); }} />
+                <s-checkbox label="Allow photo upload" checked={scanner.upload} onChange={event => { const upload = event.currentTarget.checked; setQuiz(current => ({ ...current, scanner: { ...scanner, upload } })); }} />
+                <s-paragraph color="subdued">Keep at least one capture method enabled. Scan results use the personalized content and product mappings configured for this quiz.</s-paragraph>
+              </s-stack>
+            </s-section> : null}
+            {tab !== "settings" && tab !== "branching" ? <s-section>
               <s-stack direction="inline" gap="small" justifyContent="end">
-                {showQuestions ? <>
+                {showQuestions && kind !== "scan" ? <>
                   <s-button tone="critical" variant="tertiary" onClick={removeQuestion} disabled={questions.length <= 1}>Delete question</s-button>
                   <s-button onClick={addQuestion} disabled={questions.length >= (kind === "deep" || quiz.layout === "single" ? 40 : 12)}>Add question</s-button>
                 </> : null}
@@ -257,7 +280,40 @@ export default function QuizEditor({
                 </> : null}
                 <s-button variant="primary" loading={pending} onClick={save}>Save</s-button>
               </s-stack>
-            </s-section>
+            </s-section> : null}
+            {tab === "settings" ? <s-section heading="Quiz settings">
+          <s-stack gap="base">
+                <s-badge>{quiz.layout === "scan" ? "AI Skin Scan" : quiz.layout === "single" ? "Single-block quiz" : "3-block quiz"}</s-badge>
+                <s-text-field label="Quiz code" readOnly value={code} />
+                <s-text-field label="Shortcode" readOnly value={`[dosha-quiz:${code}]`} />
+                <s-paragraph color="subdued">Add this quiz to your storefront from Blocks. Paste the quiz code into the theme block, then save the theme.</s-paragraph>
+                <s-stack direction="inline" gap="small"><s-button href="/app/blocks">Open Blocks</s-button><s-button variant="primary" loading={pending} onClick={save}>Save quiz</s-button></s-stack>
+              </s-stack>
+            </s-section> : null}
+            {tab === "branching" ? <s-section heading="Quiz flow">
+              <s-stack gap="base">
+                <s-banner heading="Questions follow a fixed order">Answer-based branching is not available yet. Customers continue through the questions in their selected quiz flow.</s-banner>
+                {quiz.layout === "scan" ? <s-paragraph>This block opens Skin Scan directly with camera or photo upload.</s-paragraph> : quiz.layout === "single" ? <s-paragraph>This single quiz contains {quiz.quick.length} questions in one flow.</s-paragraph> : <>
+                  <s-paragraph>Quick Quiz has {quiz.quick.length} questions. Deep Quiz has {quiz.deep.length} questions grouped into the sections below.</s-paragraph>
+                  <s-table><s-table-header-row><s-table-header listSlot="primary">Deep question</s-table-header><s-table-header>Section</s-table-header></s-table-header-row><s-table-body>
+                    {quiz.deep.map((item, itemIndex) => <s-table-row key={itemIndex}><s-table-cell>{itemIndex + 1}. {item.text}</s-table-cell><s-table-cell>
+                      <s-select label={`Section for question ${itemIndex + 1}`} labelAccessibilityVisibility="exclusive" value={String(item.layer)} onChange={event => {
+                        const layer = Number(event.currentTarget.value);
+                        setQuiz(current => ({ ...current, deep: current.deep.map((question, at) => {
+                          if (at !== itemIndex) return question;
+                          return { ...question, layer, options: question.options.map(option => {
+                            const scores: Record<string, number> = {};
+                            for (const [key, value] of Object.entries(option.scores)) { const base = key.replace(/v$/, ""); const next = layer === 2 ? `${base}v` : base; scores[next] = (scores[next] || 0) + value; }
+                            return { ...option, scores };
+                          }) };
+                        }) }));
+                      }}><s-option value="1">Baseline nature</s-option><s-option value="2">Current state</s-option><s-option value="3">Environment</s-option></s-select>
+                    </s-table-cell></s-table-row>)}
+                  </s-table-body></s-table>
+                </>}
+                <s-stack direction="inline" justifyContent="end"><s-button variant="primary" loading={pending} onClick={save}>Save flow</s-button></s-stack>
+              </s-stack>
+            </s-section> : null}
             {tab === "products" ? <>
               {mappingDraft ? <MappingEditor key={mappingDraft.id || "new"} draft={mappingDraft} products={products} tags={selectableTags(quiz, products)} onChange={setMappingDraft} onSave={commitMapping} onCancel={() => setMappingDraft(null)} pending={pending} /> : null}
               <s-section heading="Product mappings" padding="none">
@@ -270,7 +326,7 @@ export default function QuizEditor({
                     {quiz.mappings.map(mapping => {
                       const product = products.find(item => item.handle === mapping.productHandle);
                       const variant = product?.variants?.find(item => item.id === mapping.variantId);
-                      const title = `${product?.title || mapping.productHandle}${variant ? ` — ${variant.title}` : ""}`;
+                      const title = `${product?.title || mapping.productHandle}${variant ? ` - ${variant.title}` : ""}`;
                       return <s-table-row key={mapping.id}>
                         <s-table-cell><s-checkbox label={`Select ${title}`} checked={pickedRows.includes(mapping.id)} onChange={event => { const checked = event.currentTarget.checked; setPickedRows(current => checked ? [...current, mapping.id] : current.filter(id => id !== mapping.id)); }} /></s-table-cell>
                         <s-table-cell><s-stack direction="inline" gap="small">{mapping.tags.map((tag, tagIndex) => <s-stack key={tag} direction="inline" gap="small" alignItems="center">{tagIndex > 0 ? <s-text color="subdued">{(mapping.grouping || "or").toUpperCase()}</s-text> : null}<s-chip>{tag}</s-chip></s-stack>)}</s-stack></s-table-cell>
@@ -300,10 +356,6 @@ export default function QuizEditor({
                   <s-text-field label="Section name" value={question.phase} onInput={event => patch({ phase: event.currentTarget.value })} />
                   <s-text-area label="Help text" value={question.sub} onInput={event => patch({ sub: event.currentTarget.value })} />
                 </> : null}
-                {tab === "branching" && kind === "deep" ? <s-select label="Part of the quiz" value={String((question as DeepQuestion).layer)} onChange={event => patch({ layer: Number(event.currentTarget.value) })}>
-                  <s-option value="1">Who they are</s-option><s-option value="2">How they feel now</s-option><s-option value="3">Where they live</s-option>
-                </s-select> : null}
-                {tab === "settings" ? <s-paragraph>This quiz shortcode is <s-text type="strong">[dosha-quiz:{code}]</s-text>. Open <s-link href="/app/blocks">Blocks</s-link> and press Add block. In the theme block, paste that shortcode into Quiz code.</s-paragraph> : null}
                 <s-text-area label="Question" rows={3} value={question.text} onInput={event => patch({ text: event.currentTarget.value })} />
                 <s-grid gridTemplateColumns="repeat(auto-fit, minmax(240px, 1fr))" gap="base">
                   {question.options.map((option, optionIndex) => <s-box key={optionIndex} border="base" borderRadius="base" padding="base">
@@ -320,7 +372,7 @@ export default function QuizEditor({
                 </s-grid>
                 <s-stack direction="inline" gap="small" justifyContent="center">
                   <s-button disabled={question.options.length >= 8} onClick={() => {
-                    const options = kind === "quick" ? [...question.options, { value: "balanced", tag: "balanced" as const, label: "New answer", hint: "" }] : [...(question as DeepQuestion).options, { label: "New answer", hint: "", tag: "vata" as const, scores: { V: 3 } }];
+                    const options = kind === "quick" ? [...question.options, { value: "balanced", tag: "balanced" as const, label: "New answer", hint: "" }] : [...(question as DeepQuestion).options, { label: "New answer", hint: "", tag: "vata" as const, scores: scoresForTag("vata", (question as DeepQuestion).layer) }];
                     patch({ options } as Partial<QuickQuestion & DeepQuestion>);
                   }}>Add answer</s-button>
                   <s-button onClick={() => { if (safeIndex < questions.length - 1) setIndex(safeIndex + 1); else if (kind === "quick" && quiz.deep.length) { setKind("deep"); setIndex(0); } }}>{question.continueLabel || "Continue"}</s-button>
@@ -329,6 +381,7 @@ export default function QuizEditor({
             </s-section> : null}
           </s-stack>
         </s-grid>
+        </s-query-container>
       </s-stack>
     </s-page>
   );

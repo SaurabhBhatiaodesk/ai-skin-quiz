@@ -286,7 +286,7 @@ function normalizeProfiles(value: unknown) {
 
 export function normalizeQuiz(input: unknown): StoredQuiz {
   const source = input && typeof input === "object" ? (input as { layout?: unknown; quick?: unknown; deep?: unknown; profiles?: unknown; mappings?: unknown }) : {};
-  const layout = source.layout === "single" ? "single" : "three";
+  const layout = source.layout === "scan" ? "scan" : source.layout === "single" ? "single" : "three";
   const quick = (Array.isArray(source.quick) ? source.quick : []).slice(0, layout === "single" ? 40 : 12).flatMap((item) => {
     if (!item || typeof item !== "object") return [];
     const question = item as QuickQuestion;
@@ -325,7 +325,15 @@ export function normalizeQuiz(input: unknown): StoredQuiz {
   if (layout === "three" && (!quick.length || !deep.length)) {
     throw new Error("Add at least one quick question and one deep question, each with two answers.");
   }
-  return { layout, quick, deep: layout === "single" ? [] : deep, profiles: normalizeProfiles(source.profiles), mappings: normalizeMappings(source.mappings) };
+  const scan = (input as StoredQuiz)?.scanner;
+  const scanner = {
+    title: clip(scan?.title, 80) || "AI Skin Scan",
+    description: clip(scan?.description, 240) || "Try the skin scan demo with a live camera or photo upload.",
+    camera: scan?.camera !== false,
+    upload: scan?.upload !== false,
+  };
+  if (!scanner.camera && !scanner.upload) throw new Error("Enable camera or photo upload for Skin Scan.");
+  return { layout, scanner, quick: layout === "scan" ? [] : quick, deep: layout === "three" ? deep : [], profiles: normalizeProfiles(source.profiles), mappings: normalizeMappings(source.mappings) };
 }
 
 function normalizeMappings(value: unknown): ProductMapping[] {
@@ -436,12 +444,13 @@ export async function saveQuiz(shop: string, input: unknown, code?: unknown) {
   const library = await loadLibrary(shop);
   const handle = quizCode(code || (input && typeof input === "object" ? (input as { handle?: string }).handle : "") || "dosha-quiz");
   const current = library.find((item) => item.handle === handle);
-  const entry = normalizeEntry({
+  const merged = {
     ...(current || {}),
     ...(input && typeof input === "object" ? input : {}),
     handle,
     name: (input && typeof input === "object" && clip((input as { name?: string }).name, 80)) || current?.name || "Skin quiz",
-  }, handle) || namedQuiz(defaultQuiz(), handle, current?.name || "Skin quiz");
+  };
+  const entry = namedQuiz(normalizeQuiz(merged), handle, clip(merged.name, 80) || "Skin quiz");
   const quizzes = library.some((item) => item.handle === handle)
     ? library.map((item) => (item.handle === handle ? entry : item))
     : [...library, entry];
@@ -449,13 +458,14 @@ export async function saveQuiz(shop: string, input: unknown, code?: unknown) {
   return entry;
 }
 
-export async function createQuiz(shop: string, name: string, layout: "three" | "single" = "three") {
+export async function createQuiz(shop: string, name: string, layout: "three" | "single" | "scan" = "three") {
   const library = await loadLibrary(shop);
   let handle = quizCode(name || `quiz-${library.length + 1}`);
   if (library.some((item) => item.handle === handle)) handle = quizCode(`${handle}-${library.length + 1}`);
   const starter = defaultQuiz();
   starter.layout = layout;
   if (layout === "single") starter.deep = [];
+  if (layout === "scan") { starter.quick = []; starter.deep = []; }
   const entry = namedQuiz(starter, handle, clip(name, 80) || "New quiz");
   await writePayload(shop, [...library, entry]);
   return entry;
@@ -474,6 +484,7 @@ export async function publicQuiz(shop: string, code?: unknown) {
   const quiz = await loadQuiz(shop, code);
   return {
     layout: quiz.layout || "three",
+    scanner: quiz.scanner,
     quick: quiz.quick,
     deep: quiz.deep.map((question) => ({
       layer: question.layer,
@@ -738,6 +749,7 @@ export async function buildQuizResult(
   admin?: { graphql: (query: string) => Promise<Response> },
 ): Promise<QuizResult> {
   const quiz = await loadQuiz(shop, submission.code);
+  if (quiz.layout === "scan" && submission.path !== "scan") throw new Error("This block only supports Skin Scan.");
   if (quiz.layout === "single" && submission.path !== "quick") {
     throw new Error("This quiz only supports the single question flow.");
   }
@@ -745,7 +757,7 @@ export async function buildQuizResult(
   let source = "Quick Quiz";
   let note = "";
   let markers: QuizResult["markers"] = null;
-  let showUpgrade = quiz.layout !== "single";
+  let showUpgrade = quiz.layout !== "single" && quiz.layout !== "scan";
 
   if (submission.path === "deep" && Array.isArray(submission.answers)) {
     const scored = scoreDeep(submission.answers.map((value) => Number(value)), quiz.deep);

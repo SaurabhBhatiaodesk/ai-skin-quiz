@@ -33,7 +33,8 @@ export type QuizProfile = {
 };
 export type ProductMapping = { id: string; tags: string[]; productHandle: string; grouping?: "and" | "or"; variantId?: string };
 export type StoredQuiz = {
-  layout?: "three" | "single";
+  layout?: "three" | "single" | "scan";
+  scanner?: { title: string; description: string; camera: boolean; upload: boolean };
   quick: QuickQuestion[];
   deep: DeepQuestion[];
   profiles: Record<string, QuizProfile>;

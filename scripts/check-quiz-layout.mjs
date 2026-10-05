@@ -17,6 +17,32 @@ const api = await import(`data:text/javascript;base64,${Buffer.from(compiled.cod
 const legacy = api.normalizeQuiz({ quick: api.QUICK_QUESTIONS, deep: api.DEEP_QUESTIONS });
 assert.equal(legacy.layout, "three");
 assert.ok(legacy.deep.length);
+assert.equal(legacy.deep.length, 18);
+assert.deepEqual([1, 2, 3].map(layer => legacy.deep.filter(question => question.layer === layer).length), [8, 6, 4]);
+for (const question of legacy.deep) {
+  assert.ok(question.text && question.options.length >= 2);
+  for (const option of question.options) assert.ok(option.label && option.tags.length);
+}
+for (const [answer, expected] of [[0, "vata"], [1, "pitta"], [2, "kapha"]]) {
+  assert.equal(api.scoreDeep(Array(18).fill(answer), legacy.deep).dosha, expected);
+}
+const deepQuiz = await api.createQuiz("test", "Deep audit", "three");
+deepQuiz.deep[8].text = "Edited current-state question";
+deepQuiz.deep[8].options[0].hint = "Edited hint";
+deepQuiz.deep[8].options[0].tags = ["hydration", "vata"];
+await api.saveQuiz("test", deepQuiz, deepQuiz.handle);
+const reloadedDeep = await api.loadQuiz("test", deepQuiz.handle);
+assert.equal(reloadedDeep.deep.length, 18);
+assert.equal(reloadedDeep.deep[8].options[0].hint, "Edited hint");
+assert.deepEqual(reloadedDeep.deep[8].options[0].tags, ["hydration", "vata"]);
+assert.equal((await api.publicQuiz("test", deepQuiz.handle)).deep[8].text, "Edited current-state question");
+const deepResult = await api.buildQuizResult({ code: deepQuiz.handle, path: "deep", answers: Array(18).fill(0) }, "test");
+assert.equal(deepResult.source, "Deep Dosha");
+assert.equal(deepResult.dosha, "vata");
+assert.equal(deepResult.showUpgrade, false);
+const beforeInvalidSave = globalThis.quizTestPayload;
+await assert.rejects(api.saveQuiz("test", { ...deepQuiz, deep: [] }, deepQuiz.handle));
+assert.equal(globalThis.quizTestPayload, beforeInvalidSave);
 assert.throws(() => api.normalizeQuiz({ quick: api.QUICK_QUESTIONS, deep: [] }));
 assert.throws(() => api.normalizeQuiz({ layout: "single", quick: [], deep: [] }));
 const created = await api.createQuiz("test", "Single", "single");
@@ -75,11 +101,28 @@ async function storefront(layout) {
   vm.runInNewContext(await readFile("app/storefront-quiz.js", "utf8"), {
     document: { readyState: "complete", querySelectorAll() { return [root]; } },
     window: { scrollTo() {} },
+    URLSearchParams,
+    navigator: {},
     fetch: async () => ({ ok: true, json: async () => ({ layout, quick: [] }) }),
   });
   await new Promise(resolve => setImmediate(resolve));
-  assert.deepEqual([...active], [layout === "single" ? "quick" : "entry"]);
+  assert.deepEqual([...active], [layout === "scan" ? "scanner" : layout === "single" ? "quick" : "entry"]);
 }
 await storefront("single");
 await storefront("three");
+await storefront("scan");
+const scanOnly = await api.createQuiz("test", "Scan only", "scan");
+assert.equal(scanOnly.layout, "scan");
+assert.equal(scanOnly.quick.length, 0);
+assert.equal(scanOnly.deep.length, 0);
+await api.saveQuiz("test", scanOnly, scanOnly.handle);
+assert.equal((await api.loadQuiz("test", scanOnly.handle)).layout, "scan");
+await assert.rejects(api.buildQuizResult({ code: scanOnly.handle, path: "quick" }, "test"));
+assert.equal((await api.buildQuizResult({ code: scanOnly.handle, path: "scan" }, "test")).showUpgrade, false);
+const scanQuiz = await api.createQuiz("test", "Scan settings", "three");
+scanQuiz.scanner = { title: "My Skin Scan", description: "Upload a selfie for the demo.", camera: false, upload: true };
+await api.saveQuiz("test", scanQuiz, scanQuiz.handle);
+assert.deepEqual((await api.loadQuiz("test", scanQuiz.handle)).scanner, scanQuiz.scanner);
+assert.deepEqual((await api.publicQuiz("test", scanQuiz.handle)).scanner, scanQuiz.scanner);
+assert.throws(() => api.normalizeQuiz({ ...scanQuiz, scanner: { ...scanQuiz.scanner, upload: false } }), /Enable camera or photo upload/);
 console.log("Passed: layout creation, save/reload, legacy defaults, question validation, 40-question single flow, result restrictions, storefront startup, AND/OR mapping and variant recommendations.");

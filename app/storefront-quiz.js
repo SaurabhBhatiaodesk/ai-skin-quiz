@@ -21,6 +21,7 @@
 
     function go(name) {
       if (quiz && quiz.layout === "single" && (name === "entry" || name === "deep" || name === "scanner")) name = "quick";
+      if (quiz && quiz.layout === "scan" && (name === "entry" || name === "deep" || name === "quick")) name = "scanner";
       var screens = root.querySelectorAll(".screen");
       for (var i = 0; i < screens.length; i++) screens[i].classList.remove("active");
       var target = q('[data-screen="' + name + '"]');
@@ -186,6 +187,10 @@
     }
 
     function selectMode(mode) {
+      if (quiz && quiz.scanner) {
+        if (mode === "camera" && !quiz.scanner.camera) mode = "upload";
+        if (mode === "upload" && !quiz.scanner.upload) mode = "camera";
+      }
       scanMode = mode;
       var cam = q("[data-mode='camera']");
       var up = q("[data-mode='upload']");
@@ -354,6 +359,29 @@
       });
     }
     loadQuiz().then(function (data) {
+      var scanner = data.scanner || { title: "AI Skin Scan", description: "Try the skin scan demo with a live camera or photo upload.", camera: true, upload: true };
+      var scanCard = q('[data-goto="scanner"].entry-card');
+      if (scanCard) {
+        var title = scanCard.querySelector(".ec-name");
+        var description = scanCard.querySelector(".ec-desc");
+        var badge = scanCard.querySelector(".ec-badge");
+        if (title) title.textContent = scanner.title;
+        if (description) description.textContent = scanner.description;
+        if (badge) badge.textContent = "Demo scan";
+      }
+      var cameraButton = q('[data-mode="camera"]');
+      var uploadButton = q('[data-mode="upload"]');
+      if (cameraButton) cameraButton.style.display = scanner.camera ? "" : "none";
+      if (uploadButton) uploadButton.style.display = scanner.upload ? "" : "none";
+      scanMode = scanner.camera ? "camera" : "upload";
+      if (data.layout === "scan") {
+        root.setAttribute("data-quiz-layout", "scan");
+        var quizLinks = root.querySelectorAll('[data-goto="quick"], [data-goto="deep"], [data-upgrade]');
+        for (var scanIndex = 0; scanIndex < quizLinks.length; scanIndex++) quizLinks[scanIndex].style.display = "none";
+        go("scanner");
+      }
+      var requestedScan = new URLSearchParams(window.location ? window.location.search : "").get("dosha_scan");
+      if (data.layout !== "single" && requestedScan === quizCode) go("scanner");
       if (data.layout === "single") {
         root.setAttribute("data-quiz-layout", "single");
         var unavailable = root.querySelectorAll('[data-goto="deep"], [data-goto="scanner"], [data-upgrade]');
