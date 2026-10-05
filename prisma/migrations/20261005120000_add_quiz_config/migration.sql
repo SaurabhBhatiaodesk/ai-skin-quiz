@@ -1,0 +1,6 @@
+-- CreateTable
+CREATE TABLE IF NOT EXISTS "QuizConfig" (
+    "shop" TEXT NOT NULL PRIMARY KEY,
+    "payload" TEXT NOT NULL,
+    "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

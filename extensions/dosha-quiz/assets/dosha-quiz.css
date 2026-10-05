@@ -1,0 +1,1515 @@
+/* AI Dosha Quiz — storefront styles. Scoped to .prana-quiz so theme CSS is left alone. */
+.prana-quiz {
+  --canvas: #faf7f2;
+  --ink: #1a1208;
+  --gold: #b07d3a;
+  --gold-light: #e8d5b0;
+  --cream: #f2ede4;
+  --vata-bg: #f5ede8;
+  --vata-mid: #c4856a;
+  --vata-deep: #7a3820;
+  --pitta-bg: #e8f0eb;
+  --pitta-mid: #4a7c59;
+  --pitta-deep: #1e4a2e;
+  --kapha-bg: #eae8f0;
+  --kapha-mid: #6a5a8c;
+  --kapha-deep: #2e1e5a;
+  --border: #e0d8cc;
+  --text-muted: #888070;
+  font-family: "Jost", sans-serif;
+  background: var(--canvas);
+  color: var(--ink);
+  min-height: 100vh;
+  max-width: 100%;
+  position: relative;
+}
+
+.prana-quiz *,
+.prana-quiz *::before,
+.prana-quiz *::after {
+  box-sizing: border-box;
+}
+
+.prana-quiz .screen {
+  display: none;
+  min-height: 100vh;
+  animation: pranaFadeIn 0.4s ease;
+}
+
+.prana-quiz .screen.active {
+  display: flex;
+  flex-direction: column;
+}
+
+@keyframes pranaFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.prana-quiz .hdr {
+  text-align: center;
+  padding: 2.5rem 2rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.prana-quiz .hdr-logo {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 11px;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 0.4rem;
+}
+
+.prana-quiz .hdr-title {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 2rem;
+  font-weight: 300;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.prana-quiz .hdr-title em {
+  font-style: italic;
+  color: var(--gold);
+}
+
+.prana-quiz .hdr-sub {
+  font-size: 12px;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+  margin-top: 0.5rem;
+}
+
+.prana-quiz .entry-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  padding: 2rem;
+  max-width: 780px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.prana-quiz .entry-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 2rem 1.5rem;
+  cursor: pointer;
+  transition: all 0.25s;
+  text-align: center;
+  position: relative;
+}
+
+.prana-quiz .entry-card:hover {
+  border-color: var(--gold);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(176, 125, 58, 0.12);
+}
+
+.prana-quiz .entry-card.featured {
+  border: 2px solid var(--gold);
+}
+
+.prana-quiz .ec-badge {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--gold);
+  color: #fff;
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  padding: 4px 12px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+.prana-quiz .ec-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem;
+  font-size: 22px;
+}
+
+.prana-quiz .ec-icon.scan {
+  background: rgba(176, 125, 58, 0.1);
+}
+
+.prana-quiz .ec-icon.quick {
+  background: rgba(74, 124, 89, 0.1);
+}
+
+.prana-quiz .ec-icon.deep {
+  background: rgba(106, 90, 140, 0.1);
+}
+
+.prana-quiz .ec-name {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 1.25rem;
+  font-weight: 400;
+  margin-bottom: 0.4rem;
+}
+
+.prana-quiz .ec-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.6;
+  margin-bottom: 1rem;
+}
+
+.prana-quiz .ec-time {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 1rem;
+}
+
+.prana-quiz .btn-entry {
+  width: 100%;
+  padding: 10px;
+  background: var(--gold);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-family: "Jost", sans-serif;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.prana-quiz .btn-entry:hover {
+  background: #96694a;
+}
+
+.prana-quiz .btn-entry.ghost {
+  background: transparent;
+  color: var(--gold);
+  border: 1px solid var(--gold);
+}
+
+.prana-quiz .btn-entry.ghost:hover {
+  background: rgba(176, 125, 58, 0.08);
+}
+
+.prana-quiz .entry-note {
+  text-align: center;
+  padding-bottom: 2rem;
+  font-size: 10px;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+}
+
+.prana-quiz .scanner-wrap {
+  max-width: 500px;
+  margin: 0 auto;
+  padding: 2rem;
+  width: 100%;
+}
+
+.prana-quiz .scanner-choice {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.prana-quiz .sc-btn {
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fff;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s;
+  font-family: "Jost", sans-serif;
+  color: inherit;
+}
+
+.prana-quiz .sc-btn:hover,
+.prana-quiz .sc-btn.active {
+  border-color: var(--gold);
+  background: rgba(176, 125, 58, 0.05);
+}
+
+.prana-quiz .sc-btn-icon {
+  font-size: 24px;
+  margin-bottom: 0.4rem;
+}
+
+.prana-quiz .sc-btn-label {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.prana-quiz .sc-btn-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.prana-quiz .camera-zone {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4/3;
+  background: #111;
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+  display: none;
+}
+
+.prana-quiz .camera-zone.active {
+  display: block;
+}
+
+.prana-quiz .camera-feed {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.prana-quiz .scan-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.prana-quiz .scan-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border: 2px solid rgba(176, 125, 58, 0.6);
+  border-radius: 50%;
+  animation: pranaPulse 2s ease-in-out infinite;
+}
+
+.prana-quiz .scan-ring:nth-child(1) {
+  width: 180px;
+  height: 180px;
+  animation-delay: 0s;
+}
+
+.prana-quiz .scan-ring:nth-child(2) {
+  width: 240px;
+  height: 240px;
+  animation-delay: 0.4s;
+  opacity: 0.5;
+}
+
+.prana-quiz .scan-ring:nth-child(3) {
+  width: 300px;
+  height: 300px;
+  animation-delay: 0.8s;
+  opacity: 0.25;
+}
+
+@keyframes pranaPulse {
+  0%,
+  100% {
+    opacity: 0.8;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: translate(-50%, -50%) scale(1.03);
+  }
+}
+
+.prana-quiz .scan-line {
+  position: absolute;
+  left: 10%;
+  right: 10%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(176, 125, 58, 0.8), transparent);
+  animation: pranaScanLine 2.5s linear infinite;
+}
+
+@keyframes pranaScanLine {
+  0% {
+    top: 15%;
+  }
+  100% {
+    top: 85%;
+  }
+}
+
+.prana-quiz .scan-chips {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.prana-quiz .scan-chip {
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 20px;
+  backdrop-filter: blur(4px);
+}
+
+.prana-quiz .scan-chip.lit {
+  background: rgba(176, 125, 58, 0.8);
+  color: #fff;
+}
+
+.prana-quiz .upload-zone {
+  width: 100%;
+  aspect-ratio: 4/3;
+  border: 2px dashed var(--border);
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 1.5rem;
+  background: #fff;
+}
+
+.prana-quiz .upload-zone:hover {
+  border-color: var(--gold);
+  background: rgba(176, 125, 58, 0.03);
+}
+
+.prana-quiz .upload-zone.hidden {
+  display: none;
+}
+
+.prana-quiz .upload-icon {
+  font-size: 36px;
+  margin-bottom: 0.75rem;
+  opacity: 0.4;
+}
+
+.prana-quiz .upload-label {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.prana-quiz .upload-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+  opacity: 0.7;
+}
+
+.prana-quiz .file-input {
+  display: none;
+}
+
+.prana-quiz .upload-preview {
+  width: 100%;
+  aspect-ratio: 4/3;
+  object-fit: cover;
+  border-radius: 16px;
+  margin-bottom: 1.5rem;
+  display: none;
+}
+
+.prana-quiz .scan-status {
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 1.5rem;
+  min-height: 18px;
+}
+
+.prana-quiz .btn-scan {
+  width: 100%;
+  padding: 14px;
+  background: var(--gold);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-family: "Jost", sans-serif;
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.prana-quiz .btn-scan:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.prana-quiz .btn-scan:not(:disabled):hover {
+  background: #96694a;
+}
+
+.prana-quiz .consent-box {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.prana-quiz .consent-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 0.6rem;
+}
+
+.prana-quiz .consent-row:last-child {
+  margin-bottom: 0;
+}
+
+.prana-quiz .consent-check {
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid var(--border);
+  border-radius: 4px;
+  flex-shrink: 0;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  margin-top: 1px;
+  transition: all 0.2s;
+  background: #fff;
+}
+
+.prana-quiz .consent-check:checked {
+  background: var(--gold);
+  border-color: var(--gold);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 6l3 3 5-5' stroke='%23fff' stroke-width='1.8' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.prana-quiz .consent-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.6;
+  cursor: pointer;
+}
+
+.prana-quiz .consent-label a {
+  color: var(--gold);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.prana-quiz .consent-label strong {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.prana-quiz .consent-notice {
+  background: rgba(176, 125, 58, 0.06);
+  border: 1px solid rgba(176, 125, 58, 0.15);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+}
+
+.prana-quiz .cn-icon {
+  font-size: 14px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.prana-quiz .cn-text {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.prana-quiz .cn-text strong {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.prana-quiz .consent-error {
+  font-size: 11px;
+  color: #c0392b;
+  margin-bottom: 0.75rem;
+  display: none;
+  padding: 0 0.25rem;
+}
+
+.prana-quiz .consent-error.show {
+  display: block;
+}
+
+.prana-quiz .consent-jurisdiction {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.prana-quiz .cj-badge {
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 20px;
+  background: rgba(176, 125, 58, 0.08);
+  color: var(--gold);
+}
+
+.prana-quiz .analyzing-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(26, 18, 8, 0.85);
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.prana-quiz .analyzing-overlay.active {
+  display: flex;
+}
+
+.prana-quiz .analyzing-spinner {
+  width: 60px;
+  height: 60px;
+  border: 3px solid rgba(176, 125, 58, 0.2);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: pranaSpin 1s linear infinite;
+}
+
+@keyframes pranaSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.prana-quiz .analyzing-text {
+  color: #fff;
+  font-family: "Cormorant Garamond", serif;
+  font-size: 1.25rem;
+  font-style: italic;
+  text-align: center;
+  max-width: 260px;
+  line-height: 1.5;
+}
+
+.prana-quiz .analyzing-markers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  max-width: 300px;
+}
+
+.prana-quiz .am {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 4px 12px;
+  border-radius: 20px;
+  background: rgba(176, 125, 58, 0.15);
+  color: var(--gold-light);
+  transition: all 0.4s;
+}
+
+.prana-quiz .am.done {
+  background: rgba(176, 125, 58, 0.5);
+  color: #fff;
+}
+
+.prana-quiz .quiz-wrap {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 2rem;
+  width: 100%;
+  flex: 1;
+}
+
+.prana-quiz .quiz-progress {
+  margin-bottom: 2rem;
+}
+
+.prana-quiz .qp-bar {
+  height: 3px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.prana-quiz .qp-fill {
+  height: 100%;
+  background: var(--gold);
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+.prana-quiz .qp-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+  margin-top: 0.5rem;
+}
+
+.prana-quiz .q-step {
+  display: none;
+}
+
+.prana-quiz .q-step.active {
+  display: block;
+  animation: pranaFadeIn 0.3s ease;
+}
+
+.prana-quiz .q-text {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 1.6rem;
+  font-weight: 300;
+  line-height: 1.3;
+  margin-bottom: 0.5rem;
+}
+
+.prana-quiz .q-sub {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 1.75rem;
+  line-height: 1.6;
+}
+
+.prana-quiz .q-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.prana-quiz .q-opt {
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: #fff;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.prana-quiz .q-opt:hover {
+  border-color: var(--gold);
+  background: rgba(176, 125, 58, 0.04);
+}
+
+.prana-quiz .q-opt.selected {
+  border-color: var(--gold);
+  background: rgba(176, 125, 58, 0.08);
+}
+
+.prana-quiz .q-opt-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border);
+  flex-shrink: 0;
+  margin-top: 1px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.prana-quiz .q-opt.selected .q-opt-dot {
+  border-color: var(--gold);
+  background: var(--gold);
+}
+
+.prana-quiz .q-opt.selected .q-opt-dot::after {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #fff;
+}
+
+.prana-quiz .q-opt-text {
+  flex: 1;
+}
+
+.prana-quiz .q-opt-main {
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.prana-quiz .q-opt-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+.prana-quiz .q-nav {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 2rem;
+  align-items: center;
+}
+
+.prana-quiz .btn-back {
+  padding: 10px 20px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-family: "Jost", sans-serif;
+  font-size: 12px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.prana-quiz .btn-back:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.prana-quiz .btn-next {
+  padding: 11px 28px;
+  background: var(--gold);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-family: "Jost", sans-serif;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  opacity: 0.35;
+  pointer-events: none;
+  transition: all 0.2s;
+}
+
+.prana-quiz .btn-next.ready {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.prana-quiz .btn-next.ready:hover {
+  background: #96694a;
+}
+
+.prana-quiz .layer-pills {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.prana-quiz .layer-pill {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 4px 12px;
+  border-radius: 20px;
+  background: var(--cream);
+  color: var(--text-muted);
+}
+
+.prana-quiz .layer-pill.active {
+  background: var(--gold);
+  color: #fff;
+}
+
+.prana-quiz .result-wrap {
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 1.5rem;
+  width: 100%;
+}
+
+.prana-quiz .result-hero {
+  border-radius: 20px;
+  padding: 2rem 1.75rem;
+  color: #fff;
+  text-align: center;
+  margin-bottom: 1rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.prana-quiz .rh-vata {
+  background: linear-gradient(150deg, #3d1a0a 0%, #7a3820 50%, #c4856a 100%);
+}
+
+.prana-quiz .rh-pitta {
+  background: linear-gradient(150deg, #0a2a14 0%, #1e4a2e 50%, #4a7c59 100%);
+}
+
+.prana-quiz .rh-kapha {
+  background: linear-gradient(150deg, #12082a 0%, #2e1e5a 50%, #6a5a8c 100%);
+}
+
+.prana-quiz .rh-orb {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.prana-quiz .rh-tag {
+  font-size: 9px;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 0.5rem;
+}
+
+.prana-quiz .rh-dosha {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 2.5rem;
+  font-weight: 300;
+  letter-spacing: -0.01em;
+  margin-bottom: 0.15rem;
+}
+
+.prana-quiz .rh-sub {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+  margin-bottom: 1.25rem;
+}
+
+.prana-quiz .rh-essence {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 1rem;
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.7;
+  max-width: 340px;
+  margin: 0 auto;
+}
+
+.prana-quiz .rh-source {
+  display: inline-block;
+  margin-top: 0.75rem;
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.08);
+  padding: 4px 12px;
+  border-radius: 20px;
+}
+
+.prana-quiz .result-section {
+  margin-bottom: 1.25rem;
+}
+
+.prana-quiz .rs-label {
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 0.6rem;
+}
+
+.prana-quiz .result-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1.25rem 1.5rem;
+}
+
+.prana-quiz .skin-markers {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.6rem;
+}
+
+.prana-quiz .marker-item {
+  text-align: center;
+}
+
+.prana-quiz .marker-bar {
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 0.3rem;
+}
+
+.prana-quiz .marker-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 1s ease;
+}
+
+.prana-quiz .marker-fill.high {
+  background: var(--gold);
+}
+
+.prana-quiz .marker-fill.mid {
+  background: #b07d3a99;
+}
+
+.prana-quiz .marker-fill.low {
+  background: #b07d3a44;
+}
+
+.prana-quiz .marker-name {
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.prana-quiz .marker-val {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.prana-quiz .dosha-learn-btn {
+  width: 100%;
+  padding: 10px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-family: "Jost", sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gold);
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 0.75rem;
+}
+
+.prana-quiz .dosha-learn-btn:hover {
+  border-color: var(--gold);
+  background: rgba(176, 125, 58, 0.06);
+}
+
+.prana-quiz .insight-text {
+  font-size: 13px;
+  line-height: 1.75;
+  color: var(--ink);
+}
+
+.prana-quiz .insight-text em {
+  font-style: italic;
+  color: var(--gold);
+}
+
+.prana-quiz .product-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.prana-quiz .product-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1rem 1.25rem;
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.prana-quiz .pc-img {
+  width: 80px;
+  height: 80px;
+  border-radius: 10px;
+  background: var(--cream);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.prana-quiz .pc-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.prana-quiz .pc-img .no-img {
+  font-size: 28px;
+  opacity: 0.3;
+}
+
+.prana-quiz .pc-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.prana-quiz .pc-collection {
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 0.2rem;
+}
+
+.prana-quiz .pc-name {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 1rem;
+  font-weight: 400;
+  margin-bottom: 0.3rem;
+  line-height: 1.3;
+}
+
+.prana-quiz .pc-why {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin-bottom: 0.5rem;
+}
+
+.prana-quiz .pc-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.prana-quiz .pc-price {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.prana-quiz .btn-shop {
+  padding: 7px 14px;
+  background: var(--gold);
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  font-family: "Jost", sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+
+.prana-quiz .btn-shop:hover {
+  background: #96694a;
+}
+
+.prana-quiz .upgrade-nudge {
+  background: linear-gradient(135deg, rgba(176, 125, 58, 0.08), rgba(176, 125, 58, 0.03));
+  border: 1px solid rgba(176, 125, 58, 0.2);
+  border-radius: 12px;
+  padding: 1.25rem;
+  text-align: center;
+  margin-bottom: 1.25rem;
+}
+
+.prana-quiz .un-title {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 1.1rem;
+  margin-bottom: 0.35rem;
+}
+
+.prana-quiz .un-sub {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 0.75rem;
+  line-height: 1.5;
+}
+
+.prana-quiz .btn-upgrade {
+  padding: 9px 22px;
+  background: var(--ink);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-family: "Jost", sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.prana-quiz .btn-upgrade:hover {
+  background: #3a2810;
+}
+
+.prana-quiz .email-box {
+  background: var(--ink);
+  border-radius: 14px;
+  padding: 1.5rem;
+  color: #fff;
+  text-align: center;
+  margin-bottom: 1.25rem;
+}
+
+.prana-quiz .eb-title {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 1.2rem;
+  font-weight: 300;
+  margin-bottom: 0.3rem;
+}
+
+.prana-quiz .eb-sub {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 1rem;
+  line-height: 1.5;
+}
+
+.prana-quiz .eb-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.prana-quiz .eb-input {
+  flex: 1;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  color: #fff;
+  font-family: "Jost", sans-serif;
+  font-size: 12px;
+  outline: none;
+}
+
+.prana-quiz .eb-input::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.prana-quiz .eb-input:focus {
+  border-color: var(--gold);
+}
+
+.prana-quiz .btn-eb {
+  padding: 10px 16px;
+  background: var(--gold);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-family: "Jost", sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.prana-quiz .btn-eb:hover {
+  background: #96694a;
+}
+
+.prana-quiz .eb-confirm {
+  display: none;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  margin-top: 0.75rem;
+}
+
+.prana-quiz .eb-confirm.show {
+  display: block;
+}
+
+.prana-quiz .retake-row {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.prana-quiz .btn-retake {
+  padding: 10px 20px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-family: "Jost", sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.prana-quiz .btn-retake:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.prana-quiz .back-nav {
+  padding: 0.75rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 12px;
+  transition: color 0.2s;
+  width: fit-content;
+  background: none;
+  border: none;
+  font-family: "Jost", sans-serif;
+}
+
+.prana-quiz .back-nav:hover {
+  color: var(--gold);
+}
+
+.prana-quiz .back-arrow {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.prana-quiz .modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(26, 18, 8, 0.6);
+  z-index: 200;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.prana-quiz .modal-overlay.active {
+  display: flex;
+  animation: pranaFadeIn 0.2s ease;
+}
+
+.prana-quiz .dosha-modal {
+  width: 100%;
+  max-width: 520px;
+  border-radius: 24px 24px 0 0;
+  padding: 2rem;
+  max-height: 85vh;
+  overflow-y: auto;
+  animation: pranaSlideUp 0.35s ease;
+}
+
+@keyframes pranaSlideUp {
+  from {
+    transform: translateY(40px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.prana-quiz .modal-vata {
+  background: var(--vata-bg);
+}
+
+.prana-quiz .modal-pitta {
+  background: var(--pitta-bg);
+}
+
+.prana-quiz .modal-kapha {
+  background: var(--kapha-bg);
+}
+
+.prana-quiz .modal-tridoshic {
+  background: #faf7f2;
+}
+
+.prana-quiz .modal-handle {
+  width: 36px;
+  height: 4px;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 2px;
+  margin: 0 auto 0.75rem;
+}
+
+.prana-quiz .modal-close {
+  float: right;
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: var(--text-muted);
+  line-height: 1;
+  padding: 0;
+  margin-top: -4px;
+}
+
+.prana-quiz .modal-dosha-name {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 2rem;
+  font-weight: 300;
+  margin-bottom: 0.15rem;
+}
+
+.prana-quiz .modal-dosha-name.vata-color {
+  color: var(--vata-deep);
+}
+
+.prana-quiz .modal-dosha-name.pitta-color {
+  color: var(--pitta-deep);
+}
+
+.prana-quiz .modal-dosha-name.kapha-color {
+  color: var(--kapha-deep);
+}
+
+.prana-quiz .modal-dosha-name.gold-color {
+  color: var(--gold);
+}
+
+.prana-quiz .modal-tagline {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 0.95rem;
+  font-style: italic;
+  color: var(--text-muted);
+  margin-bottom: 1.25rem;
+}
+
+.prana-quiz .modal-section {
+  margin-bottom: 1.25rem;
+}
+
+.prana-quiz .modal-section-title {
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+}
+
+.prana-quiz .modal-section-title.vata-color {
+  color: var(--vata-mid);
+}
+
+.prana-quiz .modal-section-title.pitta-color {
+  color: var(--pitta-mid);
+}
+
+.prana-quiz .modal-section-title.kapha-color {
+  color: var(--kapha-mid);
+}
+
+.prana-quiz .modal-section-title.gold-color {
+  color: var(--gold);
+}
+
+.prana-quiz .modal-body {
+  font-size: 13px;
+  line-height: 1.75;
+  color: var(--ink);
+}
+
+.prana-quiz .ingredient-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+}
+
+.prana-quiz .ing-tag {
+  font-size: 10px;
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+
+.prana-quiz .ing-tag.vata {
+  background: rgba(196, 133, 106, 0.15);
+  color: var(--vata-deep);
+}
+
+.prana-quiz .ing-tag.pitta {
+  background: rgba(74, 124, 89, 0.15);
+  color: var(--pitta-deep);
+}
+
+.prana-quiz .ing-tag.kapha {
+  background: rgba(106, 90, 140, 0.15);
+  color: var(--kapha-deep);
+}
+
+.prana-quiz .ing-tag.gold {
+  background: rgba(176, 125, 58, 0.12);
+  color: #7a3820;
+}
+
+.prana-quiz .result-footer {
+  text-align: center;
+  padding-bottom: 2rem;
+  font-size: 10px;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+}
+
+@media (max-width: 600px) {
+  .prana-quiz .entry-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .prana-quiz .hdr {
+    padding: 1.5rem 1rem 1rem;
+  }
+
+  .prana-quiz .hdr-title {
+    font-size: 1.5rem;
+  }
+
+  .prana-quiz .quiz-wrap,
+  .prana-quiz .result-wrap,
+  .prana-quiz .scanner-wrap {
+    padding: 1rem;
+  }
+
+  .prana-quiz .skin-markers {
+    grid-template-columns: 1fr;
+  }
+
+  .prana-quiz .result-hero {
+    padding: 1.5rem 1rem;
+  }
+
+  .prana-quiz .rh-dosha {
+    font-size: 2rem;
+  }
+
+  .prana-quiz .dosha-modal {
+    padding: 1.5rem;
+  }
+
+  .prana-quiz .eb-row {
+    flex-direction: column;
+  }
+
+  .prana-quiz .pc-img {
+    width: 60px;
+    height: 60px;
+  }
+
+  .prana-quiz .product-card {
+    flex-wrap: wrap;
+  }
+}
