@@ -288,6 +288,14 @@ function normalizeProfiles(value: unknown) {
 export function normalizeQuiz(input: unknown): StoredQuiz {
   const source = input && typeof input === "object" ? (input as { layout?: unknown; quick?: unknown; deep?: unknown; profiles?: unknown; mappings?: unknown }) : {};
   const layout = source.layout === "scan" ? "scan" : source.layout === "single" ? "single" : "three";
+  const options = input as StoredQuiz;
+  const singleFlow = options?.singleFlow === "deep" ? "deep" as const : "quick" as const;
+  const allowed = ["quick", "deep", "scan"] as const;
+  const enabledPaths = layout === "scan" ? ["scan" as const] : layout === "single" ? [singleFlow] : Array.isArray(options?.enabledPaths) ? allowed.filter(path => options.enabledPaths!.includes(path)) : [...allowed];
+  if (!enabledPaths.length || (layout === "three" && enabledPaths.length < 2)) throw new Error("Choose at least two paths for a combined quiz.");
+  const imageUrl = (value: unknown) => { if (typeof value !== "string" || !value.trim()) return ""; const url = new URL(value); if (url.protocol !== "https:") throw new Error("Use an HTTPS image URL."); return url.href.slice(0, 1500); };
+  const coverImage = imageUrl(options?.coverImage);
+  const profileImage = imageUrl(options?.profileImage);
   const quick = (Array.isArray(source.quick) ? source.quick : []).slice(0, layout === "single" ? 40 : 12).flatMap((item) => {
     if (!item || typeof item !== "object") return [];
     const question = item as QuickQuestion;
@@ -320,10 +328,10 @@ export function normalizeQuiz(input: unknown): StoredQuiz {
     if (!text || options.length < 2) return [];
     return [{ layer, phase: clip(question.phase, 80) || "Question", text, sub: clip(question.sub, 240), options, ...uiFields(question) }];
   });
-  if (layout === "single" && !quick.length) {
+  if (layout === "single" && !(singleFlow === "deep" ? deep.length : quick.length)) {
     throw new Error("Add at least one question with two answers.");
   }
-  if (layout === "three" && (!quick.length || !deep.length)) {
+  if (layout === "three" && ((enabledPaths.includes("quick") && !quick.length) || (enabledPaths.includes("deep") && !deep.length))) {
     throw new Error("Add at least one quick question and one deep question, each with two answers.");
   }
   const scan = (input as StoredQuiz)?.scanner;
@@ -355,7 +363,9 @@ export function normalizeQuiz(input: unknown): StoredQuiz {
       if (url.protocol !== "https:" || url.username || url.password) throw new Error("Use HTTPS URLs without embedded credentials.");
     }
   }
-  return { layout, scanner, design, scanIntegration, quick: layout === "scan" ? [] : quick, deep: layout === "three" ? deep : [], profiles: normalizeProfiles(source.profiles), mappings: normalizeMappings(source.mappings) };
+  const widgetCss = (input as StoredQuiz)?.widgetCss;
+  if (widgetCss !== undefined && (typeof widgetCss !== "string" || widgetCss.length > 100000)) throw new Error("Widget CSS must be text under 100,000 characters.");
+  return { enabledPaths, singleFlow, coverImage, profileImage, widgetCss, layout, scanner, design, scanIntegration, quick: enabledPaths.includes("quick") ? quick : [], deep: enabledPaths.includes("deep") ? deep : [], profiles: normalizeProfiles(source.profiles), mappings: normalizeMappings(source.mappings) };
 }
 
 function normalizeMappings(value: unknown): ProductMapping[] {
@@ -451,15 +461,15 @@ export async function loadLibrary(shop: string): Promise<QuizEntry[]> {
   const payload = await readPayload(shop);
   const quizzes = payload ? normalizeLibrary(payload) : [];
   if (quizzes.length) return quizzes;
-  const starter = namedQuiz(defaultQuiz(), "dosha-quiz", "Skin quiz");
-  await writePayload(shop, [starter]);
-  return [starter];
+  return [];
 }
 
 export async function loadQuiz(shop: string, code?: unknown): Promise<QuizEntry> {
   const library = await loadLibrary(shop);
   const handle = quizCode(code || "dosha-quiz");
-  return library.find((item) => item.handle === handle) || library[0];
+  const selected = library.find((item) => item.handle === handle) || (!code ? library[0] : undefined);
+  if (!selected) throw new Error("Quiz not found. Create a quiz first.");
+  return selected;
 }
 
 export async function saveQuiz(shop: string, input: unknown, code?: unknown) {
@@ -480,15 +490,18 @@ export async function saveQuiz(shop: string, input: unknown, code?: unknown) {
   return entry;
 }
 
-export async function createQuiz(shop: string, name: string, layout: "three" | "single" | "scan" = "three") {
+export async function createQuiz(shop: string, name: string, layout: "three" | "single" | "scan" = "three", paths?: Array<"quick" | "deep" | "scan">) {
   const library = await loadLibrary(shop);
   let handle = quizCode(name || `quiz-${library.length + 1}`);
   if (library.some((item) => item.handle === handle)) handle = quizCode(`${handle}-${library.length + 1}`);
   const starter = defaultQuiz();
   starter.layout = layout;
-  if (layout === "single") starter.deep = [];
+  if (paths) starter.enabledPaths = paths;
+  starter.singleFlow = paths?.[0] === "deep" ? "deep" : "quick";
+  if (layout === "single" && starter.singleFlow === "quick") starter.deep = [];
+  if (layout === "single" && starter.singleFlow === "deep") starter.quick = [];
   if (layout === "scan") { starter.quick = []; starter.deep = []; }
-  const entry = namedQuiz(starter, handle, clip(name, 80) || "New quiz");
+  const entry = namedQuiz(normalizeQuiz(starter), handle, clip(name, 80) || "New quiz");
   await writePayload(shop, [...library, entry]);
   return entry;
 }
@@ -497,7 +510,7 @@ export async function deleteQuiz(shop: string, code: unknown) {
   const library = await loadLibrary(shop);
   const handle = quizCode(code);
   const quizzes = library.filter((item) => item.handle !== handle);
-  if (!quizzes.length || quizzes.length === library.length) return library;
+  if (quizzes.length === library.length) return library;
   await writePayload(shop, quizzes);
   return quizzes;
 }
@@ -505,9 +518,12 @@ export async function deleteQuiz(shop: string, code: unknown) {
 export async function publicQuiz(shop: string, code?: unknown) {
   const quiz = await loadQuiz(shop, code);
   return {
+    enabledPaths: quiz.enabledPaths,
+    singleFlow: quiz.singleFlow,
     layout: quiz.layout || "three",
     scanner: quiz.scanner,
     design: quiz.design,
+    widgetCss: quiz.widgetCss,
     quick: quiz.quick,
     deep: quiz.deep.map((question) => ({
       layer: question.layer,
@@ -785,7 +801,8 @@ export async function buildQuizResult(
 ): Promise<QuizResult> {
   const quiz = await loadQuiz(shop, submission.code);
   if (quiz.layout === "scan" && submission.path !== "scan") throw new Error("This block only supports Skin Scan.");
-  if (quiz.layout === "single" && submission.path !== "quick") {
+  if (quiz.enabledPaths && !quiz.enabledPaths.includes(submission.path as "quick" | "deep" | "scan")) throw new Error("This quiz path is not enabled.");
+  if (quiz.layout === "single" && submission.path !== (quiz.singleFlow || "quick")) {
     throw new Error("This quiz only supports the single question flow.");
   }
   let dosha = "balanced";

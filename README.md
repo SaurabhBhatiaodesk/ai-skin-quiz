@@ -235,7 +235,8 @@ Shopify:
 Internationalization:
 
 - [Internationalizing your app](https://shopify.dev/docs/apps/best-practices/internationalization/getting-started)
-#   a i - s k i n - q u i z  
+#   a i - s k i n - q u i z 
+ 
  
 ## Prakriti reports and Klaviyo
 
@@ -244,3 +245,11 @@ Completed quick and deep results are stored server-side with an opaque report ID
 Set server-only `KLAVIYO_PRIVATE_API_KEY` (Events write access) and `KLAVIYO_SHOP` (the authorized store's myshopify.com domain). Create and enable a Klaviyo flow triggered by **Prakriti Report Unlocked**. Its event properties contain dosha, percentage breakdown, report text and recommended catalog products. The event uses a unique report ID for deduplication. This sends a report event, not marketing subscription consent. Do not paste credentials into app provider URL fields.
 
 Real camera analysis is not implemented. Its action remains disabled rather than returning fabricated six-marker scores. US geofencing, biometric consent language and production retention enforcement still need verification before enabling a camera provider. The existing storefront page outside this extension must be updated separately if it still uses placeholder links or an older standalone quiz.
+
+### Quiz library and widget settings
+
+The Quiz entry opens saved quiz cards. Create quiz is a separate view. Choose Single (one path) or Combined (two or three paths), then select Quick, Deep or Scan. The editor and storefront expose only saved selected paths. Standalone Deep uses the full dosha scoring and email gate. Unknown widget codes are rejected; a blank/default theme code resolves automatically only when exactly one matching quiz exists. No placeholder quiz is auto-created for a new shop.
+
+Editor saves post to `/app/editor?quiz=<handle>`. Settings persist quiz name, HTTPS cover/profile images and Widget CSS. Profile image displays on the right inside the app content header (the Shopify navigation icon is controlled by Shopify). Use Shopify Files URLs for covers. Widget CSS is scoped to the widget with CSS `@scope`, which requires a browser supporting that feature.
+
+Settings include a Copy code button for a complete Custom Liquid iframe embed. `/apps/dosha-quiz/widget?code=<handle>` renders the saved quiz with bundled assets. Embed height adjusts using a same-origin, source-validated message. No external deployment has been performed by these local changes. Real scan remains disabled pending explicit approval for photo-to-provider processing and server credential configuration.

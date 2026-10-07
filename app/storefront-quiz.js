@@ -22,7 +22,7 @@
     function q(sel) { return root.querySelector(sel); }
 
     function go(name) {
-      if (quiz && quiz.layout === "single" && (name === "entry" || name === "deep" || name === "scanner")) name = "quick";
+      if (quiz && quiz.layout === "single" && (name === "entry" || name === "deep" || name === "scanner")) name = quiz.singleFlow || "quick";
       if (quiz && quiz.layout === "scan" && (name === "entry" || name === "deep" || name === "quick")) name = "scanner";
       var screens = root.querySelectorAll(".screen");
       for (var i = 0; i < screens.length; i++) screens[i].classList.remove("active");
@@ -35,13 +35,14 @@
       window.scrollTo(0, 0);
     }
 
-    var quizCode = (root.getAttribute("data-quiz-code") || "dosha-quiz").replace(/^\[dosha-quiz:([^\]]+)\]$/i, "$1").trim() || "dosha-quiz";
+    var quizCode = (root.getAttribute("data-quiz-code") || "").replace(/^\[dosha-quiz:([^\]]+)\]$/i, "$1").trim();
 
     function loadQuiz() {
+
       if (quiz) return Promise.resolve(quiz);
-      return fetch(PROXY + "/quiz?code=" + encodeURIComponent(quizCode), { headers: { Accept: "application/json" } })
-        .then(function (res) { if (!res.ok) throw new Error("quiz"); return res.json(); })
-        .then(function (data) { quiz = data; return quiz; });
+      return fetch(PROXY + "/quiz?code=" + encodeURIComponent(quizCode) + "&layout=" + encodeURIComponent(root.getAttribute("data-block-layout") || ""), { headers: { Accept: "application/json" } })
+        .then(function (res) { return res.json().then(function (body) { if (!res.ok) throw new Error(body.error || "Could not load quiz."); return body; }); })
+        .then(function (data) { quiz = data; if (data.handle) quizCode = data.handle; return quiz; });
     }
 
     function showError(message) {
@@ -91,6 +92,17 @@
           });
         } else markers.style.display = "none";
       }
+      var activeGuide = q('[data-modal="' + modalKey + '"]');
+      if (activeGuide && !reportLocked) {
+        var guideTitle = activeGuide.querySelector(".modal-dosha-name");
+        var guideSub = activeGuide.querySelector(".modal-tagline");
+        var guideBody = activeGuide.querySelector(".modal-body");
+        if (guideTitle) guideTitle.textContent = profile.name;
+        if (guideSub) guideSub.textContent = profile.sub;
+        if (guideBody) guideBody.innerHTML = result.insight || profile.insight;
+        var extraSections = activeGuide.querySelectorAll(".modal-section");
+        for (var sectionIndex = 1; sectionIndex < extraSections.length; sectionIndex++) extraSections[sectionIndex].style.display = "none";
+      }
       var guideButton = q("[data-open-modal]");
       if (guideButton) guideButton.style.display = reportLocked ? "none" : "";
       var emailBox = q(".email-box");
@@ -102,7 +114,7 @@
       if (!breakdown) { breakdown = document.createElement("div"); breakdown.setAttribute("data-percentage-breakdown", ""); q("[data-dosha-source]").parentNode.appendChild(breakdown); }
       breakdown.textContent = result.percentages ? Object.keys(result.percentages).map(function (key) { return key + ": " + result.percentages[key] + "%"; }).join(" / ") : "";
       var nudge = q("[data-upgrade]");
-      if (nudge) nudge.style.display = result.showUpgrade ? "block" : "none";
+      if (nudge) nudge.style.display = result.showUpgrade && (!quiz.enabledPaths || quiz.enabledPaths.indexOf("deep") !== -1) ? "block" : "none";
       var email = q("[data-email]");
       if (email) { email.disabled = false; email.value = ""; }
       var confirm = q("[data-email-confirm]");
@@ -393,6 +405,14 @@
       });
     }
     loadQuiz().then(function (data) {
+      var expectedLayout = root.getAttribute("data-block-layout");
+      if (expectedLayout && expectedLayout !== (data.layout || "three")) throw new Error("Paste the widget code of a " + (expectedLayout === "single" ? "Single Quiz" : expectedLayout === "scan" ? "scan" : "Combined Quiz") + " from the app Blocks page.");
+      root.setAttribute("data-configured", "true");
+      if (data.widgetCss) {
+        var widgetStyle = document.createElement("style");
+        widgetStyle.textContent = "@scope (#" + CSS.escape(root.id) + ") {" + data.widgetCss + "}";
+        root.appendChild(widgetStyle);
+      }
       if (data.design) {
         var design = data.design;
         root.style.setProperty("--canvas", design.background);
@@ -419,6 +439,9 @@
       var scanAction = q("[data-scan]");
       if (scanAction) { scanAction.disabled = true; scanAction.textContent = "Analysis provider not connected"; }
       scanMode = scanner.camera ? "camera" : "upload";
+      var enabledPaths = data.enabledPaths || (data.layout === "scan" ? ["scan"] : data.layout === "single" ? [data.singleFlow || "quick"] : ["quick", "deep", "scan"]);
+      var pathNames = { quick: "quick", deep: "deep", scan: "scanner" };
+      ["quick", "deep", "scan"].forEach(function (path) { if (enabledPaths.indexOf(path) === -1) { var links = root.querySelectorAll('[data-goto="' + pathNames[path] + '"]'); for (var at = 0; at < links.length; at++) links[at].style.display = "none"; } });
       if (data.layout === "scan") {
         root.setAttribute("data-quiz-layout", "scan");
         var quizLinks = root.querySelectorAll('[data-goto="quick"], [data-goto="deep"], [data-upgrade]');
@@ -429,13 +452,14 @@
       if (data.layout !== "single" && requestedScan === quizCode) go("scanner");
       if (data.layout === "single") {
         root.setAttribute("data-quiz-layout", "single");
-        var unavailable = root.querySelectorAll('[data-goto="deep"], [data-goto="scanner"], [data-upgrade]');
+        var unavailable = root.querySelectorAll('[data-goto="' + (data.singleFlow === "deep" ? "quick" : "deep") + '"], [data-goto="scanner"], [data-upgrade]');
         for (var i = 0; i < unavailable.length; i++) unavailable[i].style.display = "none";
-        go("quick");
+        go(data.singleFlow || "quick");
       }
-    }).catch(function () {
-      var note = q(".entry-note");
-      if (note) note.textContent = "Could not load the quiz. Refresh this page.";
+    }).catch(function (error) {
+      root.setAttribute("data-configured", "false");
+      var note = q("[data-widget-setup]");
+      if (note) note.textContent = error.message || "Could not load the quiz. Refresh this page.";
     });
   }
 

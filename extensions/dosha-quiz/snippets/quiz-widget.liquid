@@ -4,10 +4,13 @@
   class="prana-quiz"
   id="prana-quiz-{{ block.id }}"
   data-block-layout="{{ expected_layout | default: 'three' }}"
+  data-configured="false"
+  data-design-mode="{{ request.design_mode }}"
   data-prana-quiz
   data-quiz-id="{{ block.id }}"
   data-quiz-code="{{ block.settings.quiz_code | escape }}"
 >
+  {% if request.design_mode %}<p data-widget-setup role="status">Create this quiz in the app, then paste its matching Shopify widget code here.</p>{% endif %}
   <div class="analyzing-overlay" data-analyzing>
     <div class="analyzing-spinner"></div>
     <div class="analyzing-text" data-analyzing-text>Reading your skin's story…</div>
@@ -117,10 +120,10 @@
     </div>
     <div class="entry-cards">
       <div class="entry-card featured" data-goto="scanner">
-        <div class="ec-badge">Most accurate</div>
+        <div class="ec-badge">Photo analysis</div>
         <div class="ec-icon scan">📷</div>
         <div class="ec-name">AI Skin Scan</div>
-        <div class="ec-desc">Live camera or photo upload. Our AI reads 6 skin markers and maps them to your dosha.</div>
+        <div class="ec-desc">Camera or photo upload for visible cosmetic skin observations.</div>
         <div class="ec-time">✦ 30 seconds</div>
         <button class="btn-entry" type="button">Start Scan</button>
       </div>
@@ -147,7 +150,7 @@
     <div class="hdr" style="padding-top:1rem">
       <div class="hdr-logo">{{ block.settings.brand_name | escape }}</div>
       <h1 class="hdr-title">AI <em>Skin Scan</em></h1>
-      <div class="hdr-sub">Your camera reads what products cannot</div>
+      <div class="hdr-sub">Photo-based cosmetic observations, not a medical diagnosis</div>
     </div>
     <div class="scanner-wrap">
       <div class="scanner-choice">

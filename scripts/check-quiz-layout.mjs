@@ -27,12 +27,15 @@ for (const [answer, expected] of [[0, "vata"], [1, "pitta"], [2, "kapha"]]) {
   assert.equal(api.scoreDeep(Array(18).fill(answer), legacy.deep).dosha, expected);
 }
 const deepQuiz = await api.createQuiz("test", "Deep audit", "three");
+deepQuiz.widgetCss = ".prana-quiz .entry-card { border-radius: 24px; }";
 deepQuiz.deep[8].text = "Edited current-state question";
 deepQuiz.deep[8].options[0].hint = "Edited hint";
 deepQuiz.deep[8].options[0].tags = ["hydration", "vata"];
 await api.saveQuiz("test", deepQuiz, deepQuiz.handle);
 const reloadedDeep = await api.loadQuiz("test", deepQuiz.handle);
 assert.equal(reloadedDeep.deep.length, 18);
+assert.equal(reloadedDeep.widgetCss, deepQuiz.widgetCss);
+assert.equal((await api.publicQuiz("test", deepQuiz.handle)).widgetCss, deepQuiz.widgetCss);
 assert.equal(reloadedDeep.deep[8].options[0].hint, "Edited hint");
 assert.deepEqual(reloadedDeep.deep[8].options[0].tags, ["hydration", "vata"]);
 assert.equal((await api.publicQuiz("test", deepQuiz.handle)).deep[8].text, "Edited current-state question");
@@ -141,3 +144,21 @@ const ritual = api.ritualProducts(ritualQuiz, { path: "quick", answers: { 0: 2, 
 assert.deepEqual(ritual.slice(0, 3).map(product => product.title), ["Rose Jasmine Milk Cleanser", "Pure Rose Water Toning Mist", "Bakuchiol Night Restorative Serum"]);
 assert.equal(api.ritualProducts(ritualQuiz, { path: "quick", answers: { 0: 0, 1: 0, 2: 0 } }, "vata", []).length, 0);
 console.log("Passed: layout creation, save/reload, legacy defaults, question validation, 40-question single flow, result restrictions, storefront startup, AND/OR mapping and variant recommendations.");
+
+const standaloneDeep = await api.createQuiz("test", "Standalone Deep", "single", ["deep"]);
+assert.equal(standaloneDeep.singleFlow, "deep");
+assert.equal(standaloneDeep.quick.length, 0);
+assert.equal(standaloneDeep.deep.length, 18);
+const standaloneResult = await api.buildQuizResult({ code: standaloneDeep.handle, path: "deep", answers: Array(18).fill(0) }, "test");
+assert.equal(standaloneResult.source, "Deep Dosha");
+await assert.rejects(api.buildQuizResult({ code: standaloneDeep.handle, path: "quick", answers: {} }, "test"));
+const twoPaths = await api.createQuiz("test", "Two paths", "three", ["quick", "scan"]);
+assert.deepEqual(twoPaths.enabledPaths, ["quick", "scan"]);
+assert.equal(twoPaths.deep.length, 0);
+twoPaths.coverImage = "https://example.com/cover.jpg";
+twoPaths.profileImage = "https://example.com/profile.jpg";
+await api.saveQuiz("test", twoPaths, twoPaths.handle);
+assert.equal((await api.loadQuiz("test", twoPaths.handle)).coverImage, twoPaths.coverImage);
+assert.equal((await api.loadQuiz("test", twoPaths.handle)).profileImage, twoPaths.profileImage);
+await assert.rejects(api.loadQuiz("test", "does-not-exist"));
+console.log("Passed: standalone Deep, selected combined paths, image metadata persistence and unknown quiz rejection.");

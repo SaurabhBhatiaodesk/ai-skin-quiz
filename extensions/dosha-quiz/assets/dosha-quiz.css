@@ -1517,3 +1517,21 @@
 /* Per-quiz design settings. */
 .prana-quiz .btn-entry, .prana-quiz .btn-scan, .prana-quiz .btn-next, .prana-quiz .btn-shop, .prana-quiz .btn-email { border-radius: var(--button-radius, 8px); color: var(--button-text, #fff); }
 .prana-quiz[data-font='sans'], .prana-quiz[data-font='sans'] * { font-family: Arial, sans-serif; }
+
+.prana-quiz[data-configured='false'] > :not([data-widget-setup]) { display: none !important; }
+.prana-quiz[data-configured='true'] > [data-widget-setup] { display: none; }
+
+.prana-quiz[data-configured="false"] {
+  min-height: 0;
+  height: auto;
+  padding: 0;
+}
+.prana-quiz [data-widget-setup] {
+  margin: 0;
+  padding: 16px 20px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.prana-quiz[data-configured="false"][data-design-mode="false"] {
+  display: none;
+}

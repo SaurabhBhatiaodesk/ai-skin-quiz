@@ -55,7 +55,7 @@ export default function QuizEditor({
   products,
   code,
 }: {
-  initial: StoredQuiz;
+  initial: StoredQuiz & { name?: string };
   shop: string;
   scanKeyPresent?: boolean;
   products: ShopProduct[];
@@ -66,7 +66,10 @@ export default function QuizEditor({
   const [apiKeyDraft, setApiKeyDraft] = useState("");
   const [showApiKey, setShowApiKey] = useState(false);
   const [keyCopyStatus, setKeyCopyStatus] = useState("");
-  const [kind, setKind] = useState<Kind>(initial.layout === "scan" ? "scan" : "quick");
+  const [embedCopyStatus, setEmbedCopyStatus] = useState("");
+  const embedCode = `<iframe src="/apps/dosha-quiz/widget?code=${encodeURIComponent(code)}" title="Skin quiz" style="display:block;width:100%;height:700px;border:0;" loading="lazy" allow="camera"></iframe>
+<script>(function(){var frame=document.currentScript.previousElementSibling;window.addEventListener('message',function(event){if(event.source!==frame.contentWindow||event.origin!==window.location.origin||!event.data||event.data.type!=='prana-widget-height')return;var height=Number(event.data.height);if(Number.isFinite(height)&&height>0&&height<20000)frame.style.height=Math.ceil(height)+'px';});})();</script>`;
+  const [kind, setKind] = useState<Kind>(initial.layout === "scan" ? "scan" : initial.singleFlow === "deep" || (initial.enabledPaths && !initial.enabledPaths.includes("quick")) ? "deep" : "quick");
   const [index, setIndex] = useState(0);
   const [questionOpen, setQuestionOpen] = useState(false);
   const [tab, setTab] = useState<Tab>("edit");
@@ -84,8 +87,9 @@ export default function QuizEditor({
   useEffect(() => () => dragCleanup.current?.(), []);
 
   const pending = fetcher.state !== "idle";
+  const enabledPaths = quiz.enabledPaths || (quiz.layout === "scan" ? ["scan"] : quiz.layout === "single" ? [quiz.singleFlow || "quick"] : ["quick", "deep", "scan"]);
   const questions = kind === "scan" ? [] : kind === "quick" ? quiz.quick : quiz.deep;
-  const scanner = quiz.scanner || { title: "AI Skin Scan", description: "Try the skin scan demo with a live camera or photo upload.", camera: true, upload: true };
+  const scanner = quiz.scanner || { title: "AI Skin Scan", description: "Use a camera or photo upload for cosmetic skin observations.", camera: true, upload: true };
   const safeIndex = Math.min(index, Math.max(questions.length - 1, 0));
   const question = questions[safeIndex];
   const questionPage = Math.floor(safeIndex / 5);
@@ -93,8 +97,8 @@ export default function QuizEditor({
   const visibleQuestions = questions.slice(pageStart, pageStart + 5);
 
   function save() {
-    // The index marker targets app._index instead of its parent app route.
-    fetcher.submit(quiz, { method: "POST", encType: "application/json", action: `/app?index&quiz=${encodeURIComponent(code)}` });
+    // Save to the dedicated editor route.
+    fetcher.submit(quiz, { method: "POST", encType: "application/json", action: `/app/editor?quiz=${encodeURIComponent(code)}` });
   }
 
   function patch(partial: Partial<QuickQuestion & DeepQuestion>) {
@@ -207,7 +211,7 @@ export default function QuizEditor({
 
   function persist(next: StoredQuiz) {
     setQuiz(next);
-    fetcher.submit(next, { method: "POST", encType: "application/json", action: `/app?index&quiz=${encodeURIComponent(code)}` });
+    fetcher.submit(next, { method: "POST", encType: "application/json", action: `/app/editor?quiz=${encodeURIComponent(code)}` });
   }
 
   function commitMapping() {
@@ -257,9 +261,11 @@ export default function QuizEditor({
   const showSidebar = (showQuestions && quiz.layout !== "scan" && !(tab === "edit" && questionOpen)) || tab === "content";
 
   return (
-    <s-page heading="Quiz editor" inlineSize="large">
+    <s-page heading={`${quiz.name || "Quiz"} · ${TABS.find(item => item.id === tab)?.label || "Quiz editor"}`} inlineSize="large">
+      <s-button slot="breadcrumb-actions" href="/app/blocks" accessibilityLabel="Back to all quizzes">Back</s-button>
       <s-button slot="primary-action" variant="primary" loading={pending} onClick={save}>Save</s-button>
       <s-stack gap="base">
+        {quiz.profileImage ? <s-stack direction="inline" justifyContent="space-between" alignItems="center"><s-heading>{quiz.name || "Quiz"}</s-heading><s-box inlineSize="80px"><s-image src={quiz.profileImage} alt="Quiz profile" aspectRatio="1" objectFit="cover" borderRadius="large" /></s-box></s-stack> : null}
         <s-stack direction="inline" gap="small">
           {TABS.map(item => <s-button key={item.id} variant={tab === item.id ? "primary" : "tertiary"} onClick={() => setTab(item.id)}>{item.label}</s-button>)}
         </s-stack>
@@ -275,10 +281,10 @@ export default function QuizEditor({
                     {RESULTS.map(key => <s-button key={key} variant={resultKey === key ? "primary" : "secondary"} accessibilityLabel={`Edit ${quiz.profiles[key].name} result`} onClick={() => setResultKey(key)}>{quiz.profiles[key].name}</s-button>)}
                   </s-stack>
                 </> : <>
-                  {quiz.layout !== "single" ? <s-select label="Quiz flow" value={kind} onChange={event => { setKind(event.currentTarget.value === "scan" ? "scan" : event.currentTarget.value === "deep" ? "deep" : "quick"); setIndex(0); }}>
-                    <s-option value="quick">Quick Quiz ({quiz.quick.length} questions)</s-option>
-                    <s-option value="deep">Deep Quiz ({quiz.deep.length} questions)</s-option>
-                    <s-option value="scan">AI Skin Scan</s-option>
+                  {enabledPaths.length > 1 ? <s-select label="Quiz flow" value={kind} onChange={event => { setKind(event.currentTarget.value === "scan" ? "scan" : event.currentTarget.value === "deep" ? "deep" : "quick"); setIndex(0); }}>
+                    {enabledPaths.includes("quick") ? <s-option value="quick">Quick Quiz ({quiz.quick.length} questions)</s-option> : null}
+                    {enabledPaths.includes("deep") ? <s-option value="deep">Deep Quiz ({quiz.deep.length} questions)</s-option> : null}
+                    {enabledPaths.includes("scan") ? <s-option value="scan">AI Skin Scan</s-option> : null}
                   </s-select> : null}
                   <s-text color="subdued">{kind === "scan" ? "Configure camera and photo upload for the scan block." : "Select a question to edit"}</s-text>
                   <s-grid gridTemplateColumns={tab === "tags" ? "minmax(0, 1fr)" : "repeat(auto-fit, minmax(220px, 1fr))"} gap="base">
@@ -350,13 +356,26 @@ export default function QuizEditor({
             </s-section> : null}
             {tab === "settings" ? <s-section heading="Quiz settings">
           <s-stack gap="base">
-                <s-badge>{quiz.layout === "scan" ? "AI Skin Scan" : quiz.layout === "single" ? "Single-block quiz" : "3-block quiz"}</s-badge>
-                <s-text-field label="Shopify widget code" readOnly value={code} />
+                <s-badge>{quiz.layout === "scan" ? "AI Skin Scan" : quiz.layout === "single" ? "Single Quiz" : "Combined Quiz"}</s-badge>
+                <s-text-field label="Quiz name" value={quiz.name || ""} onInput={event => { const name = event.currentTarget.value; setQuiz(current => ({ ...current, name })); }} />
+                <s-text-field label="Quiz cover image URL" value={quiz.coverImage || ""} details="Use an HTTPS image URL from Shopify Files." onInput={event => { const coverImage = event.currentTarget.value; setQuiz(current => ({ ...current, coverImage })); }} />
+                <s-text-field label="Profile image URL" value={quiz.profileImage || ""} details="Shown on the right of this quiz header." onInput={event => { const profileImage = event.currentTarget.value; setQuiz(current => ({ ...current, profileImage })); }} />
+                <s-text-field label="App block widget ID" readOnly value={code} />
+                <s-text-area label="Shopify Custom Liquid embed code" rows={5} readOnly value={embedCode} />
+                <s-stack direction="inline" gap="base"><s-button icon="clipboard" onClick={async () => { try { await navigator.clipboard.writeText(embedCode); setEmbedCopyStatus("Embed code copied."); } catch { setEmbedCopyStatus("Select and copy the code above."); } }}>Copy code</s-button><s-text>{embedCopyStatus}</s-text></s-stack>
+                <s-paragraph>In your Shopify theme editor, add a Custom Liquid section, paste this complete code, and save. It loads this saved quiz, including its Widget CSS. The embed adjusts its height automatically.</s-paragraph>
                 <s-paragraph color="subdued">Add this quiz to your storefront from Blocks. Paste the quiz code into the theme block, then save the theme.</s-paragraph>
                 <s-stack direction="inline" gap="small"><s-button href="/app/blocks">Open Blocks</s-button><s-button variant="primary" loading={pending} onClick={save}>Save quiz</s-button></s-stack>
               </s-stack>
             </s-section> : null}
-            {tab === "settings" && quiz.layout !== "single" ? <s-section heading="AI Skin Scan provider setup">
+            {tab === "settings" ? <s-section heading="Widget CSS">
+              <s-stack gap="base">
+                <s-paragraph color="subdued">Edit this quiz’s storefront stylesheet. Save to apply changes to this widget. Keep the .prana-quiz selectors.</s-paragraph>
+                <s-text-area label="Widget CSS" rows={20} value={quiz.widgetCss || ""} onInput={event => { const widgetCss = event.currentTarget.value; setQuiz(current => ({ ...current, widgetCss })); }} />
+                <s-stack direction="inline" gap="base"><s-button variant="primary" loading={pending} onClick={save}>Save Widget CSS</s-button></s-stack>
+              </s-stack>
+            </s-section> : null}
+            {tab === "settings" && enabledPaths.includes("scan") ? <s-section heading="AI Skin Scan provider setup">
               <s-stack gap="base">
                 <s-banner heading="Provider integration pending">Save your provider details here. Real analysis needs a provider-specific integration; saving these fields does not activate scanning.</s-banner>
                 <s-paragraph><s-text type="strong">Required for the planned OpenAI integration: an OpenAI API key.</s-text> Create a project API key in the OpenAI dashboard and set OPENAI_API_KEY on your server.</s-paragraph>
@@ -406,7 +425,7 @@ export default function QuizEditor({
               </s-stack>
             </s-section> : null}
             {tab === "products" ? <>
-              {mappingDraft?.id ? <s-modal ref={mappingModal} id="edit-content-mapping" heading="Edit content mapping" onAfterHide={() => setMappingDraft(current => current?.id ? null : current)}>
+              {mappingDraft?.id ? <s-modal ref={mappingModal} id="edit-content-mapping" heading="Edit product mapping" onAfterHide={() => setMappingDraft(current => current?.id ? null : current)}>
                 <MappingEditor key={mappingDraft.id} draft={mappingDraft} products={products} tags={selectableTags(quiz, products)} onChange={setMappingDraft} onSave={commitMapping} onCancel={() => setMappingDraft(null)} pending={pending} compact />
                 <s-button slot="primary-action" variant="primary" loading={pending} disabled={!mappingDraft.tags.length || !mappingDraft.productHandle} onClick={commitMapping}>Save mapping</s-button>
               </s-modal> : mappingDraft ? <MappingEditor key="new" draft={mappingDraft} products={products} tags={selectableTags(quiz, products)} onChange={setMappingDraft} onSave={commitMapping} onCancel={() => setMappingDraft(null)} pending={pending} /> : null}

@@ -33,6 +33,11 @@ export type QuizProfile = {
 };
 export type ProductMapping = { id: string; tags: string[]; productHandle: string; grouping?: "and" | "or"; variantId?: string };
 export type StoredQuiz = {
+  widgetCss?: string;
+  enabledPaths?: Array<"quick" | "deep" | "scan">;
+  singleFlow?: "quick" | "deep";
+  coverImage?: string;
+  profileImage?: string;
   layout?: "three" | "single" | "scan";
   scanner?: { title: string; description: string; camera: boolean; upload: boolean };
   scanIntegration?: { provider: string; endpoint: string; documentation: string };
