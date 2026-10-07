@@ -277,16 +277,6 @@ export default function QuizEditor({
           {TABS.map(item => <s-button key={item.id} variant={tab === item.id ? "primary" : "tertiary"} onClick={() => setTab(item.id)}>{item.label}</s-button>)}
         </s-stack>
         {error ? <s-banner tone="critical" heading="Could not save quiz">{error}</s-banner> : null}
-        {tab === "edit" && kind !== "scan" ? <s-section heading="Email capture step">
-          <s-stack gap="base">
-            <s-checkbox label="Ask for email after the questions" checked={quiz.emailCapture?.enabled === true} onChange={event => setQuiz(current => ({...current, emailCapture: { heading: "Where should we send your ritual?", button: "See my ritual", allowSkip: true, ...current.emailCapture, enabled: event.currentTarget.checked }}))} />
-            {quiz.emailCapture?.enabled ? <>
-              <s-text-field label="Heading" value={quiz.emailCapture.heading} onInput={event => { const heading = event.currentTarget.value; setQuiz(current => ({...current, emailCapture: {...current.emailCapture!, heading}})); }} />
-              <s-text-field label="Button text" value={quiz.emailCapture.button} onInput={event => { const button = event.currentTarget.value; setQuiz(current => ({...current, emailCapture: {...current.emailCapture!, button}})); }} />
-              <s-checkbox label="Allow Skip" checked={quiz.emailCapture.allowSkip} onChange={event => { const allowSkip = event.currentTarget.checked; setQuiz(current => ({...current, emailCapture: {...current.emailCapture!, allowSkip}})); }} />
-            </> : null}
-          </s-stack>
-        </s-section> : null}
         <s-query-container>
         <s-grid gridTemplateColumns={tab === "tags" && showSidebar ? "minmax(240px, 1fr) minmax(0, 2fr)" : "minmax(0, 1fr)"} gap="base" alignItems="start">
           {showSidebar ? <s-section heading={tab === "content" ? "Results" : "Questions"}>
@@ -564,6 +554,18 @@ export default function QuizEditor({
           </s-stack>
         </s-grid>
         </s-query-container>
+        {tab === "edit" && kind !== "scan" ? <s-section heading="Final step: Email capture">
+          <s-stack gap="base">
+            <s-paragraph color="subdued">Shown after all questions, before the result.</s-paragraph>
+            <s-checkbox label="Add email capture at the end of this quiz" checked={quiz.emailCapture?.enabled === true} onChange={event => setQuiz(current => ({...current, emailCapture: { heading: "Where should we send your ritual?", button: "See my ritual", allowSkip: true, ...current.emailCapture, enabled: event.currentTarget.checked }}))} />
+            {quiz.emailCapture?.enabled ? <>
+              <s-text-field label="Heading" value={quiz.emailCapture.heading} onInput={event => { const heading = event.currentTarget.value; setQuiz(current => ({...current, emailCapture: {...current.emailCapture!, heading}})); }} />
+              <s-text-field label="Button text" value={quiz.emailCapture.button} onInput={event => { const button = event.currentTarget.value; setQuiz(current => ({...current, emailCapture: {...current.emailCapture!, button}})); }} />
+              <s-checkbox label="Allow Skip" checked={quiz.emailCapture.allowSkip} onChange={event => { const allowSkip = event.currentTarget.checked; setQuiz(current => ({...current, emailCapture: {...current.emailCapture!, allowSkip}})); }} />
+            </> : null}
+          </s-stack>
+        </s-section> : null}
+
       </s-stack>
     </s-page>
   );

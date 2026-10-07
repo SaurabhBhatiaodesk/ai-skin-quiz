@@ -1675,3 +1675,11 @@
 .prana-quiz .scan-chat-welcome span { font-size: 12px; }
 .prana-quiz.scan-chat-open .analyzing-overlay { position: absolute; }
 @media(max-width: 600px) { .prana-quiz.scan-chat-open { inset: 0; width: 100%; height: 100dvh; border-radius: 0; } .prana-scan-launcher { right: 16px; bottom: 16px; } }
+
+/* Final email capture step. */
+.prana-quiz [data-screen="email-capture"] { padding: clamp(24px, 4vw, 44px); background: linear-gradient(110deg, #80384d, #471526); color: #fff; min-height: 0; }
+.prana-quiz [data-screen="email-capture"] h2 { font: 600 20px Georgia, serif; color: #fff; }
+.prana-quiz [data-capture-email] { box-sizing: border-box; border: 1px solid #ffffff30; background: transparent; color: #fff; font: 18px Georgia, serif; border-radius: 0; }
+.prana-quiz [data-capture-email]::placeholder { color: #dbc1c8; }
+.prana-quiz [data-capture-submit] { background: #aa6b16; color: #fff; border: 0; border-radius: 6px; padding: 16px 24px; letter-spacing: 2px; text-transform: uppercase; }
+.prana-quiz [data-capture-skip] { display: block; margin-top: 16px; border: 0; background: transparent; color: #fff; text-decoration: underline; cursor: pointer; padding: 4px 0; }
