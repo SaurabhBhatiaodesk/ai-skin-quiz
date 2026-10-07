@@ -17,7 +17,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       name: quiz.name,
       layout: quiz.layout || "three",
       questions: quiz.quick.length + quiz.deep.length,
-      addUrl: `https://admin.shopify.com/store/${store}/themes/current/editor?template=index&addAppBlockId=${apiKey}/dosha-quiz&target=newAppsSection`,
+      addUrl: `https://admin.shopify.com/store/${store}/themes/current/editor?template=index&addAppBlockId=${apiKey}/${quiz.layout === "single" ? "single-quiz" : quiz.layout === "scan" ? "skin-scan" : "dosha-quiz"}&target=newAppsSection`,
     })),
   };
 };
@@ -56,9 +56,9 @@ export default function Blocks() {
               <s-text>What type of quiz would you like to create?</s-text>
               <s-grid gridTemplateColumns="repeat(auto-fit, minmax(220px, 1fr))" gap="base">
                 {([
-                  { value: "three", title: "3-block quiz", detail: "Quick Quiz, Deep Quiz and AI Skin Scan." },
-                  { value: "single", title: "Single-block quiz", detail: "One question flow with up to 40 questions." },
-                  { value: "scan", title: "AI Skin Scan", detail: "Camera or photo upload only. Scan results currently use demo data." },
+                  { value: "three", title: "Combined Quiz (3 paths)", detail: "Quick Quiz, Deep Quiz and AI Skin Scan." },
+                  { value: "single", title: "Single Quiz", detail: "One question flow with up to 40 questions." },
+                  { value: "scan", title: "AI Skin Scan", detail: "Camera or photo upload only. Requires a connected analysis provider." },
                 ] as const).map(option => <s-clickable key={option.value} accessibilityLabel={`Select ${option.title}`} border={layout === option.value ? "base strong" : "base"} background={layout === option.value ? "subdued" : "base"} borderRadius="base" padding="base" onClick={() => setLayout(option.value)}>
                   <s-stack gap="small"><s-text type="strong">{option.title}</s-text><s-text color="subdued">{option.detail}</s-text>{layout === option.value ? <s-badge tone="info">Selected</s-badge> : null}</s-stack>
                 </s-clickable>)}
@@ -69,7 +69,7 @@ export default function Blocks() {
         </s-section>
         {quizzes.map(quiz => <s-section key={quiz.handle} heading={quiz.name}>
           <s-stack gap="base">
-            <s-stack direction="inline" gap="small"><s-badge>{quiz.layout === "scan" ? "AI Skin Scan" : quiz.layout === "single" ? "Single-block quiz" : "3-block quiz"}</s-badge>{quiz.layout !== "scan" ? <s-text color="subdued">{quiz.questions} questions</s-text> : <s-text color="subdued">Camera / photo upload</s-text>}</s-stack>
+            <s-stack direction="inline" gap="small"><s-badge>{quiz.layout === "scan" ? "AI Skin Scan" : quiz.layout === "single" ? "Single Quiz" : "Combined Quiz (3 paths)"}</s-badge>{quiz.layout !== "scan" ? <s-text color="subdued">{quiz.questions} questions</s-text> : <s-text color="subdued">Camera / photo upload</s-text>}</s-stack>
             <s-text-field label="Shopify widget code" readOnly value={quiz.handle} />
             <s-stack direction="inline" gap="small">
               <s-button variant="primary" href={quiz.addUrl} target="_top">Add block</s-button>

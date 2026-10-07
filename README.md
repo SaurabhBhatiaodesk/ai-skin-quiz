@@ -237,3 +237,10 @@ Internationalization:
 - [Internationalizing your app](https://shopify.dev/docs/apps/best-practices/internationalization/getting-started)
 #   a i - s k i n - q u i z  
  
+## Prakriti reports and Klaviyo
+
+Completed quick and deep results are stored server-side with an opaque report ID, without camera images or raw quiz answers. Deep report text and products are withheld by the server until email capture. Quick results are immediate. Reports and attached email addresses expire after seven days and are purged on the next report request. This is not a replacement for a production scheduled deletion job or merchant privacy workflows.
+
+Set server-only `KLAVIYO_PRIVATE_API_KEY` (Events write access) and `KLAVIYO_SHOP` (the authorized store's myshopify.com domain). Create and enable a Klaviyo flow triggered by **Prakriti Report Unlocked**. Its event properties contain dosha, percentage breakdown, report text and recommended catalog products. The event uses a unique report ID for deduplication. This sends a report event, not marketing subscription consent. Do not paste credentials into app provider URL fields.
+
+Real camera analysis is not implemented. Its action remains disabled rather than returning fabricated six-marker scores. US geofencing, biometric consent language and production retention enforcement still need verification before enabling a camera provider. The existing storefront page outside this extension must be updated separately if it still uses placeholder links or an older standalone quiz.

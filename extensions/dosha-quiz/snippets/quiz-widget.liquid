@@ -1,0 +1,333 @@
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+
+<div
+  class="prana-quiz"
+  id="prana-quiz-{{ block.id }}"
+  data-block-layout="{{ expected_layout | default: 'three' }}"
+  data-prana-quiz
+  data-quiz-id="{{ block.id }}"
+  data-quiz-code="{{ block.settings.quiz_code | escape }}"
+>
+  <div class="analyzing-overlay" data-analyzing>
+    <div class="analyzing-spinner"></div>
+    <div class="analyzing-text" data-analyzing-text>Reading your skin's story…</div>
+    <div class="analyzing-markers">
+      <div class="am" data-am>Hydration</div>
+      <div class="am" data-am>Texture</div>
+      <div class="am" data-am>Pigmentation</div>
+      <div class="am" data-am>Radiance</div>
+      <div class="am" data-am>Elasticity</div>
+      <div class="am" data-am>Barrier</div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" data-modal="tridoshic">
+    <div class="dosha-modal modal-tridoshic">
+      <div class="modal-handle"></div>
+      <button class="modal-close" type="button" data-close-modal aria-label="Close">✕</button>
+      <div class="modal-dosha-name gold-color">Tridoshic</div>
+      <div class="modal-tagline">Vata · Pitta · Kapha — in rare balance</div>
+      <div class="modal-section">
+        <div class="modal-section-title gold-color">The rarest constitution</div>
+        <div class="modal-body">Tridoshic skin is the most resilient and adaptable constitution in Ayurveda — all three energies present in relative equilibrium. Your skin shifts with the seasons rather than following a fixed pattern.</div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-title gold-color">Your universal allies</div>
+        <div class="ingredient-tags">
+          <span class="ing-tag gold">Rosa Damascena</span>
+          <span class="ing-tag gold">Kashmir Saffron</span>
+          <span class="ing-tag gold">Bakuchiol</span>
+          <span class="ing-tag gold">Turmeric</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" data-modal="vata">
+    <div class="dosha-modal modal-vata">
+      <div class="modal-handle"></div>
+      <button class="modal-close" type="button" data-close-modal aria-label="Close">✕</button>
+      <div class="modal-dosha-name vata-color">Vata</div>
+      <div class="modal-tagline">Air & Space — the energy of movement</div>
+      <div class="modal-section">
+        <div class="modal-section-title vata-color">Your skin's signature</div>
+        <div class="modal-body">Fine-pored, delicate, and expressive — Vata skin holds emotion visibly. At its best, it has a translucent, almost porcelain quality.</div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-title vata-color">Ingredient allies</div>
+        <div class="ingredient-tags">
+          <span class="ing-tag vata">Kashmir Saffron</span>
+          <span class="ing-tag vata">Kokum Butter</span>
+          <span class="ing-tag vata">Shea Butter</span>
+          <span class="ing-tag vata">Rose Damascena</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" data-modal="pitta">
+    <div class="dosha-modal modal-pitta">
+      <div class="modal-handle"></div>
+      <button class="modal-close" type="button" data-close-modal aria-label="Close">✕</button>
+      <div class="modal-dosha-name pitta-color">Pitta</div>
+      <div class="modal-tagline">Fire & Water — the energy of transformation</div>
+      <div class="modal-section">
+        <div class="modal-section-title pitta-color">Your skin's signature</div>
+        <div class="modal-body">Warm, luminous, and intelligent — Pitta skin is beautiful when balanced and unmistakable when it isn't.</div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-title pitta-color">Ingredient allies</div>
+        <div class="ingredient-tags">
+          <span class="ing-tag pitta">Rosa Damascena</span>
+          <span class="ing-tag pitta">Turmeric Curcumin</span>
+          <span class="ing-tag pitta">Sandalwood</span>
+          <span class="ing-tag pitta">Saffron Safranal</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" data-modal="kapha">
+    <div class="dosha-modal modal-kapha">
+      <div class="modal-handle"></div>
+      <button class="modal-close" type="button" data-close-modal aria-label="Close">✕</button>
+      <div class="modal-dosha-name kapha-color">Kapha</div>
+      <div class="modal-tagline">Earth & Water — the energy of structure</div>
+      <div class="modal-section">
+        <div class="modal-section-title kapha-color">Your skin's signature</div>
+        <div class="modal-body">Thick, stable, and slow to age — Kapha skin is a long game that pays extraordinary dividends.</div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-title kapha-color">Ingredient allies</div>
+        <div class="ingredient-tags">
+          <span class="ing-tag kapha">Turmeric</span>
+          <span class="ing-tag kapha">Bentonite Clay</span>
+          <span class="ing-tag kapha">French Pink Clay</span>
+          <span class="ing-tag kapha">Kashmir Saffron</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="screen active" data-screen="entry">
+    <div class="hdr">
+      <div class="hdr-logo">{{ block.settings.brand_name | escape }}</div>
+      <h1 class="hdr-title">{{ block.settings.hero_title | escape }} <em>{{ block.settings.hero_accent | escape }}</em></h1>
+      <div class="hdr-sub">{{ block.settings.hero_subtitle | escape }}</div>
+    </div>
+    <div class="entry-cards">
+      <div class="entry-card featured" data-goto="scanner">
+        <div class="ec-badge">Most accurate</div>
+        <div class="ec-icon scan">📷</div>
+        <div class="ec-name">AI Skin Scan</div>
+        <div class="ec-desc">Live camera or photo upload. Our AI reads 6 skin markers and maps them to your dosha.</div>
+        <div class="ec-time">✦ 30 seconds</div>
+        <button class="btn-entry" type="button">Start Scan</button>
+      </div>
+      <div class="entry-card" data-goto="quick">
+        <div class="ec-icon quick">⚡</div>
+        <div class="ec-name">Quick Quiz</div>
+        <div class="ec-desc">Three questions about your skin. Instant ritual match — no camera needed.</div>
+        <div class="ec-time">✦ 60 seconds</div>
+        <button class="btn-entry ghost" type="button">Take Quiz</button>
+      </div>
+      <div class="entry-card" data-goto="deep">
+        <div class="ec-icon deep">🌿</div>
+        <div class="ec-name">Deep Dosha</div>
+        <div class="ec-desc">18 questions across constitution, current state, and environment. The full Ayurvedic reading.</div>
+        <div class="ec-time">✦ 5 minutes</div>
+        <button class="btn-entry ghost" type="button">Begin Reading</button>
+      </div>
+    </div>
+    <div class="entry-note">Find your personalized ritual · Free · No account required</div>
+  </div>
+
+  <div class="screen" data-screen="scanner">
+    <button class="back-nav" type="button" data-goto="entry"><span class="back-arrow">←</span> Back</button>
+    <div class="hdr" style="padding-top:1rem">
+      <div class="hdr-logo">{{ block.settings.brand_name | escape }}</div>
+      <h1 class="hdr-title">AI <em>Skin Scan</em></h1>
+      <div class="hdr-sub">Your camera reads what products cannot</div>
+    </div>
+    <div class="scanner-wrap">
+      <div class="scanner-choice">
+        <button class="sc-btn active" type="button" data-mode="camera">
+          <div class="sc-btn-icon">📷</div>
+          <div class="sc-btn-label">Live Camera</div>
+          <div class="sc-btn-sub">Real-time scan</div>
+        </button>
+        <button class="sc-btn" type="button" data-mode="upload">
+          <div class="sc-btn-icon">🖼</div>
+          <div class="sc-btn-label">Upload Photo</div>
+          <div class="sc-btn-sub">Any selfie</div>
+        </button>
+      </div>
+
+      <div class="camera-zone" data-camera-zone>
+        <video class="camera-feed" data-camera-feed autoplay playsinline muted></video>
+        <div class="scan-overlay">
+          <div class="scan-ring"></div>
+          <div class="scan-ring"></div>
+          <div class="scan-ring"></div>
+          <div class="scan-line"></div>
+          <div class="scan-chips">
+            <div class="scan-chip" data-chip>Hydration</div>
+            <div class="scan-chip" data-chip>Texture</div>
+            <div class="scan-chip" data-chip>Pigmentation</div>
+            <div class="scan-chip" data-chip>Radiance</div>
+            <div class="scan-chip" data-chip>Elasticity</div>
+            <div class="scan-chip" data-chip>Barrier</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="upload-zone hidden" data-upload-zone>
+        <div class="upload-icon">📸</div>
+        <div class="upload-label">Tap to upload a selfie</div>
+        <div class="upload-sub">JPG, PNG · Face forward, good light</div>
+      </div>
+      <input class="file-input" data-file type="file" accept="image/*" id="file-{{ block.id }}">
+      <img class="upload-preview" data-upload-preview alt="Your uploaded photo" width="640" height="480">
+
+      <div class="scan-status" data-scan-status>Position your face in the frame and hold still</div>
+
+      <div class="consent-jurisdiction">
+        <span class="cj-badge">BIPA consent</span>
+        <span class="cj-badge">CCPA consent</span>
+        <span class="cj-badge">18+ only</span>
+      </div>
+
+      <div class="consent-notice">
+        <div class="cn-icon">🔒</div>
+        <div class="cn-text"><strong>Your photo stays on this device.</strong> It is used only to run this reading in your browser, then discarded. It is not uploaded or stored.</div>
+      </div>
+
+      <div class="consent-box">
+        <div class="consent-row">
+          <input class="consent-check" type="checkbox" id="consent-bio-{{ block.id }}" data-consent="biometric">
+          <label class="consent-label" for="consent-bio-{{ block.id }}">
+            <strong>I provide written consent for real-time analysis of my facial image.</strong> I understand my photo will be used solely to assess skin characteristics and will not be stored, sold, or shared. <a href="{{ block.settings.privacy_url | escape }}" target="_blank" rel="noopener">Privacy Policy ↗</a>
+          </label>
+        </div>
+        <div class="consent-row">
+          <input class="consent-check" type="checkbox" id="consent-age-{{ block.id }}" data-consent="age">
+          <label class="consent-label" for="consent-age-{{ block.id }}">
+            <strong>I confirm I am 18 years of age or older.</strong>
+          </label>
+        </div>
+        <div class="consent-row">
+          <input class="consent-check" type="checkbox" id="consent-mail-{{ block.id }}" data-consent="marketing">
+          <label class="consent-label" for="consent-mail-{{ block.id }}">
+            <strong>Optional:</strong> I agree to receive personalised skincare recommendations by email. I can unsubscribe at any time.
+          </label>
+        </div>
+      </div>
+
+      <div class="consent-error" data-consent-error>Please accept the required consents above before scanning.</div>
+      <button class="btn-scan" type="button" data-scan>Analyse My Skin →</button>
+    </div>
+  </div>
+
+  <div class="screen" data-screen="quick">
+    <button class="back-nav" type="button" data-goto="entry"><span class="back-arrow">←</span> Back</button>
+    <div class="hdr" style="padding-top:1rem">
+      <div class="hdr-logo">{{ block.settings.brand_name | escape }}</div>
+      <h1 class="hdr-title">Quick <em>Ritual Match</em></h1>
+      <div class="hdr-sub">Three questions. Your personal ritual.</div>
+    </div>
+    <div class="quiz-wrap">
+      <div class="quiz-progress">
+        <div class="qp-bar"><div class="qp-fill" data-quick-fill style="width:33%"></div></div>
+        <div class="qp-label"><span data-quick-phase>Skin type</span><span data-quick-count>1 of 3</span></div>
+      </div>
+      <div data-quick-area></div>
+      <div class="q-nav">
+        <button class="btn-back" type="button" data-quick-back style="visibility:hidden">← Back</button>
+        <button class="btn-next" type="button" data-quick-next>Continue →</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="screen" data-screen="deep">
+    <button class="back-nav" type="button" data-goto="entry"><span class="back-arrow">←</span> Back</button>
+    <div class="hdr" style="padding-top:1rem">
+      <div class="hdr-logo">{{ block.settings.brand_name | escape }}</div>
+      <h1 class="hdr-title">Dosha <em>Diagnostic</em></h1>
+      <div class="hdr-sub">Three layers · Constitution · Current state · Environment</div>
+    </div>
+    <div class="quiz-wrap">
+      <div class="layer-pills">
+        <div class="layer-pill active" data-layer="1">Layer 1 · Prakriti</div>
+        <div class="layer-pill" data-layer="2">Layer 2 · Vikriti</div>
+        <div class="layer-pill" data-layer="3">Layer 3 · Environment</div>
+      </div>
+      <div class="quiz-progress">
+        <div class="qp-bar"><div class="qp-fill" data-deep-fill style="width:5%"></div></div>
+        <div class="qp-label"><span data-deep-phase>Prakriti · Your baseline nature</span><span data-deep-count>1 of 18</span></div>
+      </div>
+      <div data-deep-area></div>
+      <div class="q-nav">
+        <button class="btn-back" type="button" data-deep-back style="visibility:hidden">← Back</button>
+        <button class="btn-next" type="button" data-deep-next>Continue →</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="screen" data-screen="result">
+    <button class="back-nav" type="button" data-goto="entry"><span class="back-arrow">←</span> Start Over</button>
+    <div class="result-wrap">
+      <div class="result-hero rh-vata" data-hero>
+        <div class="rh-orb" style="top:-50px;right:-30px;width:160px;height:160px"></div>
+        <div class="rh-orb" style="bottom:-30px;left:-20px;width:100px;height:100px"></div>
+        <div class="rh-tag">Your Dosha Profile</div>
+        <div class="rh-dosha" data-dosha-name>Vata</div>
+        <div class="rh-sub" data-dosha-sub>Air & Space · The energy of movement</div>
+        <div class="rh-essence" data-dosha-essence>Your skin carries the poetry of movement.</div>
+        <div class="rh-source" data-dosha-source>via Quick Quiz</div>
+      </div>
+
+      <div class="result-section" data-markers style="display:none">
+        <div class="rs-label">Skin Analysis</div>
+        <div class="result-card">
+          <div class="skin-markers" data-marker-grid></div>
+        </div>
+      </div>
+
+      <div class="result-section">
+        <div class="rs-label">Your Skin Reading</div>
+        <div class="result-card">
+          <div class="insight-text" data-insight></div>
+          <button class="dosha-learn-btn" type="button" data-open-modal>Explore your full dosha guide →</button>
+        </div>
+      </div>
+
+      <div class="upgrade-nudge" data-upgrade style="display:none">
+        <div class="un-title">Want your full Prakriti analysis?</div>
+        <div class="un-sub">Your result identified your dominant dosha. The deep diagnostic reveals your constitution, current imbalances, and seasonal guidance.</div>
+        <button class="btn-upgrade" type="button" data-goto="deep">Take the Deep Dosha Diagnostic →</button>
+      </div>
+
+      <div class="result-section">
+        <div class="rs-label">Your Ritual</div>
+        <div class="product-cards" data-products></div>
+      </div>
+
+      <div class="email-box">
+        <div class="eb-title">Save your ritual guide</div>
+        <div class="eb-sub">Your complete dosha profile, ingredient allies, and seasonal updates — delivered to your inbox.</div>
+        <div class="eb-row">
+          <input class="eb-input" type="email" placeholder="your@email.com" data-email autocomplete="email">
+          <button class="btn-eb" type="button" data-save-email>Send →</button>
+        </div>
+        <div class="eb-confirm" data-email-confirm>✓ Your ritual guide is on its way</div>
+      </div>
+
+      <div class="retake-row">
+        <button class="btn-retake" type="button" data-goto="entry">Try another path</button>
+        <button class="btn-retake" type="button" data-goto="deep">Deep Dosha Reading</button>
+      </div>
+      <div class="result-footer">{{ block.settings.brand_name | escape }} · Ancient ritual. Living skin.</div>
+    </div>
+  </div>
+</div>
+

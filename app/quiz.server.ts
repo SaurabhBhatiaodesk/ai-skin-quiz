@@ -32,6 +32,7 @@ export type QuizProduct = {
   why: string;
 };
 export type QuizResult = {
+  percentages?: Record<string, number>;
   dosha: string;
   source: string;
   showUpgrade: boolean;
@@ -328,7 +329,7 @@ export function normalizeQuiz(input: unknown): StoredQuiz {
   const scan = (input as StoredQuiz)?.scanner;
   const scanner = {
     title: clip(scan?.title, 80) || "AI Skin Scan",
-    description: clip(scan?.description, 240) || "Try the skin scan demo with a live camera or photo upload.",
+    description: clip(scan?.description, 240) || "Skin scan analysis is not configured. Try the question quiz.",
     camera: scan?.camera !== false,
     upload: scan?.upload !== false,
   };
@@ -548,7 +549,12 @@ export function scoreDeep(answers: number[], questions: DeepQuestion[] = DEEP_QU
     });
   });
 
-  const dosha = resultFromTags(tags);
+  const totals = { vata: scores.V + scores.Vv, pitta: scores.P + scores.Pv, kapha: scores.K + scores.Kv };
+  const total = Object.values(totals).reduce((sum, value) => sum + value, 0);
+  const ranking = Object.entries(totals).sort((a, b) => b[1] - a[1]);
+  const percentages = Object.fromEntries(Object.entries(totals).map(([key, value]) => [key, total ? Math.floor(value / total * 100) : 0]));
+  if (total) percentages[ranking[0][0]] += 100 - Object.values(percentages).reduce((sum, value) => sum + value, 0);
+  const dosha = !total ? "balanced" : ranking[2][1] >= ranking[0][1] * 0.8 ? "balanced" : ranking[1][1] >= ranking[0][1] * 0.5 ? resultFromTags([ranking[0][0], ranking[1][0]]) : ranking[0][0];
 
   const vikVals = [scores.Vv, scores.Pv, scores.Kv];
   const vikMax = Math.max(...vikVals);
@@ -559,7 +565,7 @@ export function scoreDeep(answers: number[], questions: DeepQuestion[] = DEEP_QU
     else if (vikPrimary === "Pv") note = " Currently, Pitta is elevated — your skin needs cooling and anti-inflammatory support.";
     else note = " Currently, Kapha is elevated — your skin needs clarifying and stimulating treatment.";
   }
-  return { dosha, note };
+  return { dosha, note, percentages };
 }
 
 const KEYWORDS: Record<string, string[]> = {
@@ -644,6 +650,37 @@ function mappedProducts(tags: string[], mappings: ProductMapping[], products: Sh
   return found.slice(0, 8);
 }
 
+export function ritualProducts(quiz: StoredQuiz, submission: { path?: string; answers?: unknown }, dosha: string, products: ShopProduct[]): QuizProduct[] {
+  const roles: Record<string, string[]> = {
+    cleanser: ["rose jasmine milk cleanser", "rose jasmine cleanser"],
+    toner: ["pure rose water toning mist", "pure rose water mist"],
+    saffron: ["saffron glow serum"],
+    moisturizer: ["saffron radiance moisturizer"],
+    bakuchiol: ["bakuchiol night restorative serum", "bakuchiol night serum"],
+    mask: ["turmeric sandalwood mask"],
+  };
+  const normalize = (text: string) => text.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  let sequence = ["cleanser", "toner", "saffron"];
+  let anchors: string[] = [];
+  if (submission.path === "deep") {
+    anchors = dosha.includes("vata") ? ["saffron", "moisturizer"] : dosha.includes("pitta") ? ["toner", "moisturizer"] : dosha.includes("kapha") ? ["mask", "bakuchiol"] : ["saffron"];
+  } else {
+    const answers = submission.answers as Record<string, string | number>;
+    const labels = quiz.quick.map((question, at) => optionForAnswer(question.options, answers[String(at)], answers[`q${at + 1}`])?.label.toLowerCase() || "");
+    const timing = labels.find(value => /morning|night|weekly|full ritual|both/.test(value)) || "morning";
+    sequence = /full ritual|both/.test(timing) ? ["cleanser", "toner", "saffron", "bakuchiol", "moisturizer"] : /night/.test(timing) ? ["cleanser", "bakuchiol", "moisturizer"] : /weekly/.test(timing) ? ["cleanser", "mask", "saffron"] : sequence;
+    const concern = labels.find(value => /dull|glow|fine lines|firmness|dark spots|pigmentation|breakout|texture/.test(value)) || "";
+    anchors = /fine lines|firmness/.test(concern) ? ["bakuchiol"] : /dark spots|pigmentation/.test(concern) ? ["saffron", "mask"] : /breakout|texture/.test(concern) ? ["mask"] : ["saffron"];
+    if (labels.some(value => /dry/.test(value))) anchors.push("saffron", "moisturizer");
+    if (labels.some(value => /oily|combination/.test(value))) anchors.push("mask", "bakuchiol");
+    if (labels.some(value => /sensitive|reactive/.test(value))) { sequence = ["cleanser", "toner", ...sequence.filter(role => role !== "cleanser" && role !== "toner")]; }
+  }
+  const ordered = [...new Set([...sequence, ...anchors])];
+  return ordered.flatMap(role => {
+    const product = products.find(item => roles[role].includes(normalize(item.title)));
+    return product ? [{ title: product.title, handle: product.handle, price: product.price, image: product.image, why: anchors.includes(role) ? "Selected for your primary concern" : "Your ritual sequence" }] : [];
+  });
+}
 export function matchProducts(dosha: string, products: ShopProduct[]): QuizProduct[] {
   const keywords = KEYWORDS[dosha] || KEYWORDS.balanced;
   const matched = products
@@ -754,6 +791,7 @@ export async function buildQuizResult(
   let dosha = "balanced";
   let source = "Quick Quiz";
   let note = "";
+  let percentages: Record<string, number> | undefined;
   const markers: QuizResult["markers"] = null;
   let showUpgrade = quiz.layout !== "single" && quiz.layout !== "scan";
 
@@ -761,6 +799,7 @@ export async function buildQuizResult(
     const scored = scoreDeep(submission.answers.map((value) => Number(value)), quiz.deep);
     dosha = scored.dosha;
     note = scored.note;
+    percentages = scored.percentages;
     source = "Deep Dosha";
     showUpgrade = false;
   } else if (submission.path === "scan") {
@@ -778,7 +817,8 @@ export async function buildQuizResult(
       const storeProducts = await loadStoreProducts(admin);
       const tags = chosenTags(quiz, submission);
       if (submission.path === "scan") tags.push("scan", "ai_skin_scan", dosha);
-      products = mappedProducts(tags, quiz.mappings, storeProducts);
+      tags.push(dosha);
+      products = quiz.mappings.length ? mappedProducts(tags, quiz.mappings, storeProducts) : ritualProducts(quiz, submission, dosha, storeProducts);
     } catch {
       products = [];
     }
@@ -788,5 +828,5 @@ export async function buildQuizResult(
     ? note.trim()
     : `${profile.insight}${note}`;
 
-  return { dosha, source, showUpgrade, insight, profile, markers, products };
+  return { dosha, percentages, source, showUpgrade, insight, profile, markers, products };
 }

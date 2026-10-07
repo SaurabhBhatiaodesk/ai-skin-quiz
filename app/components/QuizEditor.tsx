@@ -69,10 +69,6 @@ export default function QuizEditor({
   const [kind, setKind] = useState<Kind>(initial.layout === "scan" ? "scan" : "quick");
   const [index, setIndex] = useState(0);
   const [questionOpen, setQuestionOpen] = useState(false);
-  const questionModal = useRef<HTMLElementTagNameMap["s-modal"]>(null);
-  useEffect(() => {
-    if (questionOpen) questionModal.current?.showOverlay();
-  }, [questionOpen]);
   const [tab, setTab] = useState<Tab>("edit");
   const [resultKey, setResultKey] = useState<(typeof RESULTS)[number]>("vata");
   const [tagDrafts, setTagDrafts] = useState<Record<string, string>>({});
@@ -256,10 +252,9 @@ export default function QuizEditor({
   const saved = fetcher.data?.ok === true;
   const error = fetcher.data && !fetcher.data.ok ? fetcher.data.error : "";
   const result = quiz.profiles[resultKey];
-  const QuestionContainer = tab === "edit" ? "s-modal" : "s-section";
   const showQuestions = tab === "edit" || tab === "tags";
   const design = quiz.design || { background: "#faf7f2", text: "#1a1208", accent: "#b07d3a", buttonText: "#ffffff", font: "classic" as const, radius: "rounded" as const };
-  const showSidebar = (showQuestions && quiz.layout !== "scan") || tab === "content";
+  const showSidebar = (showQuestions && quiz.layout !== "scan" && !(tab === "edit" && questionOpen)) || tab === "content";
 
   return (
     <s-page heading="Quiz editor" inlineSize="large">
@@ -451,7 +446,7 @@ export default function QuizEditor({
                                 document.removeEventListener("pointerup", finish, true);
                                 document.removeEventListener("pointermove", track, true);
                                 document.removeEventListener("pointercancel", clean, true);
-                                for (const row of mappingRows.current.values()) for (const cell of row.children) (cell as HTMLElement).style.backgroundColor = "";
+                                for (const row of mappingRows.current.values()) for (const cell of row.children) ((cell.shadowRoot?.firstElementChild ?? cell) as HTMLElement).style.backgroundColor = "";
                                 document.body.style.userSelect = previousSelection;
                                 handle.style.cursor = "grab";
                                 if (source) source.style.opacity = "";
@@ -463,7 +458,7 @@ export default function QuizEditor({
                                 target = null;
                                 for (const [targetId, row] of mappingRows.current) {
                                   // Polaris table rows may use display:contents; measure rendered cells.
-                                  const cells = Array.from(row.children) as HTMLElement[];
+                                  const cells = Array.from(row.children).map((cell) => (cell.shadowRoot?.firstElementChild ?? cell) as HTMLElement);
                                   const bounds = cells.map(cell => cell.getBoundingClientRect()).filter(rect => rect.height > 0);
                                   const over = bounds.some(rect => move.clientY >= rect.top && move.clientY <= rect.bottom);
                                   for (const cell of cells) cell.style.backgroundColor = over && targetId !== mapping.id ? "#eaf4ff" : "";
@@ -513,8 +508,9 @@ export default function QuizEditor({
                 <s-text-area label="Full reading" value={result.insight} rows={5} onInput={event => patchProfile({ insight: event.currentTarget.value })} />
               </s-stack>
             </s-section> : null}
-            {showQuestions && question && (tab !== "edit" || questionOpen) ? <QuestionContainer heading={`Question ${safeIndex + 1}`} {...(tab === "edit" ? { ref: questionModal, onAfterHide: () => setQuestionOpen(false) } : {})}>
+            {showQuestions && question && (tab !== "edit" || questionOpen) ? <s-section heading={`Question ${safeIndex + 1}`}>
               <s-stack gap="base">
+                {tab === "edit" ? <s-stack direction="inline"><s-button icon="arrow-left" onClick={() => setQuestionOpen(false)}>Back to questions</s-button></s-stack> : null}
                 <s-text-area label="Question" rows={3} value={question.text} onInput={event => patch({ text: event.currentTarget.value })} />
                 <s-grid gridTemplateColumns={tab === "tags" ? "repeat(2, minmax(0, 1fr))" : "repeat(auto-fit, minmax(240px, 1fr))"} gap="base">
                   {question.options.map((option, optionIndex) => <s-box key={optionIndex} border="base" borderRadius="base" padding="base">
@@ -538,7 +534,7 @@ export default function QuizEditor({
                   <s-button onClick={() => { if (safeIndex < questions.length - 1) setIndex(safeIndex + 1); else if (kind === "quick" && quiz.deep.length) { setKind("deep"); setIndex(0); } }}>{question.continueLabel || "Continue"}</s-button>
                 </s-stack>}
               </s-stack>
-            </QuestionContainer> : null}
+            </s-section> : null}
           </s-stack>
         </s-grid>
         </s-query-container>

@@ -16,6 +16,8 @@
     var cameraStream = null;
     var scanMode = "camera";
     var captured = null;
+    var reportId = null;
+    var reportLocked = false;
 
     function q(sel) { return root.querySelector(sel); }
 
@@ -50,6 +52,8 @@
     function paintResult(data) {
       var result = data.result || data;
       var profile = result.profile;
+      reportId = result.reportId || null;
+      reportLocked = Boolean(result.locked);
       if (!profile) return;
       doshaKey = result.dosha || doshaKey;
       source = result.source || source;
@@ -87,6 +91,16 @@
           });
         } else markers.style.display = "none";
       }
+      var guideButton = q("[data-open-modal]");
+      if (guideButton) guideButton.style.display = reportLocked ? "none" : "";
+      var emailBox = q(".email-box");
+      if (emailBox) {
+        emailBox.querySelector(".eb-title").textContent = reportLocked ? "Unlock your full Prakriti analysis" : "Email your ritual guide";
+        emailBox.querySelector(".eb-sub").textContent = reportLocked ? "Enter your email to view the detailed guide and recommended ritual." : "Optional: link this result to your email.";
+      }
+      var breakdown = q("[data-percentage-breakdown]");
+      if (!breakdown) { breakdown = document.createElement("div"); breakdown.setAttribute("data-percentage-breakdown", ""); q("[data-dosha-source]").parentNode.appendChild(breakdown); }
+      breakdown.textContent = result.percentages ? Object.keys(result.percentages).map(function (key) { return key + ": " + result.percentages[key] + "%"; }).join(" / ") : "";
       var nudge = q("[data-upgrade]");
       if (nudge) nudge.style.display = result.showUpgrade ? "block" : "none";
       var email = q("[data-email]");
@@ -293,6 +307,7 @@
         return;
       }
       if (origin.closest("[data-open-modal]")) {
+        if (reportLocked) return;
         var modal = q('[data-modal="' + modalKey + '"]');
         if (modal) modal.classList.add("active");
         return;
@@ -342,13 +357,19 @@
 
     function saveEmail() {
       var input = q("[data-email]");
-      if (!input || input.value.indexOf("@") === -1) return;
-      input.disabled = true;
-      q("[data-email-confirm]").classList.add("show");
-      var body = "form_type=customer&utf8=%E2%9C%93&contact%5Bemail%5D=" + encodeURIComponent(input.value.trim()) + "&contact%5Btags%5D=dosha-quiz," + doshaKey;
-      fetch("/contact", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: body }).catch(function () {});
+      var confirm = q("[data-email-confirm]");
+      if (!input || !reportId) return;
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.value.trim())) { confirm.textContent = "Enter a valid email address."; confirm.classList.add("show"); return; }
+      var button = q("[data-save-email]");
+      if (button.disabled) return;
+      button.disabled = true;
+      var email = input.value.trim();
+      fetch(PROXY + "/result", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ intent: "unlock", reportId: reportId, email: email }) })
+        .then(function (response) { return response.json().then(function (data) { if (!response.ok) throw new Error(data.error || "Could not save your email."); return data; }); })
+        .then(function (data) { paintResult(data); confirm.textContent = data.delivery === "queued" ? "Guide unlocked. Email delivery has been queued." : data.delivery === "failed" ? "Guide unlocked and email saved. Delivery failed; retry to send again." : "Guide unlocked and email saved. Email delivery is not configured yet."; confirm.classList.add("show"); input.value = email; })
+        .catch(function (error) { confirm.textContent = error.message; confirm.classList.add("show"); })
+        .finally(function () { button.disabled = false; });
     }
-
     var fileInput = q("[data-file]");
     if (fileInput) {
       fileInput.addEventListener("change", function (event) {
@@ -381,7 +402,7 @@
         root.style.setProperty("--button-radius", design.radius === "pill" ? "999px" : design.radius === "square" ? "0px" : "8px");
         if (design.font === "sans") root.setAttribute("data-font", "sans");
       }
-      var scanner = data.scanner || { title: "AI Skin Scan", description: "Try the skin scan demo with a live camera or photo upload.", camera: true, upload: true };
+      var scanner = data.scanner || { title: "AI Skin Scan", description: "Skin scan analysis is not configured. Try the question quiz.", camera: true, upload: true };
       var scanCard = q('[data-goto="scanner"].entry-card');
       if (scanCard) {
         var title = scanCard.querySelector(".ec-name");
@@ -389,12 +410,14 @@
         var badge = scanCard.querySelector(".ec-badge");
         if (title) title.textContent = scanner.title;
         if (description) description.textContent = scanner.description;
-        if (badge) badge.textContent = "Demo scan";
+        if (badge) badge.textContent = "Setup required";
       }
       var cameraButton = q('[data-mode="camera"]');
       var uploadButton = q('[data-mode="upload"]');
       if (cameraButton) cameraButton.style.display = scanner.camera ? "" : "none";
       if (uploadButton) uploadButton.style.display = scanner.upload ? "" : "none";
+      var scanAction = q("[data-scan]");
+      if (scanAction) { scanAction.disabled = true; scanAction.textContent = "Analysis provider not connected"; }
       scanMode = scanner.camera ? "camera" : "upload";
       if (data.layout === "scan") {
         root.setAttribute("data-quiz-layout", "scan");

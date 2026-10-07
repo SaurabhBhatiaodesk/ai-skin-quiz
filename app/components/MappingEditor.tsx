@@ -29,12 +29,12 @@ export default function MappingEditor({ draft, products, tags, onChange, onSave,
   return (
     <Container {...(compact ? {} : { heading: draft.id ? "Edit mapping" : "New mapping" })}>
       <s-stack gap="base">
-        <s-grid gridTemplateColumns={compact ? "minmax(0, 1fr)" : "repeat(auto-fit, minmax(240px, 1fr))"} gap="large" alignItems="start">
+        <s-grid gridTemplateColumns={compact ? "minmax(0, 1fr)" : "repeat(auto-fit, minmax(240px, 1fr))"} gap={compact ? "small" : "large"} alignItems="start">
           <s-stack gap="small">
             {compact ? <s-stack direction="inline" gap="small">
               {draft.tags.map(tag => <s-clickable-chip key={tag} removable accessibilityLabel={`Remove ${tag}`} onRemove={() => onChange({ ...draft, tags: draft.tags.filter(value => value !== tag) })}>{tag}</s-clickable-chip>)}
             </s-stack> : null}
-            <s-button icon="search" commandFor={`${id}-tags`} command="--toggle" inlineSize="fill">Select one or more tags</s-button>
+            {compact ? <s-clickable accessibilityLabel="Select one or more tags" commandFor={`${id}-tags`} command="--toggle" border="base" borderRadius="base" padding="small" inlineSize="100%"><s-stack direction="inline" gap="small" alignItems="center"><s-icon type="search" /><s-text color="subdued">Select one or more tags</s-text></s-stack></s-clickable> : <s-button icon="search" commandFor={`${id}-tags`} command="--toggle" inlineSize="fill">Select one or more tags</s-button>}
             <s-popover id={`${id}-tags`} inlineSize="300px">
               <s-box padding="base">
                 <s-stack gap="small">
@@ -64,7 +64,7 @@ export default function MappingEditor({ draft, products, tags, onChange, onSave,
                 <s-button onClick={() => openResources("product")}>Add product</s-button><s-text>OR</s-text><s-button onClick={() => openResources("variant")}>Add variant</s-button>
               </s-stack>
             </s-box> : null}
-            {draft.productHandle ? compact ? <s-box border="base" borderRadius="base" padding="small"><s-grid gridTemplateColumns="minmax(0, 1fr) auto" gap="small" alignItems="center"><s-button variant="tertiary" onClick={() => openResources(draft.variantId ? "variant" : "product")}>{resourceName}</s-button><s-button icon="x" variant="tertiary" accessibilityLabel="Remove selected resource" onClick={() => onChange({ ...draft, productHandle: "", variantId: undefined })} /></s-grid></s-box> : <s-clickable-chip removable accessibilityLabel="Remove selected resource" onRemove={() => onChange({ ...draft, productHandle: "", variantId: undefined })}>{resourceName}</s-clickable-chip> : null}
+            {draft.productHandle ? compact ? <s-box border="base" borderRadius="base" padding="none"><s-grid gridTemplateColumns="minmax(0, 1fr) auto" gap="none" alignItems="center"><s-clickable accessibilityLabel={`Replace ${resourceName}`} padding="small" onClick={() => openResources(draft.variantId ? "variant" : "product")}><s-text>{resourceName}</s-text></s-clickable><s-button icon="x" variant="tertiary" accessibilityLabel="Remove selected resource" onClick={() => onChange({ ...draft, productHandle: "", variantId: undefined })} /></s-grid></s-box> : <s-clickable-chip removable accessibilityLabel="Remove selected resource" onRemove={() => onChange({ ...draft, productHandle: "", variantId: undefined })}>{resourceName}</s-clickable-chip> : null}
           </s-stack>
         </s-grid>
         {!compact ? <s-stack direction="inline" gap="small" justifyContent="end">
