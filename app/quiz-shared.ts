@@ -33,6 +33,7 @@ export type QuizProfile = {
 };
 export type ProductMapping = { id: string; tags: string[]; productHandle: string; grouping?: "and" | "or"; variantId?: string };
 export type StoredQuiz = {
+  emailCapture?: { enabled: boolean; heading: string; button: string; allowSkip: boolean };
   widgetCss?: string;
   enabledPaths?: Array<"quick" | "deep" | "scan">;
   singleFlow?: "quick" | "deep";
@@ -68,3 +69,5 @@ export function scoresForTag(tag: string, layer = 1) {
   if (tag === "kapha") return current ? { Kv: 3 } : { K: 3 };
   return {};
 }
+
+export const LAYOUT_NAMES: Record<string, string> = { three: "Combined Quiz", single: "Single Quiz", scan: "AI Skin Scan" };

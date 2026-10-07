@@ -1,18 +1,18 @@
 export default function Documentation() {
   return (
     <s-page heading="Documentation" inlineSize="large">
-      <s-button slot="breadcrumb-actions" href="/app/blocks" accessibilityLabel="Back to all quizzes">Back</s-button>
+      <s-button slot="breadcrumb-actions" href="/app" accessibilityLabel="Back to home">Home</s-button>
       <s-stack gap="base">
         <s-paragraph color="subdued">A quick guide to creating, installing and customizing your quiz.</s-paragraph>
         <s-section heading="1. Create a quiz">
           <s-stack gap="small">
-            <s-paragraph>Open Quiz and press Create quiz. Enter a name, choose Single or Combined, then select the included quiz paths and press Create quiz. The saved quiz appears as a card.</s-paragraph>
+            <s-paragraph>Open Quizzes and press Create quiz. Enter a name, choose Single or Combined, select the quiz paths, then press Create quiz. The new quiz opens in the editor, ready for its questions.</s-paragraph>
             <s-unordered-list>
               <s-list-item>Combined Quiz: choose any two or all three paths.</s-list-item>
               <s-list-item>Single Quiz: Quick Quiz, Deep Dosha Diagnostic, or AI Skin Scan.</s-list-item>
               <s-list-item>AI Skin Scan: a camera or photo upload block.</s-list-item>
             </s-unordered-list>
-            <s-button href="/app/blocks">All quizzes</s-button>
+            <s-button href="/app/quizzes/new">Create quiz</s-button>
           </s-stack>
         </s-section>
         <s-section heading="2. Edit questions and answers">
@@ -39,19 +39,30 @@ export default function Documentation() {
           </s-stack>
         </s-section>
         <s-section heading="Cover image, profile image and Widget CSS">
-          <s-paragraph>In Settings, edit the quiz name, cover image URL and profile image URL using HTTPS images from Shopify Files. Widget CSS contains the editable stylesheet for this quiz. Save to apply changes.</s-paragraph>
+          <s-paragraph>In Settings, edit the quiz name, cover image URL and profile image URL using HTTPS images from Shopify Files. Custom CSS adds your own styles on top of the default quiz design; leave it empty to use the defaults.</s-paragraph>
         </s-section>
         <s-section heading="5. Install the Shopify widget">
           <s-stack gap="small">
-            <s-paragraph>In the quiz editor Settings, copy your Shopify widget code. On the quiz card, use the actions menu and Add to theme. Paste the code into the block&apos;s Shopify widget code setting and save the theme.</s-paragraph>
+            <s-paragraph>In the quiz editor Settings, copy your Shopify widget code. On the quiz card, use Add to theme. Paste the code into the block&apos;s Shopify widget code setting and save the theme.</s-paragraph>
             <s-paragraph>For Custom Liquid, copy the complete embed code from Settings, paste it into a Custom Liquid section and save. The embedded quiz adjusts its height automatically.</s-paragraph><s-paragraph>Choose the theme block matching your quiz type and paste its widget code. Open your storefront and complete the quiz to check your saved design and product mappings.</s-paragraph>
           </s-stack>
         </s-section>
         <s-section heading="AI Skin Scan setup">
           <s-stack gap="small">
-            <s-banner heading="Real analysis is not configured">The camera and photo upload screen is available, but a real skin-analysis provider has not been connected. The app does not return fabricated scan results.</s-banner>
+            <s-banner heading="OpenAI photo analysis">Add your OpenAI API key in Global Settings. The scan describes visible cosmetic concerns and recommends matching store products. It does not measure dosha or internal skin health.</s-banner>
             <s-paragraph>For a quiz containing the scan path, select AI Skin Scan to change its title, description and capture methods. Keep camera or photo upload enabled. Start scan opens the installed widget on your storefront.</s-paragraph>
             <s-paragraph>Photo uploads accept JPG, PNG or WebP files under 5 MB. Camera access requires browser permission and a secure storefront connection.</s-paragraph>
+          </s-stack>
+        </s-section>
+        <s-section heading="Developer API: quiz data">
+          <s-stack gap="base">
+            <s-paragraph>Fetch saved quiz configuration from the same Shopify storefront through the app proxy. Replace YOUR_WIDGET_ID with the saved quiz widget ID.</s-paragraph>
+            <pre style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{`const response = await fetch('/apps/dosha-quiz/quiz?code=YOUR_WIDGET_ID');
+if (!response.ok) throw new Error('Quiz not available');
+const quiz = await response.json();
+// quiz.quick, quiz.deep, quiz.design, quiz.widgetCss, quiz.emailCapture`}</pre>
+            <s-paragraph>Score answers with POST /apps/dosha-quiz/result using JSON: code, path (quick or deep), and answers (zero-based option indexes). The response contains result and matching store products. Deep report details remain email-gated.</s-paragraph>
+            <s-paragraph>These endpoints use Shopify app-proxy authentication. Call them from the storefront domain; direct unauthenticated requests to the app server are rejected. They do not expose API keys, customer reports or scoring weights.</s-paragraph>
           </s-stack>
         </s-section>
         <s-section heading="Troubleshooting">

@@ -38,3 +38,26 @@ export async function unlockReport(shop: string, id: unknown, email: unknown) {
   }
   return { result: publicReport(result, id, true), delivery };
 }
+
+// Customer data cleanup for uninstall and GDPR webhooks. Without an email, every report for the shop is removed.
+export async function deleteReports(shop: string, email?: string) {
+  await prepare();
+  if (email) await prisma.$executeRawUnsafe("DELETE FROM QuizReport WHERE shop=? AND email=?", shop, email.trim().toLowerCase());
+  else await prisma.$executeRawUnsafe("DELETE FROM QuizReport WHERE shop=?", shop);
+}
+
+export async function countReports(shop: string, email: string) {
+  await prepare();
+  const rows = await prisma.$queryRawUnsafe<Array<{ total: number | bigint }>>("SELECT COUNT(*) AS total FROM QuizReport WHERE shop=? AND email=?", shop, email.trim().toLowerCase());
+  return Number(rows[0]?.total || 0);
+}
+
+// Results are kept for 7 days, so these counts cover the last week.
+export async function reportStats(shop: string) {
+  await prepare();
+  const rows = await prisma.$queryRawUnsafe<Array<{ results: number | bigint; emails: number | bigint | null }>>(
+    "SELECT COUNT(*) AS results, SUM(CASE WHEN email IS NOT NULL THEN 1 ELSE 0 END) AS emails FROM QuizReport WHERE shop=?",
+    shop,
+  );
+  return { results: Number(rows[0]?.results || 0), emails: Number(rows[0]?.emails || 0) };
+}

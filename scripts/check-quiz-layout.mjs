@@ -26,7 +26,15 @@ for (const question of legacy.deep) {
 for (const [answer, expected] of [[0, "vata"], [1, "pitta"], [2, "kapha"]]) {
   assert.equal(api.scoreDeep(Array(18).fill(answer), legacy.deep).dosha, expected);
 }
-const deepQuiz = await api.createQuiz("test", "Deep audit", "three");
+// New quizzes start empty; tests add the stock questions where a flow needs them.
+const withQuestions = quiz => ({ ...quiz, quick: quiz.enabledPaths.includes("quick") ? structuredClone(api.QUICK_QUESTIONS) : [], deep: quiz.enabledPaths.includes("deep") ? structuredClone(api.DEEP_QUESTIONS) : [] });
+const emptyQuiz = await api.createQuiz("test", "Empty start", "three");
+assert.equal(emptyQuiz.quick.length + emptyQuiz.deep.length, 0);
+assert.equal((await api.loadQuiz("test", emptyQuiz.handle)).quick.length, 0);
+await assert.rejects(api.publicQuiz("test", emptyQuiz.handle), /no questions yet/);
+await assert.rejects(api.buildQuizResult({ code: emptyQuiz.handle, path: "quick", answers: {} }, "test"), /no questions yet/);
+await api.deleteQuiz("test", emptyQuiz.handle);
+const deepQuiz = withQuestions(await api.createQuiz("test", "Deep audit", "three"));
 deepQuiz.widgetCss = ".prana-quiz .entry-card { border-radius: 24px; }";
 deepQuiz.deep[8].text = "Edited current-state question";
 deepQuiz.deep[8].options[0].hint = "Edited hint";
@@ -48,7 +56,7 @@ await assert.rejects(api.saveQuiz("test", { ...deepQuiz, deep: [] }, deepQuiz.ha
 assert.equal(globalThis.quizTestPayload, beforeInvalidSave);
 assert.throws(() => api.normalizeQuiz({ quick: api.QUICK_QUESTIONS, deep: [] }));
 assert.throws(() => api.normalizeQuiz({ layout: "single", quick: [], deep: [] }));
-const created = await api.createQuiz("test", "Single", "single");
+const created = withQuestions(await api.createQuiz("test", "Single", "single"));
 assert.equal(created.layout, "single");
 assert.equal(created.deep.length, 0);
 created.quick = Array.from({ length: 40 }, () => created.quick[0]);
@@ -80,17 +88,20 @@ assert.equal(variantResult.products[0].price, "$12.00");
 loaded.mappings[0].tags = ["skin", "missing"];
 await api.saveQuiz("test", loaded, loaded.handle);
 const andResult = await api.buildQuizResult({ code: loaded.handle, path: "quick", answers: { 0: 0 } }, "test", admin);
-assert.deepEqual(andResult.products, []);
+// No mapping matched, so the result falls back to keyword matches from the real catalog (never invented products).
+assert.equal(andResult.products[0].variantId, undefined);
+assert.equal(andResult.products[0].handle, "serum");
 loaded.mappings[0].grouping = "or";
 await api.saveQuiz("test", loaded, loaded.handle);
 const orResult = await api.buildQuizResult({ code: loaded.handle, path: "quick", answers: { 0: 0 } }, "test", admin);
 assert.equal(orResult.products[0].variantId, variantId);
 assert.equal((await api.loadQuiz("test", loaded.handle)).mappings[0].grouping, "or");
+api.clearProductCache();
 const failedProducts = await api.buildQuizResult({ code: loaded.handle, path: "quick", answers: { 0: 0 } }, "test", { graphql: async () => { throw new Error("Unavailable"); } });
 assert.deepEqual(failedProducts.products, []);
 assert.deepEqual(result.products, []);
 
-async function storefront(layout) {
+async function storefront(layout, scanReady = false) {
   const active = new Set(["entry"]);
   const screens = ["entry", "quick", "deep", "scanner"].map(name => ({
     classList: { remove() { active.delete(name); }, add() { active.add(name); } },
@@ -105,18 +116,20 @@ async function storefront(layout) {
     },
   };
   vm.runInNewContext(await readFile("app/storefront-quiz.js", "utf8"), {
-    document: { readyState: "complete", querySelectorAll() { return [root]; } },
+    document: { readyState: "complete", querySelectorAll() { return [root]; }, addEventListener() {} },
     window: { scrollTo() {} },
     URLSearchParams,
     navigator: {},
-    fetch: async () => ({ ok: true, json: async () => ({ layout, quick: [] }) }),
+    fetch: async () => ({ ok: true, json: async () => ({ layout, scanReady, quick: [] }) }),
   });
   await new Promise(resolve => setImmediate(resolve));
-  assert.deepEqual([...active], [layout === "scan" ? "scanner" : layout === "single" ? "quick" : "entry"]);
+  // A scan-only block stays on its hidden start screen until analysis is connected.
+  assert.deepEqual([...active], [layout === "scan" && scanReady ? "scanner" : layout === "single" ? "quick" : "entry"]);
 }
 await storefront("single");
 await storefront("three");
 await storefront("scan");
+await storefront("scan", true);
 const scanOnly = await api.createQuiz("test", "Scan only", "scan");
 assert.equal(scanOnly.layout, "scan");
 assert.equal(scanOnly.quick.length, 0);
@@ -125,7 +138,7 @@ await api.saveQuiz("test", scanOnly, scanOnly.handle);
 assert.equal((await api.loadQuiz("test", scanOnly.handle)).layout, "scan");
 await assert.rejects(api.buildQuizResult({ code: scanOnly.handle, path: "quick" }, "test"));
 await assert.rejects(api.buildQuizResult({ code: scanOnly.handle, path: "scan" }, "test"), /not configured/);
-const scanQuiz = await api.createQuiz("test", "Scan settings", "three");
+const scanQuiz = withQuestions(await api.createQuiz("test", "Scan settings", "three"));
 scanQuiz.scanner = { title: "My Skin Scan", description: "Upload a selfie for the demo.", camera: false, upload: true };
 await api.saveQuiz("test", scanQuiz, scanQuiz.handle);
 assert.deepEqual((await api.loadQuiz("test", scanQuiz.handle)).scanner, scanQuiz.scanner);
@@ -143,16 +156,31 @@ const ritualQuiz = api.normalizeQuiz({ quick: api.QUICK_QUESTIONS, deep: api.DEE
 const ritual = api.ritualProducts(ritualQuiz, { path: "quick", answers: { 0: 2, 1: 1, 2: 1 } }, "pitta", catalog);
 assert.deepEqual(ritual.slice(0, 3).map(product => product.title), ["Rose Jasmine Milk Cleanser", "Pure Rose Water Toning Mist", "Bakuchiol Night Restorative Serum"]);
 assert.equal(api.ritualProducts(ritualQuiz, { path: "quick", answers: { 0: 0, 1: 0, 2: 0 } }, "vata", []).length, 0);
+api.clearProductCache();
+const inr = { graphql: async () => ({ json: async () => ({ data: { shop: { currencyCode: "INR" }, products: { nodes: [product] } } }) }) };
+assert.equal((await api.loadStoreProducts(inr))[0].price, "₹12.00");
+const pages = [];
+const pagingAdmin = { graphql: async (query, options) => { pages.push(options?.variables?.after ?? null); return { json: async () => ({ data: { products: { pageInfo: { hasNextPage: pages.length < 2, endCursor: "p" + pages.length }, nodes: [{ ...product, handle: "p" + pages.length }] } } }) }; } };
+assert.deepEqual((await api.loadStoreProducts(pagingAdmin)).map(item => item.handle), ["p1", "p2"]);
+assert.equal(api.scoreQuick({ 0: 0, 1: 1, 2: 2 }, [0, 1, 2].map(() => ({ text: "Q", options: ["vata", "pitta", "kapha"].map(tag => ({ label: tag, tag, value: tag, tags: [tag] })) }))), "balanced");
+const dualQuiz = withQuestions(await api.createQuiz("test", "Dual mapping", "single", ["deep"]));
+dualQuiz.mappings = [{ id: "dual", tags: ["dual_vata_pitta"], productHandle: "serum", grouping: "or" }];
+await api.saveQuiz("test", dualQuiz, dualQuiz.handle);
+const dualAnswers = dualQuiz.deep.map((question, at) => at % 2);
+const dualResult = await api.buildQuizResult({ code: dualQuiz.handle, path: "deep", answers: dualAnswers }, "test", admin);
+assert.equal(dualResult.dosha, "dual-vata-pitta");
+assert.equal(dualResult.products[0].why, "dual_vata_pitta");
 console.log("Passed: layout creation, save/reload, legacy defaults, question validation, 40-question single flow, result restrictions, storefront startup, AND/OR mapping and variant recommendations.");
 
-const standaloneDeep = await api.createQuiz("test", "Standalone Deep", "single", ["deep"]);
+const standaloneDeep = withQuestions(await api.createQuiz("test", "Standalone Deep", "single", ["deep"]));
 assert.equal(standaloneDeep.singleFlow, "deep");
+await api.saveQuiz("test", standaloneDeep, standaloneDeep.handle);
 assert.equal(standaloneDeep.quick.length, 0);
 assert.equal(standaloneDeep.deep.length, 18);
 const standaloneResult = await api.buildQuizResult({ code: standaloneDeep.handle, path: "deep", answers: Array(18).fill(0) }, "test");
 assert.equal(standaloneResult.source, "Deep Dosha");
 await assert.rejects(api.buildQuizResult({ code: standaloneDeep.handle, path: "quick", answers: {} }, "test"));
-const twoPaths = await api.createQuiz("test", "Two paths", "three", ["quick", "scan"]);
+const twoPaths = withQuestions(await api.createQuiz("test", "Two paths", "three", ["quick", "scan"]));
 assert.deepEqual(twoPaths.enabledPaths, ["quick", "scan"]);
 assert.equal(twoPaths.deep.length, 0);
 twoPaths.coverImage = "https://example.com/cover.jpg";

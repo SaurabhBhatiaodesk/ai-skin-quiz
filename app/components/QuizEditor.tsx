@@ -1,4 +1,6 @@
+import referenceQuizCss from "../reference-quiz.css?raw";
 import { useEffect, useRef, useState } from "react";
+import { useAppBridge } from "@shopify/app-bridge-react";
 import MappingEditor from "./MappingEditor";
 import type { MappingDraft } from "./MappingEditor";
 import { useFetcher } from "react-router";
@@ -48,24 +50,29 @@ function isDosha(tag: string): tag is ResultTag {
   return tag === "vata" || tag === "pitta" || tag === "kapha" || tag === "balanced";
 }
 
+// Keep an option's scoring in sync with its dosha tag; removing the dosha tag makes the answer neutral.
+function withTags<T extends { tags?: string[]; label: string }>(option: T, tags: string[], kind: Kind, layer: number): T {
+  const dosha = tags.find(isDosha);
+  if (dosha) return kind === "quick" ? { ...option, tags, tag: dosha, value: dosha } : { ...option, tags, tag: dosha, scores: scoresForTag(dosha, layer) };
+  if (!tagsFor(option).some(isDosha)) return { ...option, tags };
+  return kind === "quick" ? { ...option, tags, tag: "balanced", value: "balanced" } : { ...option, tags, tag: "balanced", scores: {} };
+}
+
 export default function QuizEditor({
   initial,
   shop,
-  scanKeyPresent = false,
   products,
+  productsError = false,
   code,
 }: {
   initial: StoredQuiz & { name?: string };
   shop: string;
-  scanKeyPresent?: boolean;
   products: ShopProduct[];
+  productsError?: boolean;
   code: string;
 }) {
   const fetcher = useFetcher<SaveResult>();
   const [quiz, setQuiz] = useState(initial);
-  const [apiKeyDraft, setApiKeyDraft] = useState("");
-  const [showApiKey, setShowApiKey] = useState(false);
-  const [keyCopyStatus, setKeyCopyStatus] = useState("");
   const [embedCopyStatus, setEmbedCopyStatus] = useState("");
   const embedCode = `<iframe src="/apps/dosha-quiz/widget?code=${encodeURIComponent(code)}" title="Skin quiz" style="display:block;width:100%;height:700px;border:0;" loading="lazy" allow="camera"></iframe>
 <script>(function(){var frame=document.currentScript.previousElementSibling;window.addEventListener('message',function(event){if(event.source!==frame.contentWindow||event.origin!==window.location.origin||!event.data||event.data.type!=='prana-widget-height')return;var height=Number(event.data.height);if(Number.isFinite(height)&&height>0&&height<20000)frame.style.height=Math.ceil(height)+'px';});})();</script>`;
@@ -87,6 +94,11 @@ export default function QuizEditor({
   useEffect(() => () => dragCleanup.current?.(), []);
 
   const pending = fetcher.state !== "idle";
+  const shopify = useAppBridge();
+  const saveResult = fetcher.data;
+  useEffect(() => {
+    if (saveResult?.ok) shopify.toast.show("Quiz saved");
+  }, [saveResult, shopify]);
   const enabledPaths = quiz.enabledPaths || (quiz.layout === "scan" ? ["scan"] : quiz.layout === "single" ? [quiz.singleFlow || "quick"] : ["quick", "deep", "scan"]);
   const questions = kind === "scan" ? [] : kind === "quick" ? quiz.quick : quiz.deep;
   const scanner = quiz.scanner || { title: "AI Skin Scan", description: "Use a camera or photo upload for cosmetic skin observations.", camera: true, upload: true };
@@ -122,13 +134,8 @@ export default function QuizEditor({
     const fallback = slugTag(question.options[optionIndex]?.label || "") || "tag";
     const unique = [...new Set(tags.map((tag) => slugTag(tag)).filter(Boolean))].slice(0, 8);
     const stored = unique.length ? unique : [fallback];
-    const dosha = unique.find(isDosha);
-    const options = question.options.map((option, itemIndex) => {
-      if (itemIndex !== optionIndex) return option;
-      if (kind === "quick") return { ...option, tags: stored, ...(dosha ? { tag: dosha, value: dosha } : {}) };
-      if (dosha) return { ...option, tags: stored, tag: dosha, scores: scoresForTag(dosha, "layer" in question ? question.layer : 1) };
-      return { ...option, tags: stored };
-    });
+    const layer = "layer" in question ? question.layer : 1;
+    const options = question.options.map((option, itemIndex) => (itemIndex === optionIndex ? withTags(option, stored, kind, layer) : option));
     const list = kind === "quick" ? quiz.quick : quiz.deep;
     const nextList = list.map((item, itemIndex) => (itemIndex === safeIndex ? { ...item, options } : item));
     persist(kind === "quick"
@@ -142,8 +149,7 @@ export default function QuizEditor({
       const key = `${kind}-${safeIndex}-${optionIndex}`;
       const extra = (tagDrafts[key] || "").split(",").map(slugTag).filter(Boolean);
       const tags = [...new Set([...tagsFor(option), ...extra])].slice(0, 8);
-      const dosha = tags.find(isDosha);
-      return { ...option, tags, ...(dosha ? kind === "quick" ? { tag: dosha, value: dosha } : { tag: dosha, scores: scoresForTag(dosha, "layer" in question ? question.layer : 1) } : {}) };
+      return withTags(option, tags, kind, "layer" in question ? question.layer : 1);
     });
     const list = kind === "quick" ? quiz.quick : quiz.deep;
     const nextList = list.map((item, at) => at === safeIndex ? { ...item, options } : item);
@@ -160,6 +166,8 @@ export default function QuizEditor({
 
   function addQuestion() {
     if (questions.length >= (kind === "deep" || quiz.layout === "single" ? 40 : 12)) return;
+    // Open the new question straight away so it can be filled in.
+    if (tab === "edit") setQuestionOpen(true);
     setQuiz((current) => {
       if (kind === "quick") {
         const quick = [
@@ -182,7 +190,7 @@ export default function QuizEditor({
         ...current.deep,
         {
           layer: 1,
-          phase: "Prakriti Â· Your baseline nature",
+          phase: "Prakriti · Your baseline nature",
           text: "New question",
           sub: "",
           continueLabel: "Continue",
@@ -253,23 +261,32 @@ export default function QuizEditor({
     }));
   }
 
-  const saved = fetcher.data?.ok === true;
   const error = fetcher.data && !fetcher.data.ok ? fetcher.data.error : "";
   const result = quiz.profiles[resultKey];
   const showQuestions = tab === "edit" || tab === "tags";
-  const design = quiz.design || { background: "#faf7f2", text: "#1a1208", accent: "#b07d3a", buttonText: "#ffffff", font: "classic" as const, radius: "rounded" as const };
+  const design = quiz.design || { background: "#faf7f2", text: "#1a1208", accent: "#8f6330", buttonText: "#ffffff", font: "classic" as const, radius: "rounded" as const };
   const showSidebar = (showQuestions && quiz.layout !== "scan" && !(tab === "edit" && questionOpen)) || tab === "content";
 
   return (
     <s-page heading={`${quiz.name || "Quiz"} · ${TABS.find(item => item.id === tab)?.label || "Quiz editor"}`} inlineSize="large">
-      <s-button slot="breadcrumb-actions" href="/app/blocks" accessibilityLabel="Back to all quizzes">Back</s-button>
+      <s-button slot="breadcrumb-actions" href="/app/quizzes" accessibilityLabel="Back to quizzes">Quizzes</s-button>
       <s-button slot="primary-action" variant="primary" loading={pending} onClick={save}>Save</s-button>
       <s-stack gap="base">
         {quiz.profileImage ? <s-stack direction="inline" justifyContent="space-between" alignItems="center"><s-heading>{quiz.name || "Quiz"}</s-heading><s-box inlineSize="80px"><s-image src={quiz.profileImage} alt="Quiz profile" aspectRatio="1" objectFit="cover" borderRadius="large" /></s-box></s-stack> : null}
         <s-stack direction="inline" gap="small">
           {TABS.map(item => <s-button key={item.id} variant={tab === item.id ? "primary" : "tertiary"} onClick={() => setTab(item.id)}>{item.label}</s-button>)}
         </s-stack>
-        {error ? <s-banner tone="critical" heading="Could not save quiz">{error}</s-banner> : saved ? <s-banner tone="success" heading="Saved" /> : null}
+        {error ? <s-banner tone="critical" heading="Could not save quiz">{error}</s-banner> : null}
+        {tab === "edit" && kind !== "scan" ? <s-section heading="Email capture step">
+          <s-stack gap="base">
+            <s-checkbox label="Ask for email after the questions" checked={quiz.emailCapture?.enabled === true} onChange={event => setQuiz(current => ({...current, emailCapture: { heading: "Where should we send your ritual?", button: "See my ritual", allowSkip: true, ...current.emailCapture, enabled: event.currentTarget.checked }}))} />
+            {quiz.emailCapture?.enabled ? <>
+              <s-text-field label="Heading" value={quiz.emailCapture.heading} onInput={event => { const heading = event.currentTarget.value; setQuiz(current => ({...current, emailCapture: {...current.emailCapture!, heading}})); }} />
+              <s-text-field label="Button text" value={quiz.emailCapture.button} onInput={event => { const button = event.currentTarget.value; setQuiz(current => ({...current, emailCapture: {...current.emailCapture!, button}})); }} />
+              <s-checkbox label="Allow Skip" checked={quiz.emailCapture.allowSkip} onChange={event => { const allowSkip = event.currentTarget.checked; setQuiz(current => ({...current, emailCapture: {...current.emailCapture!, allowSkip}})); }} />
+            </> : null}
+          </s-stack>
+        </s-section> : null}
         <s-query-container>
         <s-grid gridTemplateColumns={tab === "tags" && showSidebar ? "minmax(240px, 1fr) minmax(0, 2fr)" : "minmax(0, 1fr)"} gap="base" alignItems="start">
           {showSidebar ? <s-section heading={tab === "content" ? "Results" : "Questions"}>
@@ -287,6 +304,7 @@ export default function QuizEditor({
                     {enabledPaths.includes("scan") ? <s-option value="scan">AI Skin Scan</s-option> : null}
                   </s-select> : null}
                   <s-text color="subdued">{kind === "scan" ? "Configure camera and photo upload for the scan block." : "Select a question to edit"}</s-text>
+                  {kind !== "scan" && !questions.length ? <s-banner heading="No questions yet">Click Add question to create the first question for this quiz, then Save.</s-banner> : null}
                   <s-grid gridTemplateColumns={tab === "tags" ? "minmax(0, 1fr)" : "repeat(auto-fit, minmax(220px, 1fr))"} gap="base">
                   {visibleQuestions.map((item, pageIndex) => { const itemIndex = pageStart + pageIndex; return <s-clickable key={`${kind}-${itemIndex}`} accessibilityLabel={`Edit question ${itemIndex + 1}: ${item.text}`} background={safeIndex === itemIndex ? "subdued" : "base"} border={safeIndex === itemIndex ? "base strong" : "base"} borderRadius="base" padding="base" onClick={() => { setIndex(itemIndex); if (tab === "edit") setQuestionOpen(true); }}>
                     {tab === "tags" ? <s-stack gap="small">
@@ -320,6 +338,8 @@ export default function QuizEditor({
               <s-stack gap="base">
                 <s-paragraph color="subdued">Customize the appearance of this quiz on your storefront.</s-paragraph>
                 <s-grid gridTemplateColumns="repeat(auto-fit, minmax(240px, 1fr))" gap="base">
+                  <s-button onClick={() => setQuiz(current => ({ ...current, widgetCss: referenceQuizCss, design: { ...design, background: "#f3ecd9", text: "#180d0c", accent: "#4c1428", buttonText: "#ffffff", font: "classic", radius: "rounded" } }))}>Apply cream and burgundy design</s-button>
+                  <s-paragraph color="subdued">Matches the reference question layout. Edit its CSS in Settings ? Widget CSS, then Save.</s-paragraph>
                   {([{ key: "background", label: "Background color" }, { key: "text", label: "Text color" }, { key: "accent", label: "Button and accent color" }, { key: "buttonText", label: "Button text color" }] as const).map(field => <s-color-field key={field.key} label={field.label} value={design[field.key]} onInput={event => { const value = event.currentTarget.value; setQuiz(current => ({ ...current, design: { ...design, [field.key]: value } })); }} />)}
                   <s-select label="Font style" value={design.font} onChange={event => { const font = event.currentTarget.value === "sans" ? "sans" : "classic"; setQuiz(current => ({ ...current, design: { ...design, font } })); }}><s-option value="classic">Classic serif headings</s-option><s-option value="sans">Sans serif</s-option></s-select>
                   <s-select label="Button shape" value={design.radius} onChange={event => { const radius = event.currentTarget.value === "square" ? "square" : event.currentTarget.value === "pill" ? "pill" : "rounded"; setQuiz(current => ({ ...current, design: { ...design, radius } })); }}><s-option value="square">Square</s-option><s-option value="rounded">Rounded</s-option><s-option value="pill">Pill</s-option></s-select>
@@ -347,11 +367,10 @@ export default function QuizEditor({
                 {tab === "products" ? <>
                   <s-button commandFor="quiz-bulk-actions">Bulk actions</s-button>
                   <s-menu id="quiz-bulk-actions" accessibilityLabel="Bulk actions">
-                    <s-button tone="critical" disabled={!pickedRows.length || pending} onClick={() => deleteMappings(pickedRows)}>Delete selected</s-button>
+                    <s-button tone="critical" disabled={!pickedRows.length || pending} commandFor="delete-mappings-modal" command="--show">Delete selected</s-button>
                   </s-menu>
                   <s-button icon="plus" onClick={() => setMappingDraft({ id: "", tags: [], productHandle: "", grouping: "or" })}>New mapping</s-button>
                 </> : null}
-                <s-button variant="primary" loading={pending} onClick={save}>Save</s-button>
               </s-stack>
             </s-section> : null}
             {tab === "settings" ? <s-section heading="Quiz settings">
@@ -364,41 +383,23 @@ export default function QuizEditor({
                 <s-text-area label="Shopify Custom Liquid embed code" rows={5} readOnly value={embedCode} />
                 <s-stack direction="inline" gap="base"><s-button icon="clipboard" onClick={async () => { try { await navigator.clipboard.writeText(embedCode); setEmbedCopyStatus("Embed code copied."); } catch { setEmbedCopyStatus("Select and copy the code above."); } }}>Copy code</s-button><s-text>{embedCopyStatus}</s-text></s-stack>
                 <s-paragraph>In your Shopify theme editor, add a Custom Liquid section, paste this complete code, and save. It loads this saved quiz, including its Widget CSS. The embed adjusts its height automatically.</s-paragraph>
-                <s-paragraph color="subdued">Add this quiz to your storefront from Blocks. Paste the quiz code into the theme block, then save the theme.</s-paragraph>
-                <s-stack direction="inline" gap="small"><s-button href="/app/blocks">Open Blocks</s-button><s-button variant="primary" loading={pending} onClick={save}>Save quiz</s-button></s-stack>
+                <s-paragraph color="subdued">Or add this quiz from Quizzes: open the actions menu on the quiz card, choose Add to theme, paste the App block widget ID above into the block, and save the theme.</s-paragraph>
+                <s-stack direction="inline" gap="small"><s-button href="/app/quizzes">All quizzes</s-button></s-stack>
               </s-stack>
             </s-section> : null}
             {tab === "settings" ? <s-section heading="Widget CSS">
               <s-stack gap="base">
-                <s-paragraph color="subdued">Edit this quiz’s storefront stylesheet. Save to apply changes to this widget. Keep the .prana-quiz selectors.</s-paragraph>
-                <s-text-area label="Widget CSS" rows={20} value={quiz.widgetCss || ""} onInput={event => { const widgetCss = event.currentTarget.value; setQuiz(current => ({ ...current, widgetCss })); }} />
-                <s-stack direction="inline" gap="base"><s-button variant="primary" loading={pending} onClick={save}>Save Widget CSS</s-button></s-stack>
+                <s-paragraph color="subdued">Add custom CSS on top of the default quiz styles. Leave empty to use the defaults. Rules apply only inside this widget and override the defaults, for example: .entry-card {"{"} border-radius: 24px; {"}"}</s-paragraph>
+                <s-text-area label="Custom CSS" rows={12} placeholder=".entry-card { border-radius: 24px; }" value={quiz.widgetCss || ""} onInput={event => { const widgetCss = event.currentTarget.value; setQuiz(current => ({ ...current, widgetCss })); }} />
+                <s-stack direction="inline" gap="base">
+                  <s-button variant="primary" loading={pending} onClick={save}>Save CSS</s-button>
+                  <s-button disabled={!quiz.widgetCss} onClick={() => setQuiz(current => ({ ...current, widgetCss: "" }))}>Reset to default</s-button>
+                </s-stack>
               </s-stack>
             </s-section> : null}
-            {tab === "settings" && enabledPaths.includes("scan") ? <s-section heading="AI Skin Scan provider setup">
-              <s-stack gap="base">
-                <s-banner heading="Provider integration pending">Save your provider details here. Real analysis needs a provider-specific integration; saving these fields does not activate scanning.</s-banner>
-                <s-paragraph><s-text type="strong">Required for the planned OpenAI integration: an OpenAI API key.</s-text> Create a project API key in the OpenAI dashboard and set OPENAI_API_KEY on your server.</s-paragraph>
-                <s-link href="https://platform.openai.com/api-keys" target="_blank">Create an OpenAI API key</s-link>
-                <s-paragraph color="subdued">The OpenAI scan integration is still pending. Adding a key alone does not activate real analysis.</s-paragraph>
-                <s-text-field label="Provider name" placeholder="Your skin-analysis provider" value={quiz.scanIntegration?.provider || ""} onInput={event => { const provider = event.currentTarget.value; setQuiz(current => ({ ...current, scanIntegration: { endpoint: "", documentation: "", ...current.scanIntegration, provider } })); }} />
-                <s-text-field label="API endpoint" placeholder="https://api.example.com/analyze" details="Do not include API keys or other secrets in this URL." value={quiz.scanIntegration?.endpoint || ""} onInput={event => { const endpoint = event.currentTarget.value; setQuiz(current => ({ ...current, scanIntegration: { provider: "", documentation: "", ...current.scanIntegration, endpoint } })); }} />
-                <s-text-field label="API documentation URL" placeholder="https://example.com/docs" value={quiz.scanIntegration?.documentation || ""} onInput={event => { const documentation = event.currentTarget.value; setQuiz(current => ({ ...current, scanIntegration: { provider: "", endpoint: "", ...current.scanIntegration, documentation } })); }} />
-                <s-badge tone={scanKeyPresent ? "success" : "warning"}>{scanKeyPresent ? "OpenAI API key present" : "OpenAI API key missing"}</s-badge>
-                <s-grid gridTemplateColumns="minmax(0, 1fr) auto auto" gap="small" alignItems="end">
-                  {showApiKey ? <s-text-field label="OpenAI API key (temporary)" value={apiKeyDraft} onInput={event => { setApiKeyDraft(event.currentTarget.value); setKeyCopyStatus(""); }} /> : <s-password-field label="OpenAI API key (temporary)" value={apiKeyDraft} onInput={event => { setApiKeyDraft(event.currentTarget.value); setKeyCopyStatus(""); }} />}
-                  <s-button icon={showApiKey ? "hide" : "view"} accessibilityLabel={showApiKey ? "Hide API key" : "Show API key"} onClick={() => setShowApiKey(current => !current)} />
-                  <s-button icon="clipboard" accessibilityLabel="Copy API key" disabled={!apiKeyDraft} onClick={async () => {
-                    try { await navigator.clipboard.writeText(apiKeyDraft); setKeyCopyStatus("API key copied."); }
-                    catch { setKeyCopyStatus("Copy failed. Use Show API key and copy manually."); }
-                  }} />
-                </s-grid>
-                {keyCopyStatus ? <s-text color="subdued">{keyCopyStatus}</s-text> : null}
-                <s-paragraph color="subdued">This temporary field helps you copy a new key to your server configuration. It is not saved or connected by Save provider settings. Clear it after copying.</s-paragraph>
-                <s-stack direction="inline"><s-button variant="tertiary" disabled={!apiKeyDraft} onClick={() => { setApiKeyDraft(""); setShowApiKey(false); setKeyCopyStatus(""); }}>Clear key</s-button></s-stack>
-                <s-paragraph>OPENAI_API_KEY is checked on the server. The secret is never displayed here. Key presence does not verify the connection.</s-paragraph>
-                <s-stack direction="inline" justifyContent="end"><s-button variant="primary" loading={pending} onClick={save}>Save provider settings</s-button></s-stack>
-              </s-stack>
+            {tab === "settings" && enabledPaths.includes("scan") ? <s-section heading="AI Skin Scan provider">
+              <s-paragraph>Provider configuration is shared across all quizzes in this store.</s-paragraph>
+              <s-link href="/app/settings">Open Global Settings</s-link>
             </s-section> : null}
             {tab === "branching" ? <s-section heading="Quiz flow">
               <s-stack gap="base">
@@ -425,6 +426,12 @@ export default function QuizEditor({
               </s-stack>
             </s-section> : null}
             {tab === "products" ? <>
+              {productsError ? <s-banner tone="warning" heading="Products could not be loaded">Refresh the page to try again. Existing mappings are kept.</s-banner> : null}
+              <s-modal id="delete-mappings-modal" heading="Delete product mappings?">
+                <s-paragraph>{`${pickedRows.length} selected ${pickedRows.length === 1 ? "mapping" : "mappings"} will be removed and the change is saved right away.`}</s-paragraph>
+                <s-button slot="primary-action" variant="primary" tone="critical" commandFor="delete-mappings-modal" command="--hide" onClick={() => deleteMappings(pickedRows)}>Delete</s-button>
+                <s-button slot="secondary-actions" commandFor="delete-mappings-modal" command="--hide">Cancel</s-button>
+              </s-modal>
               {mappingDraft?.id ? <s-modal ref={mappingModal} id="edit-content-mapping" heading="Edit product mapping" onAfterHide={() => setMappingDraft(current => current?.id ? null : current)}>
                 <MappingEditor key={mappingDraft.id} draft={mappingDraft} products={products} tags={selectableTags(quiz, products)} onChange={setMappingDraft} onSave={commitMapping} onCancel={() => setMappingDraft(null)} pending={pending} compact />
                 <s-button slot="primary-action" variant="primary" loading={pending} disabled={!mappingDraft.tags.length || !mappingDraft.productHandle} onClick={commitMapping}>Save mapping</s-button>

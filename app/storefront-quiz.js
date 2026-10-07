@@ -18,12 +18,15 @@
     var captured = null;
     var reportId = null;
     var reportLocked = false;
+    var submitting = false;
+    var lastFocus = null;
 
     function q(sel) { return root.querySelector(sel); }
 
-    function go(name) {
+    function go(name, fromUser) {
       if (quiz && quiz.layout === "single" && (name === "entry" || name === "deep" || name === "scanner")) name = quiz.singleFlow || "quick";
       if (quiz && quiz.layout === "scan" && (name === "entry" || name === "deep" || name === "quick")) name = "scanner";
+      if (name === "scanner" && quiz && quiz.scanReady !== true) return;
       var screens = root.querySelectorAll(".screen");
       for (var i = 0; i < screens.length; i++) screens[i].classList.remove("active");
       var target = q('[data-screen="' + name + '"]');
@@ -32,7 +35,13 @@
       if (name === "scanner") selectMode(scanMode);
       if (name === "quick") resetQuick();
       if (name === "deep") resetDeep();
-      window.scrollTo(0, 0);
+      // Only move the page when the shopper navigates, never on load (blocks may sit below the fold).
+      if (fromUser && target) {
+        var rect = root.getBoundingClientRect();
+        if (rect.top < 0 || rect.top > window.innerHeight * 0.5) root.scrollIntoView({ block: "start" });
+        var heading = target.querySelector(".hdr-title, .rh-dosha");
+        if (heading) { heading.setAttribute("tabindex", "-1"); heading.focus({ preventScroll: true }); }
+      }
     }
 
     var quizCode = (root.getAttribute("data-quiz-code") || "").replace(/^\[dosha-quiz:([^\]]+)\]$/i, "$1").trim();
@@ -41,13 +50,19 @@
 
       if (quiz) return Promise.resolve(quiz);
       return fetch(PROXY + "/quiz?code=" + encodeURIComponent(quizCode) + "&layout=" + encodeURIComponent(root.getAttribute("data-block-layout") || ""), { headers: { Accept: "application/json" } })
-        .then(function (res) { return res.json().then(function (body) { if (!res.ok) throw new Error(body.error || "Could not load quiz."); return body; }); })
+        .then(function (res) { return res.json().catch(function () { return {}; }).then(function (body) { if (!res.ok || !body) throw new Error((body && body.error) || "Could not load quiz."); return body; }); })
         .then(function (data) { quiz = data; if (data.handle) quizCode = data.handle; return quiz; });
     }
 
-    function showError(message) {
-      var area = q("[data-deep-area]") || q("[data-scan-status]");
+    function showError(message, path) {
+      var screen = q('[data-screen="' + (path === "scan" ? "scanner" : path || "quick") + '"]') || q(".screen.active");
+      var area = path === "scan" ? q("[data-scan-status]") : screen && screen.querySelector("[data-quiz-error]");
       if (area) area.textContent = message;
+    }
+
+    function clearErrors() {
+      var areas = root.querySelectorAll("[data-quiz-error]");
+      for (var i = 0; i < areas.length; i++) areas[i].textContent = "";
     }
 
     function paintResult(data) {
@@ -55,7 +70,7 @@
       var profile = result.profile;
       reportId = result.reportId || null;
       reportLocked = Boolean(result.locked);
-      if (!profile) return;
+      if (!profile) { showError("Could not show your result. Please try again.", source === "Deep Dosha" ? "deep" : "quick"); return; }
       doshaKey = result.dosha || doshaKey;
       source = result.source || source;
       modalKey = profile.modal || "tridoshic";
@@ -65,7 +80,7 @@
       q("[data-dosha-sub]").textContent = profile.sub;
       q("[data-dosha-essence]").textContent = profile.essence;
       q("[data-dosha-source]").textContent = "via " + source;
-      q("[data-insight]").innerHTML = result.insight || profile.insight;
+      q("[data-insight]").innerHTML = safeHtml(result.insight || profile.insight);
       var learn = q("[data-open-modal]");
       if (learn) learn.textContent = "Explore your full " + profile.name + " guide →";
       var markers = q("[data-markers]");
@@ -99,7 +114,7 @@
         var guideBody = activeGuide.querySelector(".modal-body");
         if (guideTitle) guideTitle.textContent = profile.name;
         if (guideSub) guideSub.textContent = profile.sub;
-        if (guideBody) guideBody.innerHTML = result.insight || profile.insight;
+        if (guideBody) guideBody.innerHTML = safeHtml(result.insight || profile.insight);
         var extraSections = activeGuide.querySelectorAll(".modal-section");
         for (var sectionIndex = 1; sectionIndex < extraSections.length; sectionIndex++) extraSections[sectionIndex].style.display = "none";
       }
@@ -112,7 +127,11 @@
       }
       var breakdown = q("[data-percentage-breakdown]");
       if (!breakdown) { breakdown = document.createElement("div"); breakdown.setAttribute("data-percentage-breakdown", ""); q("[data-dosha-source]").parentNode.appendChild(breakdown); }
-      breakdown.textContent = result.percentages ? Object.keys(result.percentages).map(function (key) { return key + ": " + result.percentages[key] + "%"; }).join(" / ") : "";
+      breakdown.className = "dosha-breakdown";
+      breakdown.innerHTML = result.percentages ? Object.keys(result.percentages).map(function (key) {
+        var value = Math.max(0, Math.min(100, Number(result.percentages[key]) || 0));
+        return '<div class="db-row"><span class="db-name">' + esc(key) + '</span><span class="db-bar" role="img" aria-label="' + esc(key) + " " + value + '%"><span class="db-fill" style="width:' + value + '%"></span></span><span class="db-val">' + value + "%</span></div>";
+      }).join("") : "";
       var nudge = q("[data-upgrade]");
       if (nudge) nudge.style.display = result.showUpgrade && (!quiz.enabledPaths || quiz.enabledPaths.indexOf("deep") !== -1) ? "block" : "none";
       var email = q("[data-email]");
@@ -122,41 +141,119 @@
       var box = q("[data-products]");
       if (box) {
         box.innerHTML = (result.products || []).map(function (product) {
-          var img = product.image ? '<img src="' + product.image + '" alt="">' : '<span class="no-img">✦</span>';
-          return '<div class="product-card"><div class="pc-img">' + img + '</div><div class="pc-body"><div class="pc-name">' + product.title + '</div>' + (product.why ? '<div class="pc-why">' + product.why + '</div>' : '') + '<div class="pc-bottom"><span class="pc-price">' + (product.price || '') + '</span><a class="btn-shop" href="/products/' + product.handle + (product.variantId ? '?variant=' + encodeURIComponent(product.variantId.split('/').pop()) : '') + '">Shop Now →</a></div></div></div>';
+          var img = product.image ? '<img src="' + esc(product.image) + '" alt="" loading="lazy">' : '<span class="no-img" aria-hidden="true">✦</span>';
+          var href = "/products/" + encodeURIComponent(product.handle || "") + (product.variantId ? "?variant=" + encodeURIComponent(String(product.variantId).split("/").pop()) : "");
+          return '<div class="product-card"><div class="pc-img">' + img + '</div><div class="pc-body"><div class="pc-name">' + esc(product.title) + "</div>" + (product.why ? '<div class="pc-why">' + esc(product.why) + "</div>" : "") + '<div class="pc-bottom"><span class="pc-price">' + esc(product.price) + '</span><a class="btn-shop" href="' + esc(href) + '" aria-label="Shop ' + esc(product.title) + '">Shop Now →</a></div></div></div>';
         }).join("");
         if (!result.products || !result.products.length) box.textContent = "No matching products are available for this result yet.";
       }
-      go("result");
+      var resultScreen = q('[data-screen="result"]');
+      if (!resultScreen || !resultScreen.classList.contains("active")) go("result", true);
     }
 
+    function setSubmitting(state) {
+      submitting = state;
+      var buttons = root.querySelectorAll("[data-quick-next], [data-deep-next]");
+      for (var i = 0; i < buttons.length; i++) {
+        buttons[i].setAttribute("aria-busy", state ? "true" : "false");
+        buttons[i].classList.toggle("busy", state);
+      }
+    }
+
+    var pendingEmailPayload = null;
+    function submitWithEmail(payload) {
+      if (!quiz.emailCapture || !quiz.emailCapture.enabled) return submit(payload);
+      pendingEmailPayload = payload;
+      var screen = q('[data-screen="email-capture"]');
+      if (!screen) {
+        screen = document.createElement("div"); screen.className = "screen"; screen.setAttribute("data-screen", "email-capture");
+        root.appendChild(screen);
+      }
+      screen.innerHTML = '<div class="q-step active"><h2>' + esc(quiz.emailCapture.heading) + '</h2><input type="email" data-capture-email placeholder="your@email.com" aria-label="Email address" autocomplete="email" style="width:100%;padding:14px;margin:16px 0"><button type="button" class="btn-entry" data-capture-submit>' + esc(quiz.emailCapture.button) + '</button>' + (quiz.emailCapture.allowSkip ? '<button type="button" data-capture-skip>Skip</button>' : '') + '<p data-capture-error role="alert"></p></div>';
+      go("email-capture", true);
+    }
+    root.addEventListener("click", function(event) {
+      if (event.target.closest("[data-capture-skip]")) { if (!submitting && pendingEmailPayload) submit(pendingEmailPayload); return; }
+      if (!event.target.closest("[data-capture-submit]") || submitting || !pendingEmailPayload) return;
+      var input = q("[data-capture-email]");
+      if (!input.value.trim() || !input.checkValidity()) { q("[data-capture-error]").textContent = "Enter a valid email address."; return; }
+      submit(Object.assign({}, pendingEmailPayload, {email: input.value.trim()}));
+    });
+
     function submit(payload) {
+      if (submitting) return Promise.resolve();
+      setSubmitting(true);
+      clearErrors();
       payload.code = quizCode;
+      var controller = new AbortController();
+      var requestTimer = setTimeout(function () { controller.abort(); }, payload.path === "scan" ? 40000 : 20000);
       return fetch(PROXY + "/result", {
         method: "POST",
         headers: { "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
+        signal: controller.signal
       }).then(function (res) {
-        return res.json().then(function (body) { if (!res.ok) throw new Error(body.error || "Quiz service unavailable."); return body; });
+        return res.json().catch(function () { return {}; }).then(function (body) { if (!res.ok) throw new Error(body.error || "Quiz service unavailable. Please try again."); if (!body.result) throw new Error(body.error || "The server returned no result. Please try again."); return body; });
       }).then(paintResult).catch(function (error) {
+        if (error.name === "AbortError") error = new Error("Analysis took too long. Check your connection and try again with a smaller photo.");
+        var captureError = q('[data-screen="email-capture"].active [data-capture-error]');
+        if (captureError) captureError.textContent = error.message;
         var status = q("[data-scan-status]");
-        if (payload.path === "scan" && status) status.textContent = error.message;
-        else showError(error.message);
-      });
+        if (payload.path === "scan" && status) { status.textContent = error.message; showError(error.message || "Skin analysis failed. Please try again.", "scan"); }
+        else showError(error.message || "Something went wrong. Please try again.", payload.path);
+      }).finally(function () { clearTimeout(requestTimer); setSubmitting(false); });
     }
 
     function esc(value) {
-      return String(value || "").replace(/[&<>"]/g, function (ch) {
-        return ch === "&" ? "&amp;" : ch === "<" ? "&lt;" : ch === ">" ? "&gt;" : "&quot;";
+      return String(value == null ? "" : value).replace(/[&<>"']/g, function (ch) {
+        return ch === "&" ? "&amp;" : ch === "<" ? "&lt;" : ch === ">" ? "&gt;" : ch === '"' ? "&quot;" : "&#39;";
       });
+    }
+
+    // Result copy may use simple emphasis; every other tag is shown as text.
+    function safeHtml(value) {
+      return esc(value).replace(/&lt;(\/?)(em|strong|b|i|br)\s*\/?&gt;/gi, "<$1$2>");
     }
 
     function optHtml(options, selected, attr) {
       var html = "";
       for (var i = 0; i < options.length; i++) {
-        html += '<div class="q-opt' + (selected === i ? " selected" : "") + '" role="button" tabindex="0" ' + attr + '="' + i + '"><div class="q-opt-dot"></div><div class="q-opt-text"><div class="q-opt-main">' + esc(options[i].label) + '</div><div class="q-opt-hint">' + esc(options[i].hint) + '</div></div></div>';
+        var focusable = selected === i || (selected === undefined && i === 0);
+        html += '<div class="q-opt' + (selected === i ? " selected" : "") + '" role="radio" aria-checked="' + (selected === i) + '" tabindex="' + (focusable ? 0 : -1) + '" ' + attr + '="' + i + '"><div class="q-opt-dot" aria-hidden="true"></div><div class="q-opt-text"><div class="q-opt-main">' + esc(options[i].label) + "</div>" + (options[i].hint ? '<div class="q-opt-hint">' + esc(options[i].hint) + "</div>" : "") + "</div></div>";
       }
       return html;
+    }
+
+    function questionHtml(question, selected, attr, id) {
+      return '<div class="q-step active">' + (question.image ? '<img class="q-image" src="' + esc(question.image) + '" alt="" loading="lazy">' : "") + '<div class="q-text" id="' + id + '">' + esc(question.text) + "</div>" + (question.sub ? '<div class="q-sub">' + esc(question.sub) + "</div>" : "") + '<div class="q-options" role="radiogroup" aria-labelledby="' + id + '">' + optHtml(question.options, selected, attr) + "</div></div>";
+    }
+
+    function markSelected(option, attr) {
+      var all = root.querySelectorAll("[" + attr + "]");
+      for (var i = 0; i < all.length; i++) {
+        var on = all[i] === option;
+        all[i].classList.toggle("selected", on);
+        all[i].setAttribute("aria-checked", on ? "true" : "false");
+        all[i].setAttribute("tabindex", on ? "0" : "-1");
+      }
+    }
+
+    function setNext(button, ready, label) {
+      if (!button) return;
+      button.classList.toggle("ready", ready);
+      button.setAttribute("aria-disabled", ready ? "false" : "true");
+      if (label) button.textContent = label + " →";
+    }
+
+    function setProgress(fill, step, total) {
+      if (!fill) return;
+      fill.style.width = Math.round((step / total) * 100) + "%";
+      var bar = fill.parentNode;
+      bar.setAttribute("role", "progressbar");
+      bar.setAttribute("aria-valuemin", "0");
+      bar.setAttribute("aria-valuemax", String(total));
+      bar.setAttribute("aria-valuenow", String(step));
+      bar.setAttribute("aria-label", "Question " + step + " of " + total);
     }
 
     function resetQuick() {
@@ -176,12 +273,11 @@
       }
       var question = quiz.quick[quickStep];
       var total = quiz.quick.length;
-      if (q("[data-quick-fill]")) q("[data-quick-fill]").style.width = Math.round(((quickStep + 1) / total) * 100) + "%";
+      setProgress(q("[data-quick-fill]"), quickStep + 1, total);
       if (q("[data-quick-count]")) q("[data-quick-count]").textContent = (quickStep + 1) + " of " + total;
       if (q("[data-quick-phase]")) q("[data-quick-phase]").textContent = question.phase || "";
-      area.innerHTML = '<div class="q-step active"><div class="q-text">' + esc(question.text) + '</div><div class="q-sub">' + esc(question.sub) + '</div><div class="q-options">' + optHtml(question.options, quickAnswers[quickStep], "data-quick-opt") + "</div></div>";
-      var next = q("[data-quick-next]");
-      if (next) next.classList.toggle("ready", quickAnswers[quickStep] !== undefined);
+      area.innerHTML = questionHtml(question, quickAnswers[quickStep], "data-quick-opt", root.id + "-quick-q");
+      setNext(q("[data-quick-next]"), quickAnswers[quickStep] !== undefined, question.continueLabel || (quickStep === total - 1 ? "See my result" : "Continue"));
       var back = q("[data-quick-back]");
       if (back) back.style.visibility = quickStep === 0 ? "hidden" : "visible";
     }
@@ -193,15 +289,14 @@
         return;
       }
       var question = quiz.deep[deepStep];
-      var fill = q("[data-deep-fill]");
-      if (fill) fill.style.width = Math.round(((deepStep + 1) / quiz.deep.length) * 100) + "%";
+      if (!question) { area.textContent = "This quiz has no questions yet."; return; }
+      setProgress(q("[data-deep-fill]"), deepStep + 1, quiz.deep.length);
       if (q("[data-deep-count]")) q("[data-deep-count]").textContent = (deepStep + 1) + " of " + quiz.deep.length;
       if (q("[data-deep-phase]")) q("[data-deep-phase]").textContent = question.phase;
       var pills = root.querySelectorAll("[data-layer]");
       for (var i = 0; i < pills.length; i++) pills[i].classList.toggle("active", String(question.layer) === pills[i].getAttribute("data-layer"));
-      area.innerHTML = '<div class="q-step active"><div class="q-text">' + esc(question.text) + '</div><div class="q-sub">' + esc(question.sub) + '</div><div class="q-options">' + optHtml(question.options, deepAnswers[deepStep], "data-deep-opt") + "</div></div>";
-      var next = q("[data-deep-next]");
-      if (next) next.classList.toggle("ready", deepAnswers[deepStep] !== undefined);
+      area.innerHTML = questionHtml(question, deepAnswers[deepStep], "data-deep-opt", root.id + "-deep-q");
+      setNext(q("[data-deep-next]"), deepAnswers[deepStep] !== undefined, question.continueLabel || (deepStep === quiz.deep.length - 1 ? "See my result" : "Continue"));
       var back = q("[data-deep-back]");
       if (back) back.style.visibility = deepStep === 0 ? "hidden" : "visible";
     }
@@ -210,10 +305,18 @@
       deepStep = 0;
       deepAnswers = {};
       loadQuiz().then(renderDeep).catch(function () {
-        showError("Could not load the quiz. Refresh this page.");
+        var area = q("[data-deep-area]");
+        if (area) area.textContent = "Could not load the quiz. Refresh this page.";
       });
     }
 
+    function consentGiven() {
+      var bio = q("[data-consent='biometric']");
+      var age = q("[data-consent='age']");
+      return Boolean(bio && bio.checked && age && age.checked);
+    }
+
+    // The camera turns on only after the shopper accepts the required consents.
     function selectMode(mode) {
       if (quiz && quiz.scanner) {
         if (mode === "camera" && !quiz.scanner.camera) mode = "upload";
@@ -230,8 +333,9 @@
       if (upload) upload.classList.toggle("hidden", mode !== "upload");
       var status = q("[data-scan-status]");
       if (status) status.textContent = mode === "camera" ? "Position your face in the frame and hold still" : "Upload a clear selfie in good lighting";
-      if (mode === "camera") startCamera();
-      else stopCamera();
+      if (mode === "camera" && consentGiven()) startCamera();
+      else if (mode === "camera" && status) status.textContent = "Accept the consents below to turn on the camera";
+      if (mode !== "camera") stopCamera();
     }
 
     function startCamera() {
@@ -266,7 +370,7 @@
       var origin = event.target.closest ? event.target : null;
       if (!origin) return;
       var goto = origin.closest("[data-goto]");
-      if (goto) { go(goto.getAttribute("data-goto")); return; }
+      if (goto) { go(goto.getAttribute("data-goto"), true); return; }
       var mode = origin.closest("[data-mode]");
       if (mode) { selectMode(mode.getAttribute("data-mode")); return; }
       if (origin.closest("[data-upload-zone]")) { var file = q("[data-file]"); if (file) file.click(); return; }
@@ -274,7 +378,8 @@
       var quickOpt = origin.closest("[data-quick-opt]");
       if (quickOpt) {
         quickAnswers[quickStep] = parseInt(quickOpt.getAttribute("data-quick-opt"), 10);
-        renderQuick();
+        markSelected(quickOpt, "data-quick-opt");
+        setNext(q("[data-quick-next]"), true);
         return;
       }
       if (origin.closest("[data-quick-back]")) {
@@ -284,55 +389,103 @@
         return;
       }
       if (origin.closest("[data-quick-next]")) {
-        if (quickAnswers[quickStep] === undefined || !quiz) return;
+        if (quickAnswers[quickStep] === undefined || !quiz || submitting) return;
+        clearErrors();
         if (quickStep < quiz.quick.length - 1) {
           quickStep++;
           renderQuick();
         } else {
-          submit({ path: "quick", answers: quickAnswers });
+          submitWithEmail({ path: "quick", answers: quickAnswers });
         }
         return;
       }
       var deepOpt = origin.closest("[data-deep-opt]");
       if (deepOpt) {
         deepAnswers[deepStep] = parseInt(deepOpt.getAttribute("data-deep-opt"), 10);
-        var all = root.querySelectorAll("[data-deep-opt]");
-        for (var d = 0; d < all.length; d++) all[d].classList.remove("selected");
-        deepOpt.classList.add("selected");
-        q("[data-deep-next]").classList.add("ready");
+        markSelected(deepOpt, "data-deep-opt");
+        setNext(q("[data-deep-next]"), true);
         return;
       }
       if (origin.closest("[data-deep-back]")) {
-        if (deepStep === 0) { go("entry"); return; }
+        if (deepStep === 0) { go("entry", true); return; }
         deepStep--;
         renderDeep();
         return;
       }
       if (origin.closest("[data-deep-next]")) {
-        if (deepAnswers[deepStep] === undefined || !quiz) return;
+        if (deepAnswers[deepStep] === undefined || !quiz || submitting) return;
+        clearErrors();
         if (deepStep < quiz.deep.length - 1) { deepStep++; renderDeep(); }
         else {
           var answers = [];
           for (var n = 0; n < quiz.deep.length; n++) answers.push(deepAnswers[n]);
-          submit({ path: "deep", answers: answers });
+          submitWithEmail({ path: "deep", answers: answers });
         }
         return;
       }
       if (origin.closest("[data-open-modal]")) {
         if (reportLocked) return;
-        var modal = q('[data-modal="' + modalKey + '"]');
-        if (modal) modal.classList.add("active");
+        openModal(q('[data-modal="' + modalKey + '"]'), origin.closest("[data-open-modal]"));
         return;
       }
       if (origin.closest("[data-close-modal]") || origin.classList.contains("modal-overlay")) {
-        var modals = root.querySelectorAll(".modal-overlay");
-        for (var m = 0; m < modals.length; m++) modals[m].classList.remove("active");
+        closeModals();
         return;
       }
       if (origin.closest("[data-save-email]")) saveEmail();
     });
 
+    function openModal(modal, trigger) {
+      if (!modal) return;
+      lastFocus = trigger || document.activeElement;
+      modal.classList.add("active");
+      var close = modal.querySelector("[data-close-modal]");
+      if (close) close.focus();
+    }
+
+    function closeModals() {
+      var modals = root.querySelectorAll(".modal-overlay.active");
+      if (!modals.length) return;
+      for (var m = 0; m < modals.length; m++) modals[m].classList.remove("active");
+      if (lastFocus && lastFocus.focus) lastFocus.focus();
+      lastFocus = null;
+    }
+
+    // Keyboard support: Enter/Space activate cards and answers, arrows move between answers, Escape closes the guide.
+    root.addEventListener("keydown", function (event) {
+      var key = event.key;
+      if (key === "Escape") { closeModals(); return; }
+      var target = event.target;
+      if (!target || !target.closest) return;
+      var activeModal = target.closest(".modal-overlay.active");
+      if (key === "Tab" && activeModal) {
+        var focusables = activeModal.querySelectorAll("button, a[href], [tabindex='0']");
+        if (focusables.length) {
+          var first = focusables[0];
+          var last = focusables[focusables.length - 1];
+          if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+          else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+        }
+        return;
+      }
+      var option = target.closest("[role='radio']");
+      if (option && (key === "ArrowDown" || key === "ArrowRight" || key === "ArrowUp" || key === "ArrowLeft")) {
+        event.preventDefault();
+        var group = option.parentNode.querySelectorAll("[role='radio']");
+        var at = Array.prototype.indexOf.call(group, option);
+        var nextOption = group[(at + (key === "ArrowDown" || key === "ArrowRight" ? 1 : group.length - 1)) % group.length];
+        nextOption.focus();
+        nextOption.click();
+        return;
+      }
+      if ((key === "Enter" || key === " ") && (option || (target.matches && target.matches(".entry-card")))) {
+        event.preventDefault();
+        target.click();
+      }
+    });
+
     function runScan() {
+      if (submitting) return;
       var bio = q("[data-consent='biometric']");
       var age = q("[data-consent='age']");
       var err = q("[data-consent-error]");
@@ -361,8 +514,13 @@
       }
       var overlay = q("[data-analyzing]");
       if (overlay) overlay.classList.add("active");
-      submit({ path: "scan", image: captured, consent: true }).finally(function () {
+      submit({ path: "scan", image: captured, consent: true, adult: true }).finally(function () {
         captured = null;
+        stopCamera();
+        var preview = q("[data-upload-preview]");
+        if (preview) { preview.removeAttribute("src"); preview.style.display = "none"; }
+        var fileInput = q("[data-upload-input]");
+        if (fileInput) fileInput.value = "";
         if (overlay) overlay.classList.remove("active");
       });
     }
@@ -382,6 +540,10 @@
         .catch(function (error) { confirm.textContent = error.message; confirm.classList.add("show"); })
         .finally(function () { button.disabled = false; });
     }
+    root.addEventListener("change", function (event) {
+      if (event.target && event.target.matches && event.target.matches("[data-consent]") && scanMode === "camera" && consentGiven()) selectMode("camera");
+    });
+
     var fileInput = q("[data-file]");
     if (fileInput) {
       fileInput.addEventListener("change", function (event) {
@@ -406,11 +568,24 @@
     }
     loadQuiz().then(function (data) {
       var expectedLayout = root.getAttribute("data-block-layout");
-      if (expectedLayout && expectedLayout !== (data.layout || "three")) throw new Error("Paste the widget code of a " + (expectedLayout === "single" ? "Single Quiz" : expectedLayout === "scan" ? "scan" : "Combined Quiz") + " from the app Blocks page.");
+      if (expectedLayout && expectedLayout !== (data.layout || "three")) throw new Error("Paste the widget code of a " + (expectedLayout === "single" ? "Single Quiz" : expectedLayout === "scan" ? "scan" : "Combined Quiz") + " from All quizzes in the app.");
       root.setAttribute("data-configured", "true");
+      var quickCount = (data.quick || []).length;
+      var deepCount = (data.deep || []).length;
+      var minutes = function (count, seconds) { return Math.max(1, Math.round(count * seconds / 60)); };
+      var plural = function (count) { return count + (count === 1 ? " question" : " questions"); };
+      var copy = {
+        "[data-quick-desc]": plural(quickCount) + " about your skin. Instant ritual match — no camera needed.",
+        "[data-quick-time]": "✦ About " + minutes(quickCount, 20) + " min",
+        "[data-quick-sub]": plural(quickCount) + ". Your personal ritual.",
+        "[data-deep-desc]": plural(deepCount) + " across constitution, current state, and environment. The full Ayurvedic reading.",
+        "[data-deep-time]": "✦ About " + minutes(deepCount, 15) + " min"
+      };
+      Object.keys(copy).forEach(function (selector) { var node = q(selector); if (node) node.textContent = copy[selector]; });
       if (data.widgetCss) {
         var widgetStyle = document.createElement("style");
-        widgetStyle.textContent = "@scope (#" + CSS.escape(root.id) + ") {" + data.widgetCss + "}";
+        // Nesting under :scope gives merchant rules like ".entry-card" the same weight as the defaults, and they load later, so they win.
+        widgetStyle.textContent = "@scope (#" + CSS.escape(root.id) + ") { :scope { " + data.widgetCss.replace(/\.prana-quiz\b/g, "&") + " } }";
         root.appendChild(widgetStyle);
       }
       if (data.design) {
@@ -422,24 +597,31 @@
         root.style.setProperty("--button-radius", design.radius === "pill" ? "999px" : design.radius === "square" ? "0px" : "8px");
         if (design.font === "sans") root.setAttribute("data-font", "sans");
       }
-      var scanner = data.scanner || { title: "AI Skin Scan", description: "Skin scan analysis is not configured. Try the question quiz.", camera: true, upload: true };
+      var scanReady = data.scanReady === true;
+      // Without a connected analysis provider a scan cannot produce a result, so it is never offered to shoppers.
+      if (!scanReady && data.layout === "scan") throw new Error("AI Skin Scan analysis is not connected yet, so this block stays hidden on your store. Use a question quiz block for now.");
+      var scanner = data.scanner || { title: "AI Skin Scan", description: "Camera or photo upload for visible cosmetic skin observations.", camera: true, upload: true };
       var scanCard = q('[data-goto="scanner"].entry-card');
       if (scanCard) {
         var title = scanCard.querySelector(".ec-name");
         var description = scanCard.querySelector(".ec-desc");
-        var badge = scanCard.querySelector(".ec-badge");
         if (title) title.textContent = scanner.title;
-        if (description) description.textContent = scanner.description;
-        if (badge) badge.textContent = "Setup required";
+        if (description) description.textContent = scanReady ? scanner.description : "AI Skin Scan setup is pending. The analysis provider is not connected yet.";
+        if (!scanReady) {
+          scanCard.setAttribute("aria-disabled", "true");
+          var scanLabel = scanCard.querySelector(".btn-entry");
+          if (scanLabel) { scanLabel.textContent = "Setup required"; scanLabel.disabled = true; }
+          var scanBadge = scanCard.querySelector(".ec-badge");
+          if (scanBadge) scanBadge.textContent = "SETUP REQUIRED";
+        }
       }
       var cameraButton = q('[data-mode="camera"]');
       var uploadButton = q('[data-mode="upload"]');
       if (cameraButton) cameraButton.style.display = scanner.camera ? "" : "none";
       if (uploadButton) uploadButton.style.display = scanner.upload ? "" : "none";
-      var scanAction = q("[data-scan]");
-      if (scanAction) { scanAction.disabled = true; scanAction.textContent = "Analysis provider not connected"; }
+
       scanMode = scanner.camera ? "camera" : "upload";
-      var enabledPaths = data.enabledPaths || (data.layout === "scan" ? ["scan"] : data.layout === "single" ? [data.singleFlow || "quick"] : ["quick", "deep", "scan"]);
+      var enabledPaths = (data.enabledPaths || (data.layout === "scan" ? ["scan"] : data.layout === "single" ? [data.singleFlow || "quick"] : ["quick", "deep", "scan"]));
       var pathNames = { quick: "quick", deep: "deep", scan: "scanner" };
       ["quick", "deep", "scan"].forEach(function (path) { if (enabledPaths.indexOf(path) === -1) { var links = root.querySelectorAll('[data-goto="' + pathNames[path] + '"]'); for (var at = 0; at < links.length; at++) links[at].style.display = "none"; } });
       if (data.layout === "scan") {
@@ -448,8 +630,43 @@
         for (var scanIndex = 0; scanIndex < quizLinks.length; scanIndex++) quizLinks[scanIndex].style.display = "none";
         go("scanner");
       }
+      if (scanReady && enabledPaths.indexOf("scan") !== -1 && !document.querySelector("[data-scan-chat-launcher]")) {
+        var launcher = document.createElement("button");
+        launcher.type = "button"; launcher.className = "prana-scan-launcher";
+        launcher.setAttribute("data-scan-chat-launcher", "");
+        launcher.setAttribute("aria-label", "Open skin scan assistant");
+        launcher.setAttribute("aria-expanded", "false");
+        launcher.textContent = "Skin Scan";
+        document.body.appendChild(launcher);
+        var close = document.createElement("button");
+        close.type = "button"; close.className = "scan-chat-close"; close.textContent = "Close";
+        close.setAttribute("aria-label", "Close skin scan assistant"); root.appendChild(close);
+        var previousOverflow = "";
+        function closeScanChat() {
+          if (!root.classList.contains("scan-chat-open")) return;
+          root.classList.remove("scan-chat-open"); root.removeAttribute("role"); root.removeAttribute("aria-modal"); root.removeAttribute("aria-label");
+          document.body.style.overflow = previousOverflow;
+          stopCamera(); launcher.setAttribute("aria-expanded", "false"); launcher.focus();
+        }
+        launcher.addEventListener("click", function () {
+          previousOverflow = document.body.style.overflow; document.body.style.overflow = "hidden";
+          root.classList.add("scan-chat-open"); root.setAttribute("role", "dialog"); root.setAttribute("aria-modal", "true"); root.setAttribute("aria-label", "Skin scan assistant");
+          launcher.setAttribute("aria-expanded", "true"); go("scanner", true); close.focus();
+        });
+        close.addEventListener("click", closeScanChat);
+        root.addEventListener("keydown", function(event) {
+          if (!root.classList.contains("scan-chat-open")) return;
+          if (event.key === "Escape") { closeScanChat(); return; }
+          if (event.key === "Tab") {
+            var controls = Array.prototype.filter.call(root.querySelectorAll('button, input, a[href], [tabindex="0"]'), function(node) { return !node.disabled && node.getClientRects().length; });
+            var first = controls[0], last = controls[controls.length - 1];
+            if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+            else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+          }
+        });
+      }
       var requestedScan = new URLSearchParams(window.location ? window.location.search : "").get("dosha_scan");
-      if (data.layout !== "single" && requestedScan === quizCode) go("scanner");
+      if (scanReady && data.layout !== "single" && requestedScan === quizCode) go("scanner");
       if (data.layout === "single") {
         root.setAttribute("data-quiz-layout", "single");
         var unavailable = root.querySelectorAll('[data-goto="' + (data.singleFlow === "deep" ? "quick" : "deep") + '"], [data-goto="scanner"], [data-upgrade]');
@@ -469,4 +686,6 @@
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
   else boot();
+  // The theme editor re-renders sections without a page load.
+  document.addEventListener("shopify:section:load", boot);
 })();

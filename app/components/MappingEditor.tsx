@@ -34,7 +34,7 @@ export default function MappingEditor({ draft, products, tags, onChange, onSave,
             {compact ? <s-stack direction="inline" gap="small">
               {draft.tags.map(tag => <s-clickable-chip key={tag} removable accessibilityLabel={`Remove ${tag}`} onRemove={() => onChange({ ...draft, tags: draft.tags.filter(value => value !== tag) })}>{tag}</s-clickable-chip>)}
             </s-stack> : null}
-            {compact ? <s-clickable accessibilityLabel="Select one or more tags" commandFor={`${id}-tags`} command="--toggle" border="base" borderRadius="base" padding="small" inlineSize="100%"><s-stack direction="inline" gap="small" alignItems="center"><s-icon type="search" /><s-text color="subdued">Select one or more tags</s-text></s-stack></s-clickable> : <s-button icon="search" commandFor={`${id}-tags`} command="--toggle" inlineSize="fill">Select one or more tags</s-button>}
+            <s-clickable accessibilityLabel="Select one or more tags" commandFor={`${id}-tags`} command="--toggle" border="base" borderRadius="base" padding="small" inlineSize="100%"><s-stack direction="inline" gap="small" alignItems="center" justifyContent="start"><s-icon type="search" /><s-text color="subdued">Select one or more tags</s-text></s-stack></s-clickable>
             <s-popover id={`${id}-tags`} inlineSize="300px">
               <s-box padding="base">
                 <s-stack gap="small">

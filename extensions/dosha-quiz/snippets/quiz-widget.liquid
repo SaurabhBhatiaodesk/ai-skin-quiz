@@ -11,24 +11,17 @@
   data-quiz-code="{{ block.settings.quiz_code | escape }}"
 >
   {% if request.design_mode %}<p data-widget-setup role="status">Create this quiz in the app, then paste its matching Shopify widget code here.</p>{% endif %}
-  <div class="analyzing-overlay" data-analyzing>
+  <div class="analyzing-overlay" data-analyzing role="status" aria-live="polite">
     <div class="analyzing-spinner"></div>
     <div class="analyzing-text" data-analyzing-text>Reading your skin's story…</div>
-    <div class="analyzing-markers">
-      <div class="am" data-am>Hydration</div>
-      <div class="am" data-am>Texture</div>
-      <div class="am" data-am>Pigmentation</div>
-      <div class="am" data-am>Radiance</div>
-      <div class="am" data-am>Elasticity</div>
-      <div class="am" data-am>Barrier</div>
-    </div>
+    <div class="analyzing-markers"><div class="am">Reviewing visible skin concerns</div><div class="am">Matching your ritual</div></div>
   </div>
 
   <div class="modal-overlay" data-modal="tridoshic">
-    <div class="dosha-modal modal-tridoshic">
+    <div class="dosha-modal modal-tridoshic" role="dialog" aria-modal="true" aria-labelledby="modal-tridoshic-{{ block.id }}">
       <div class="modal-handle"></div>
-      <button class="modal-close" type="button" data-close-modal aria-label="Close">✕</button>
-      <div class="modal-dosha-name gold-color">Tridoshic</div>
+      <button class="modal-close" type="button" data-close-modal aria-label="Close guide">✕</button>
+      <div class="modal-dosha-name gold-color" id="modal-tridoshic-{{ block.id }}">Tridoshic</div>
       <div class="modal-tagline">Vata · Pitta · Kapha — in rare balance</div>
       <div class="modal-section">
         <div class="modal-section-title gold-color">The rarest constitution</div>
@@ -47,10 +40,10 @@
   </div>
 
   <div class="modal-overlay" data-modal="vata">
-    <div class="dosha-modal modal-vata">
+    <div class="dosha-modal modal-vata" role="dialog" aria-modal="true" aria-labelledby="modal-vata-{{ block.id }}">
       <div class="modal-handle"></div>
-      <button class="modal-close" type="button" data-close-modal aria-label="Close">✕</button>
-      <div class="modal-dosha-name vata-color">Vata</div>
+      <button class="modal-close" type="button" data-close-modal aria-label="Close guide">✕</button>
+      <div class="modal-dosha-name vata-color" id="modal-vata-{{ block.id }}">Vata</div>
       <div class="modal-tagline">Air & Space — the energy of movement</div>
       <div class="modal-section">
         <div class="modal-section-title vata-color">Your skin's signature</div>
@@ -69,10 +62,10 @@
   </div>
 
   <div class="modal-overlay" data-modal="pitta">
-    <div class="dosha-modal modal-pitta">
+    <div class="dosha-modal modal-pitta" role="dialog" aria-modal="true" aria-labelledby="modal-pitta-{{ block.id }}">
       <div class="modal-handle"></div>
-      <button class="modal-close" type="button" data-close-modal aria-label="Close">✕</button>
-      <div class="modal-dosha-name pitta-color">Pitta</div>
+      <button class="modal-close" type="button" data-close-modal aria-label="Close guide">✕</button>
+      <div class="modal-dosha-name pitta-color" id="modal-pitta-{{ block.id }}">Pitta</div>
       <div class="modal-tagline">Fire & Water — the energy of transformation</div>
       <div class="modal-section">
         <div class="modal-section-title pitta-color">Your skin's signature</div>
@@ -91,10 +84,10 @@
   </div>
 
   <div class="modal-overlay" data-modal="kapha">
-    <div class="dosha-modal modal-kapha">
+    <div class="dosha-modal modal-kapha" role="dialog" aria-modal="true" aria-labelledby="modal-kapha-{{ block.id }}">
       <div class="modal-handle"></div>
-      <button class="modal-close" type="button" data-close-modal aria-label="Close">✕</button>
-      <div class="modal-dosha-name kapha-color">Kapha</div>
+      <button class="modal-close" type="button" data-close-modal aria-label="Close guide">✕</button>
+      <div class="modal-dosha-name kapha-color" id="modal-kapha-{{ block.id }}">Kapha</div>
       <div class="modal-tagline">Earth & Water — the energy of structure</div>
       <div class="modal-section">
         <div class="modal-section-title kapha-color">Your skin's signature</div>
@@ -115,7 +108,7 @@
   <div class="screen active" data-screen="entry">
     <div class="hdr">
       <div class="hdr-logo">{{ block.settings.brand_name | escape }}</div>
-      <h1 class="hdr-title">{{ block.settings.hero_title | escape }} <em>{{ block.settings.hero_accent | escape }}</em></h1>
+      <h2 class="hdr-title">{{ block.settings.hero_title | escape }} <em>{{ block.settings.hero_accent | escape }}</em></h2>
       <div class="hdr-sub">{{ block.settings.hero_subtitle | escape }}</div>
     </div>
     <div class="entry-cards">
@@ -130,15 +123,15 @@
       <div class="entry-card" data-goto="quick">
         <div class="ec-icon quick">⚡</div>
         <div class="ec-name">Quick Quiz</div>
-        <div class="ec-desc">Three questions about your skin. Instant ritual match — no camera needed.</div>
-        <div class="ec-time">✦ 60 seconds</div>
+        <div class="ec-desc" data-quick-desc>A few questions about your skin. Instant ritual match — no camera needed.</div>
+        <div class="ec-time" data-quick-time>✦ About 1 min</div>
         <button class="btn-entry ghost" type="button">Take Quiz</button>
       </div>
       <div class="entry-card" data-goto="deep">
         <div class="ec-icon deep">🌿</div>
         <div class="ec-name">Deep Dosha</div>
-        <div class="ec-desc">18 questions across constitution, current state, and environment. The full Ayurvedic reading.</div>
-        <div class="ec-time">✦ 5 minutes</div>
+        <div class="ec-desc" data-deep-desc>Questions across constitution, current state, and environment. The full Ayurvedic reading.</div>
+        <div class="ec-time" data-deep-time>✦ About 5 min</div>
         <button class="btn-entry ghost" type="button">Begin Reading</button>
       </div>
     </div>
@@ -149,10 +142,11 @@
     <button class="back-nav" type="button" data-goto="entry"><span class="back-arrow">←</span> Back</button>
     <div class="hdr" style="padding-top:1rem">
       <div class="hdr-logo">{{ block.settings.brand_name | escape }}</div>
-      <h1 class="hdr-title">AI <em>Skin Scan</em></h1>
+      <h2 class="hdr-title">AI <em>Skin Scan</em></h2>
       <div class="hdr-sub">Photo-based cosmetic observations, not a medical diagnosis</div>
     </div>
     <div class="scanner-wrap">
+      <div class="scan-chat-welcome"><strong>Let?s find your skin ritual.</strong><p>Take a clear photo in natural light, without filters. We?ll review visible cosmetic concerns and suggest matching products from this store.</p><span>1. Choose camera or upload ? 2. Give consent ? 3. See your recommendations</span></div>
       <div class="scanner-choice">
         <button class="sc-btn active" type="button" data-mode="camera">
           <div class="sc-btn-icon">📷</div>
@@ -192,7 +186,7 @@
       <input class="file-input" data-file type="file" accept="image/*" id="file-{{ block.id }}">
       <img class="upload-preview" data-upload-preview alt="Your uploaded photo" width="640" height="480">
 
-      <div class="scan-status" data-scan-status>Position your face in the frame and hold still</div>
+      <div class="scan-status" data-scan-status aria-live="polite">Position your face in the frame and hold still</div>
 
       <div class="consent-jurisdiction">
         <span class="cj-badge">BIPA consent</span>
@@ -202,14 +196,14 @@
 
       <div class="consent-notice">
         <div class="cn-icon">🔒</div>
-        <div class="cn-text"><strong>Your photo stays on this device.</strong> It is used only to run this reading in your browser, then discarded. It is not uploaded or stored.</div>
+        <div class="cn-text"><strong>Your photo is used only for this reading.</strong> It is sent to OpenAI for cosmetic observations. Our app does not save your photo; OpenAI data handling policies apply.</div>
       </div>
 
       <div class="consent-box">
         <div class="consent-row">
           <input class="consent-check" type="checkbox" id="consent-bio-{{ block.id }}" data-consent="biometric">
           <label class="consent-label" for="consent-bio-{{ block.id }}">
-            <strong>I provide written consent for real-time analysis of my facial image.</strong> I understand my photo will be used solely to assess skin characteristics and will not be stored, sold, or shared. <a href="{{ block.settings.privacy_url | escape }}" target="_blank" rel="noopener">Privacy Policy ↗</a>
+            <strong>I provide written consent for real-time analysis of my facial image.</strong> I consent to sending my photo to OpenAI for cosmetic skin observations. Our app does not save the photo; OpenAI data handling policies apply. <a href="{{ block.settings.privacy_url | escape }}" target="_blank" rel="noopener">Privacy Policy ↗</a>
           </label>
         </div>
         <div class="consent-row">
@@ -226,7 +220,7 @@
         </div>
       </div>
 
-      <div class="consent-error" data-consent-error>Please accept the required consents above before scanning.</div>
+      <div class="consent-error" data-consent-error role="alert">Please accept the required consents above before scanning.</div>
       <button class="btn-scan" type="button" data-scan>Analyse My Skin →</button>
     </div>
   </div>
@@ -235,18 +229,19 @@
     <button class="back-nav" type="button" data-goto="entry"><span class="back-arrow">←</span> Back</button>
     <div class="hdr" style="padding-top:1rem">
       <div class="hdr-logo">{{ block.settings.brand_name | escape }}</div>
-      <h1 class="hdr-title">Quick <em>Ritual Match</em></h1>
-      <div class="hdr-sub">Three questions. Your personal ritual.</div>
+      <h2 class="hdr-title">Quick <em>Ritual Match</em></h2>
+      <div class="hdr-sub" data-quick-sub>Your personal ritual.</div>
     </div>
     <div class="quiz-wrap">
       <div class="quiz-progress">
         <div class="qp-bar"><div class="qp-fill" data-quick-fill style="width:33%"></div></div>
-        <div class="qp-label"><span data-quick-phase>Skin type</span><span data-quick-count>1 of 3</span></div>
+        <div class="qp-label"><span data-quick-phase>Skin type</span><span data-quick-count></span></div>
       </div>
       <div data-quick-area></div>
+      <div class="q-error" data-quiz-error role="alert"></div>
       <div class="q-nav">
         <button class="btn-back" type="button" data-quick-back style="visibility:hidden">← Back</button>
-        <button class="btn-next" type="button" data-quick-next>Continue →</button>
+        <button class="btn-next" type="button" data-quick-next aria-disabled="true">Continue →</button>
       </div>
     </div>
   </div>
@@ -255,7 +250,7 @@
     <button class="back-nav" type="button" data-goto="entry"><span class="back-arrow">←</span> Back</button>
     <div class="hdr" style="padding-top:1rem">
       <div class="hdr-logo">{{ block.settings.brand_name | escape }}</div>
-      <h1 class="hdr-title">Dosha <em>Diagnostic</em></h1>
+      <h2 class="hdr-title">Dosha <em>Diagnostic</em></h2>
       <div class="hdr-sub">Three layers · Constitution · Current state · Environment</div>
     </div>
     <div class="quiz-wrap">
@@ -266,12 +261,13 @@
       </div>
       <div class="quiz-progress">
         <div class="qp-bar"><div class="qp-fill" data-deep-fill style="width:5%"></div></div>
-        <div class="qp-label"><span data-deep-phase>Prakriti · Your baseline nature</span><span data-deep-count>1 of 18</span></div>
+        <div class="qp-label"><span data-deep-phase>Prakriti · Your baseline nature</span><span data-deep-count></span></div>
       </div>
       <div data-deep-area></div>
+      <div class="q-error" data-quiz-error role="alert"></div>
       <div class="q-nav">
         <button class="btn-back" type="button" data-deep-back style="visibility:hidden">← Back</button>
-        <button class="btn-next" type="button" data-deep-next>Continue →</button>
+        <button class="btn-next" type="button" data-deep-next aria-disabled="true">Continue →</button>
       </div>
     </div>
   </div>
@@ -319,10 +315,11 @@
         <div class="eb-title">Save your ritual guide</div>
         <div class="eb-sub">Your complete dosha profile, ingredient allies, and seasonal updates — delivered to your inbox.</div>
         <div class="eb-row">
-          <input class="eb-input" type="email" placeholder="your@email.com" data-email autocomplete="email">
+          <label class="visually-hidden" for="email-{{ block.id }}">Email address</label>
+          <input class="eb-input" id="email-{{ block.id }}" type="email" placeholder="your@email.com" data-email autocomplete="email" aria-describedby="email-status-{{ block.id }}">
           <button class="btn-eb" type="button" data-save-email>Send →</button>
         </div>
-        <div class="eb-confirm" data-email-confirm>✓ Your ritual guide is on its way</div>
+        <div class="eb-confirm" data-email-confirm id="email-status-{{ block.id }}" aria-live="polite">✓ Your ritual guide is on its way</div>
       </div>
 
       <div class="retake-row">

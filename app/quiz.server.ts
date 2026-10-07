@@ -108,15 +108,6 @@ const PROFILES: Record<string, QuizProfile> = {
   },
 };
 
-const FALLBACK_PRODUCTS: Record<string, { title: string; price: string }> = {
-  "saffron-glow-serum": { title: "Saffron Glow Serum", price: "$89.00" },
-  "saffron-radiance-moisturizer": { title: "Saffron Radiance Moisturizer", price: "$72.00" },
-  "bakuchiol-night-serum": { title: "Bakuchiol Night Serum", price: "$79.00" },
-  "turmeric-sandalwood-mask": { title: "Turmeric & Sandalwood Mask", price: "$52.00" },
-  "rose-water-mist": { title: "Pure Rose Water Mist", price: "$35.00" },
-  "rose-jasmine-cleanser": { title: "Rose Jasmine Milk Cleanser", price: "$32.00" },
-};
-
 export const QUICK_QUESTIONS: QuickQuestion[] = [
   {
     phase: "Skin type",
@@ -245,6 +236,7 @@ function resultFromTags(tags: string[]) {
   });
   const ranked = Object.entries(counts).sort((a, b) => b[1] - a[1]);
   if (ranked[0][1] === 0) return "balanced";
+  if (ranked[0][1] === ranked[2][1]) return "balanced";
   if (ranked[0][1] === ranked[1][1]) {
     const pair = [ranked[0][0], ranked[1][0]].sort().join("-");
     if (pair === "pitta-vata") return "dual-vata-pitta";
@@ -285,7 +277,10 @@ function normalizeProfiles(value: unknown) {
   return profiles;
 }
 
-export function normalizeQuiz(input: unknown): StoredQuiz {
+// Drafts (new or not yet finished quizzes) may be stored without questions; saves from the editor are strict.
+const DEFAULT_CSS_MARKER = "/* AI Dosha Quiz — storefront styles.";
+
+export function normalizeQuiz(input: unknown, { draft = false }: { draft?: boolean } = {}): StoredQuiz {
   const source = input && typeof input === "object" ? (input as { layout?: unknown; quick?: unknown; deep?: unknown; profiles?: unknown; mappings?: unknown }) : {};
   const layout = source.layout === "scan" ? "scan" : source.layout === "single" ? "single" : "three";
   const options = input as StoredQuiz;
@@ -293,7 +288,16 @@ export function normalizeQuiz(input: unknown): StoredQuiz {
   const allowed = ["quick", "deep", "scan"] as const;
   const enabledPaths = layout === "scan" ? ["scan" as const] : layout === "single" ? [singleFlow] : Array.isArray(options?.enabledPaths) ? allowed.filter(path => options.enabledPaths!.includes(path)) : [...allowed];
   if (!enabledPaths.length || (layout === "three" && enabledPaths.length < 2)) throw new Error("Choose at least two paths for a combined quiz.");
-  const imageUrl = (value: unknown) => { if (typeof value !== "string" || !value.trim()) return ""; const url = new URL(value); if (url.protocol !== "https:") throw new Error("Use an HTTPS image URL."); return url.href.slice(0, 1500); };
+  const imageUrl = (value: unknown) => {
+    if (typeof value !== "string" || !value.trim()) return "";
+    let url: URL | null = null;
+    try { url = new URL(value); } catch { url = null; }
+    if (!url || url.protocol !== "https:") {
+      if (draft) return "";
+      throw new Error("Use an HTTPS image URL.");
+    }
+    return url.href.slice(0, 1500);
+  };
   const coverImage = imageUrl(options?.coverImage);
   const profileImage = imageUrl(options?.profileImage);
   const quick = (Array.isArray(source.quick) ? source.quick : []).slice(0, layout === "single" ? 40 : 12).flatMap((item) => {
@@ -328,10 +332,10 @@ export function normalizeQuiz(input: unknown): StoredQuiz {
     if (!text || options.length < 2) return [];
     return [{ layer, phase: clip(question.phase, 80) || "Question", text, sub: clip(question.sub, 240), options, ...uiFields(question) }];
   });
-  if (layout === "single" && !(singleFlow === "deep" ? deep.length : quick.length)) {
+  if (!draft && layout === "single" && !(singleFlow === "deep" ? deep.length : quick.length)) {
     throw new Error("Add at least one question with two answers.");
   }
-  if (layout === "three" && ((enabledPaths.includes("quick") && !quick.length) || (enabledPaths.includes("deep") && !deep.length))) {
+  if (!draft && layout === "three" && ((enabledPaths.includes("quick") && !quick.length) || (enabledPaths.includes("deep") && !deep.length))) {
     throw new Error("Add at least one quick question and one deep question, each with two answers.");
   }
   const scan = (input as StoredQuiz)?.scanner;
@@ -350,7 +354,7 @@ export function normalizeQuiz(input: unknown): StoredQuiz {
   }
   const design: NonNullable<StoredQuiz["design"]> = {
     background: color(suppliedDesign?.background, "#faf7f2"), text: color(suppliedDesign?.text, "#1a1208"),
-    accent: color(suppliedDesign?.accent, "#b07d3a"), buttonText: color(suppliedDesign?.buttonText, "#ffffff"),
+    accent: color(suppliedDesign?.accent, "#8f6330"), buttonText: color(suppliedDesign?.buttonText, "#ffffff"),
     font: suppliedDesign?.font === "sans" ? "sans" : "classic",
     radius: suppliedDesign?.radius === "square" ? "square" : suppliedDesign?.radius === "pill" ? "pill" : "rounded",
   };
@@ -363,9 +367,14 @@ export function normalizeQuiz(input: unknown): StoredQuiz {
       if (url.protocol !== "https:" || url.username || url.password) throw new Error("Use HTTPS URLs without embedded credentials.");
     }
   }
-  const widgetCss = (input as StoredQuiz)?.widgetCss;
-  if (widgetCss !== undefined && (typeof widgetCss !== "string" || widgetCss.length > 100000)) throw new Error("Widget CSS must be text under 100,000 characters.");
-  return { enabledPaths, singleFlow, coverImage, profileImage, widgetCss, layout, scanner, design, scanIntegration, quick: enabledPaths.includes("quick") ? quick : [], deep: enabledPaths.includes("deep") ? deep : [], profiles: normalizeProfiles(source.profiles), mappings: normalizeMappings(source.mappings) };
+  const suppliedCss = (input as StoredQuiz)?.widgetCss;
+  if (suppliedCss !== undefined && (typeof suppliedCss !== "string" || suppliedCss.length > 100000)) throw new Error("Widget CSS must be text under 100,000 characters.");
+  // Widget CSS holds custom overrides only. Older saves stored a full copy of the default stylesheet,
+  // which would freeze the widget on outdated styles, so those copies are dropped.
+  const widgetCss = typeof suppliedCss === "string" && !suppliedCss.trimStart().startsWith(DEFAULT_CSS_MARKER) ? suppliedCss : undefined;
+  const email = (input as StoredQuiz)?.emailCapture;
+  const emailCapture = { enabled: email?.enabled === true, heading: clip(email?.heading, 120) || "Where should we send your ritual?", button: clip(email?.button, 40) || "See my ritual", allowSkip: email?.allowSkip !== false };
+  return { emailCapture, enabledPaths, singleFlow, coverImage, profileImage, widgetCss, layout, scanner, design, scanIntegration, quick: enabledPaths.includes("quick") ? quick : [], deep: enabledPaths.includes("deep") ? deep : [], profiles: normalizeProfiles(source.profiles), mappings: normalizeMappings(source.mappings) };
 }
 
 function normalizeMappings(value: unknown): ProductMapping[] {
@@ -381,6 +390,12 @@ function normalizeMappings(value: unknown): ProductMapping[] {
     if (variantId && !/^gid:\/\/shopify\/ProductVariant\/\d+$/.test(variantId)) return [];
     return [{ id: clip(mapping.id, 40) || `${tags[0]}-${productHandle}`, tags: [...new Set(tags)], productHandle, grouping, ...(variantId ? { variantId } : {}) }];
   });
+}
+
+function assertHasQuestions(quiz: StoredQuiz) {
+  const paths = quiz.enabledPaths || [];
+  const missing = paths.some(path => (path === "quick" && !quiz.quick.length) || (path === "deep" && !quiz.deep.length));
+  if (missing) throw new Error("This quiz has no questions yet. Add questions in the app and save.");
 }
 
 function defaultQuiz(): StoredQuiz {
@@ -414,7 +429,7 @@ function normalizeEntry(input: unknown, fallbackHandle: string): QuizEntry | nul
   if (!input || typeof input !== "object") return null;
   try {
     const source = input as { handle?: string; name?: string };
-    return namedQuiz(normalizeQuiz(input), source.handle || fallbackHandle, source.name || "Skin quiz");
+    return namedQuiz(normalizeQuiz(input, { draft: true }), source.handle || fallbackHandle, source.name || "Skin quiz");
   } catch {
     return null;
   }
@@ -457,6 +472,11 @@ async function writePayload(shop: string, quizzes: QuizEntry[]) {
   );
 }
 
+export async function deleteShopQuizzes(shop: string) {
+  await ensureQuizTable();
+  await prisma.$executeRawUnsafe(`DELETE FROM "QuizConfig" WHERE "shop" = ?`, shop);
+}
+
 export async function loadLibrary(shop: string): Promise<QuizEntry[]> {
   const payload = await readPayload(shop);
   const quizzes = payload ? normalizeLibrary(payload) : [];
@@ -492,16 +512,17 @@ export async function saveQuiz(shop: string, input: unknown, code?: unknown) {
 
 export async function createQuiz(shop: string, name: string, layout: "three" | "single" | "scan" = "three", paths?: Array<"quick" | "deep" | "scan">) {
   const library = await loadLibrary(shop);
-  let handle = quizCode(name || `quiz-${library.length + 1}`);
-  if (library.some((item) => item.handle === handle)) handle = quizCode(`${handle}-${library.length + 1}`);
+  const base = quizCode(name || `quiz-${library.length + 1}`);
+  let handle = base;
+  for (let suffix = 2; library.some((item) => item.handle === handle); suffix++) handle = quizCode(`${base.slice(0, 34)}-${suffix}`);
+  // New quizzes start without questions; the merchant adds their own in the editor.
   const starter = defaultQuiz();
   starter.layout = layout;
   if (paths) starter.enabledPaths = paths;
   starter.singleFlow = paths?.[0] === "deep" ? "deep" : "quick";
-  if (layout === "single" && starter.singleFlow === "quick") starter.deep = [];
-  if (layout === "single" && starter.singleFlow === "deep") starter.quick = [];
-  if (layout === "scan") { starter.quick = []; starter.deep = []; }
-  const entry = namedQuiz(normalizeQuiz(starter), handle, clip(name, 80) || "New quiz");
+  starter.quick = [];
+  starter.deep = [];
+  const entry = namedQuiz(normalizeQuiz(starter, { draft: true }), handle, clip(name, 80) || "New quiz");
   await writePayload(shop, [...library, entry]);
   return entry;
 }
@@ -515,13 +536,22 @@ export async function deleteQuiz(shop: string, code: unknown) {
   return quizzes;
 }
 
+// No skin-analysis provider is integrated yet, so scan submissions cannot return a result.
+// While this is false the storefront hides the scan path instead of asking shoppers for camera access.
+export function scanAnalysisReady() {
+  return false;
+}
+
 export async function publicQuiz(shop: string, code?: unknown) {
   const quiz = await loadQuiz(shop, code);
+  assertHasQuestions(quiz);
   return {
+    emailCapture: quiz.emailCapture,
     enabledPaths: quiz.enabledPaths,
     singleFlow: quiz.singleFlow,
     layout: quiz.layout || "three",
     scanner: quiz.scanner,
+    scanReady: scanAnalysisReady(),
     design: quiz.design,
     widgetCss: quiz.widgetCss,
     quick: quiz.quick,
@@ -593,20 +623,6 @@ const KEYWORDS: Record<string, string[]> = {
   "dual-kapha-pitta": ["purifying", "cooling", "mask", "mist", "clarifying", "balancing"],
   balanced: ["gentle", "balanced", "all", "basic", "universal", "everyday"],
 };
-
-function fallbackProducts(dosha: string, profiles?: Record<string, QuizProfile>): QuizProduct[] {
-  const profile = profileFor(dosha, profiles);
-  return profile.products.slice(0, 4).map((handle) => {
-    const known = FALLBACK_PRODUCTS[handle];
-    return {
-      title: known?.title || handle,
-      price: known?.price || "",
-      image: "",
-      handle,
-      why: "",
-    };
-  });
-}
 
 function optionForAnswer<T extends { value?: string; tag?: string }>(
   options: T[],
@@ -697,7 +713,8 @@ export function ritualProducts(quiz: StoredQuiz, submission: { path?: string; an
     return product ? [{ title: product.title, handle: product.handle, price: product.price, image: product.image, why: anchors.includes(role) ? "Selected for your primary concern" : "Your ritual sequence" }] : [];
   });
 }
-export function matchProducts(dosha: string, products: ShopProduct[]): QuizProduct[] {
+// Keyword/tag matching against the store catalog, topped up with the profile's suggested handles that exist in the store.
+export function matchProducts(dosha: string, products: ShopProduct[], profiles?: Record<string, QuizProfile>): QuizProduct[] {
   const keywords = KEYWORDS[dosha] || KEYWORDS.balanced;
   const matched = products
     .map((product) => {
@@ -714,92 +731,143 @@ export function matchProducts(dosha: string, products: ShopProduct[]): QuizProdu
     .sort((a, b) => b.score - a.score)
     .slice(0, 4);
 
-  if (matched.length < 2) return fallbackProducts(dosha);
-  return matched.map(({ product, hits }) => ({
+  const picked: QuizProduct[] = matched.map(({ product, hits }) => ({
     title: product.title,
     price: product.price,
     image: product.image,
     handle: product.handle,
     why: hits.length ? `Chosen for ${hits.join(", ")}` : "",
   }));
+  for (const handle of profileFor(dosha, profiles).products) {
+    if (picked.length >= 4) break;
+    const product = products.find((item) => item.handle === handle);
+    if (product && !picked.some((item) => item.handle === handle)) picked.push({ title: product.title, price: product.price, image: product.image, handle, why: "" });
+  }
+  return picked;
 }
 
-export async function loadStoreProducts(admin: {
-  graphql: (query: string) => Promise<Response>;
-}): Promise<ShopProduct[]> {
-  const response = await admin.graphql(`#graphql
-    query DoshaQuizProducts {
-      products(first: 50) {
-        nodes {
-          id
-          title
-          handle
-          tags
-          productType
-          featuredMedia {
-            preview {
-              image { url }
+type AdminGraphql = { graphql: (query: string, options?: { variables?: Record<string, unknown> }) => Promise<Response> };
+
+type ProductNode = {
+  id?: string;
+  title?: string;
+  handle?: string;
+  tags?: string[];
+  productType?: string;
+  featuredMedia?: { preview?: { image?: { url?: string } } };
+  variants?: { nodes: Array<{ id?: string; title?: string; price?: string; image?: { url?: string } }>; pageInfo?: { hasNextPage?: boolean; endCursor?: string } };
+};
+
+const PRODUCT_PAGES = 5;
+
+function formatPrice(amount: string | undefined, currency: string) {
+  if (!amount || !Number.isFinite(Number(amount))) return "";
+  try {
+    return new Intl.NumberFormat("en-US", { style: "currency", currency }).format(Number(amount));
+  } catch {
+    return `${Number(amount).toFixed(2)} ${currency}`;
+  }
+}
+
+export async function loadStoreProducts(admin: AdminGraphql): Promise<ShopProduct[]> {
+  const nodes: ProductNode[] = [];
+  let currency = "USD";
+  let after: string | null = null;
+  // Up to 250 products, 50 per page, to stay below Shopify's query cost limit.
+  for (let page = 0; page < PRODUCT_PAGES; page++) {
+    const response = await admin.graphql(`#graphql
+      query DoshaQuizProducts($after: String) {
+        shop { currencyCode }
+        products(first: 50, after: $after, query: "status:active") {
+          pageInfo { hasNextPage endCursor }
+          nodes {
+            id
+            title
+            handle
+            tags
+            productType
+            featuredMedia {
+              preview {
+                image { url }
+              }
             }
-          }
-          variants(first: 10) {
-            nodes { id title price image { url } }
-            pageInfo { hasNextPage endCursor }
-          }
-        }
-      }
-    }
-  `);
-  const json = await response.json();
-  if (json.errors?.length) throw new Error("Could not load store products.");
-  const nodes = json?.data?.products?.nodes || [];
-  // Keep the initial query below Shopify's cost limit; fetch additional variant pages only when needed.
-  for (const node of nodes) {
-    let page = node.variants?.pageInfo;
-    while (page?.hasNextPage && page.endCursor) {
-      const more = await admin.graphql(`#graphql
-        query DoshaQuizVariantPage {
-          product(id: ${JSON.stringify(node.id)}) {
-            variants(first: 100, after: ${JSON.stringify(page.endCursor)}) {
+            variants(first: 10) {
               nodes { id title price image { url } }
               pageInfo { hasNextPage endCursor }
             }
           }
         }
-      `);
+      }
+    `, { variables: { after } });
+    const json = await response.json();
+    if (json.errors?.length) throw new Error("Could not load store products.");
+    currency = json?.data?.shop?.currencyCode || currency;
+    nodes.push(...(json?.data?.products?.nodes || []));
+    const info = json?.data?.products?.pageInfo;
+    if (!info?.hasNextPage || !info.endCursor) break;
+    after = info.endCursor;
+  }
+  // Fetch additional variant pages only when needed.
+  for (const node of nodes) {
+    let page = node.variants?.pageInfo;
+    while (page?.hasNextPage && page.endCursor) {
+      const more = await admin.graphql(`#graphql
+        query DoshaQuizVariantPage($id: ID!, $after: String) {
+          product(id: $id) {
+            variants(first: 100, after: $after) {
+              nodes { id title price image { url } }
+              pageInfo { hasNextPage endCursor }
+            }
+          }
+        }
+      `, { variables: { id: node.id, after: page.endCursor } });
       const next = await more.json();
       if (next.errors?.length || !next.data?.product?.variants) throw new Error("Could not load product variants.");
       const variants = next.data.product.variants;
-      node.variants.nodes.push(...variants.nodes);
+      node.variants!.nodes.push(...variants.nodes);
       if (variants.pageInfo?.hasNextPage && variants.pageInfo.endCursor === page.endCursor) throw new Error("Could not advance product variants.");
       page = variants.pageInfo;
     }
   }
-  return nodes.map((node: {
-    title?: string;
-    handle?: string;
-    tags?: string[];
-    productType?: string;
-    featuredMedia?: { preview?: { image?: { url?: string } } };
-    variants?: { nodes?: Array<{ id?: string; title?: string; price?: string; image?: { url?: string } }> };
-  }) => ({
+  return nodes.map((node) => ({
     title: node.title || "Product",
     handle: node.handle || "",
     tags: node.tags || [],
     productType: node.productType || "",
     image: node.featuredMedia?.preview?.image?.url || "",
-    price: node.variants?.nodes?.[0]?.price ? `$${Number(node.variants.nodes[0].price).toFixed(2)}` : "",
+    price: formatPrice(node.variants?.nodes?.[0]?.price, currency),
     variants: (node.variants?.nodes || []).filter((variant) => variant.id).map((variant) => ({
-      id: variant.id!, title: variant.title || "Default", price: variant.price ? `$${Number(variant.price).toFixed(2)}` : "", image: variant.image?.url || "",
+      id: variant.id!, title: variant.title || "Default", price: formatPrice(variant.price, currency), image: variant.image?.url || "",
     })),
   }));
+}
+
+const PRODUCT_CACHE_MS = 5 * 60 * 1000;
+const productCache = new Map<string, { at: number; products: Promise<ShopProduct[]> }>();
+
+export function clearProductCache(shop?: string) {
+  if (shop) productCache.delete(shop);
+  else productCache.clear();
+}
+
+// Every storefront submission needs the catalog; cache it per shop for a few minutes.
+function cachedStoreProducts(shop: string, admin: AdminGraphql) {
+  const hit = productCache.get(shop);
+  if (hit && Date.now() - hit.at < PRODUCT_CACHE_MS) return hit.products;
+  const products = loadStoreProducts(admin);
+  productCache.set(shop, { at: Date.now(), products });
+  // Drop a failed load, but never a newer entry that replaced it.
+  products.catch(() => { if (productCache.get(shop)?.products === products) productCache.delete(shop); });
+  return products;
 }
 
 export async function buildQuizResult(
   submission: { path?: string; answers?: unknown; code?: unknown },
   shop: string,
-  admin?: { graphql: (query: string) => Promise<Response> },
+  admin?: AdminGraphql,
 ): Promise<QuizResult> {
   const quiz = await loadQuiz(shop, submission.code);
+  assertHasQuestions(quiz);
   if (quiz.layout === "scan" && submission.path !== "scan") throw new Error("This block only supports Skin Scan.");
   if (quiz.enabledPaths && !quiz.enabledPaths.includes(submission.path as "quick" | "deep" | "scan")) throw new Error("This quiz path is not enabled.");
   if (quiz.layout === "single" && submission.path !== (quiz.singleFlow || "quick")) {
@@ -831,12 +899,16 @@ export async function buildQuizResult(
   let products: QuizProduct[] = [];
   if (admin) {
     try {
-      const storeProducts = await loadStoreProducts(admin);
+      const storeProducts = await cachedStoreProducts(shop, admin);
       const tags = chosenTags(quiz, submission);
-      if (submission.path === "scan") tags.push("scan", "ai_skin_scan", dosha);
-      tags.push(dosha);
-      products = quiz.mappings.length ? mappedProducts(tags, quiz.mappings, storeProducts) : ritualProducts(quiz, submission, dosha, storeProducts);
-    } catch {
+      if (submission.path === "scan") tags.push("scan", "ai_skin_scan");
+      // Result tags use the same slug format as mapping tags, plus each dosha in a dual result.
+      tags.push(slugTag(dosha), ...dosha.split("-").filter((part) => part === "vata" || part === "pitta" || part === "kapha"));
+      if (quiz.mappings.length) products = mappedProducts(tags, quiz.mappings, storeProducts);
+      if (!products.length) products = ritualProducts(quiz, submission, dosha, storeProducts);
+      if (!products.length) products = matchProducts(dosha, storeProducts, quiz.profiles);
+    } catch (error) {
+      console.error("Quiz product recommendations failed", shop, error);
       products = [];
     }
   }

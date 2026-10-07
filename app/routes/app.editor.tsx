@@ -1,24 +1,24 @@
-import defaultWidgetCss from "../../extensions/dosha-quiz/assets/dosha-quiz.css?raw";
 import type { ActionFunctionArgs, HeadersFunction, LoaderFunctionArgs } from "react-router";
-import { redirect, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
 import { loadQuiz, loadStoreProducts, saveQuiz } from "../quiz.server";
 import QuizEditor from "../components/QuizEditor";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { session, admin } = await authenticate.admin(request);
+  const { session, admin, redirect } = await authenticate.admin(request);
   const code = new URL(request.url).searchParams.get("quiz");
-  if (!code?.trim()) return redirect("/app/blocks");
+  if (!code?.trim()) return redirect("/app/quizzes");
   const quiz = await loadQuiz(session.shop, code);
-  quiz.widgetCss ??= defaultWidgetCss;
   let products: Awaited<ReturnType<typeof loadStoreProducts>> = [];
+  let productsError = false;
   try {
     products = await loadStoreProducts(admin);
-  } catch {
-    products = [];
+  } catch (error) {
+    console.error("Editor product load failed", session.shop, error);
+    productsError = true;
   }
-  return { shop: session.shop, quiz, products, scanKeyPresent: Boolean(process.env.OPENAI_API_KEY) };
+  return { shop: session.shop, quiz, products, productsError };
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -36,8 +36,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 export default function Index() {
-  const { shop, quiz, products, scanKeyPresent } = useLoaderData<typeof loader>();
-  return <QuizEditor initial={quiz} shop={shop} products={products} code={quiz.handle} scanKeyPresent={scanKeyPresent} />;
+  const { shop, quiz, products, productsError } = useLoaderData<typeof loader>();
+  return <QuizEditor initial={quiz} shop={shop} products={products} productsError={productsError} code={quiz.handle} />;
 }
 
 export const headers: HeadersFunction = (headersArgs) => {
