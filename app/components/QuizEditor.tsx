@@ -383,15 +383,15 @@ export default function QuizEditor({
                 {(["scan", "quick", "deep"] as const).map(path => <div key={path}>
                   <s-heading>{path === "scan" ? "AI Skin Scan" : path === "quick" ? "Quick Quiz" : "Deep Dosha"}</s-heading>
                   {quiz.cardIcons?.[path] ? <img src={quiz.cardIcons[path]} alt={`${path} card icon preview`} style={{width:48,height:48,objectFit:"contain",display:"block",margin:"8px 0"}} /> : null}
-                  <input type="file" accept="image/svg+xml,image/png,image/jpeg,image/webp" aria-label={`Upload ${path} card icon`} onChange={event => {
+                  <s-drop-zone label="Upload card icon" accept=".svg,.png,.jpg,.jpeg,.webp" accessibilityLabel={`Upload ${path} card icon`} onChange={event => {
                     const input = event.currentTarget;
                     const file = input.files?.[0];
                     if (!file) return;
-                    if (file.size > 65536 || !["image/svg+xml","image/png","image/jpeg","image/webp"].includes(file.type)) { input.setCustomValidity("Choose an SVG, PNG, JPG or WebP file under 64 KB."); input.reportValidity(); input.value=""; return; }
-                    input.setCustomValidity("");
+                    if (file.size > 65536 || !["image/svg+xml","image/png","image/jpeg","image/webp"].includes(file.type)) { input.error = "Choose an SVG, PNG, JPG or WebP file under 64 KB."; input.value=""; return; }
+                    input.error = "";
                     const reader = new FileReader();
                     reader.onload = () => { const value = reader.result; if (typeof value === "string") setQuiz(current => ({...current,cardIcons:{...current.cardIcons,[path]:value}})); };
-                    reader.onerror = () => { input.setCustomValidity("Could not read this file. Please try again."); input.reportValidity(); };
+                    reader.onerror = () => { input.error = "Could not read this file. Please try again."; };
                     reader.readAsDataURL(file);
                   }} />
                   <s-text-field label="Or HTTPS icon image URL" value={quiz.cardIcons?.[path]?.startsWith("https://") ? quiz.cardIcons[path] : ""} onInput={event => { const value = event.currentTarget.value; setQuiz(current => ({...current,cardIcons:{...current.cardIcons,[path]:value}})); }} />

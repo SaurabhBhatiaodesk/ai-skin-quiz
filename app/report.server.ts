@@ -26,7 +26,8 @@ export async function unlockReport(shop: string, id: unknown, email: unknown) {
   if (!row) throw new Error("This result has expired. Please retake the quiz.");
   const address = email.trim().toLowerCase();
   if (row.email && row.email !== address) throw new Error("This report is already linked to another email. Please retake the quiz.");
-  await prisma.$executeRawUnsafe("UPDATE QuizReport SET email=? WHERE id=? AND shop=?", address, id, shop);
+  const linked = await prisma.$executeRawUnsafe("UPDATE QuizReport SET email=? WHERE id=? AND shop=? AND expires>? AND (email IS NULL OR email=?)", address, id, shop, Date.now(), address);
+  if (!linked) throw new Error("This report expired or was linked to another email. Please retake the quiz.");
   const result = JSON.parse(row.payload) as QuizResult;
   let delivery = row.sent ? "queued" : "not_configured";
   if (!row.sent && process.env.KLAVIYO_PRIVATE_API_KEY && process.env.KLAVIYO_SHOP === shop) {

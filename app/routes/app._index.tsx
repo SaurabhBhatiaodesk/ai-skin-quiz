@@ -1,4 +1,3 @@
-import type { ReactNode } from "react";
 import type { HeadersFunction, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
@@ -12,25 +11,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   return { ...overview, stats };
 };
 
-const statIcons: Record<string, ReactNode> = {
-  Quizzes: <><rect x="5" y="3" width="14" height="18" rx="2" /><path d="M9 8h6M9 12h6M9 16h3" /></>,
-  Storefront: <><path d="M3 10 5 3h14l2 7M4 10v11h16V10M3 10a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0M9 21v-7h6v7" /></>,
-  Results: <><path d="M4 3v18h17M8 16v-4M13 16V8M18 16V5" /></>,
-  Emails: <><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3 7 9 6 9-6" /></>,
-};
-function Stat({ label, value, detail, href }: { label: string; value: string; detail: string; href?: string }) {
-  return (
-    <div className="dashboard-stat" style={{ background: "#fff", padding: 20, display: "grid", gridTemplateColumns: "36px minmax(0, 1fr)", alignContent: "start", columnGap: 12, rowGap: 10 }}>
-      <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, borderRadius: 9, background: "#e3f1df", color: "#29845a", gridRow: "1 / 3" }}>
-        <svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">{statIcons[label]}</svg>
-      </span>
-      <span style={{ fontSize: 13, lineHeight: "18px", color: "#616161" }}>{href ? <s-link href={href}>{label === "Storefront" ? "Theme blocks" : label}</s-link> : label}</span>
-      <strong style={{ fontSize: label === "Storefront" ? 20 : 26, lineHeight: "28px", color: label === "Storefront" && value === "Enabled" ? "#29845a" : "#303030", marginTop: -6 }}>{value}</strong>
-      <span style={{ gridColumn: "1 / -1", fontSize: 13, lineHeight: "18px", color: "#616161", overflowWrap: "anywhere" }}>{detail}</span>
-    </div>
-  );
-}
-
 export default function Home() {
   const { quizzes, themeChecked, themeActivated, themeEditorUrl, stats } = useLoaderData<typeof loader>();
   const liveCount = quizzes.filter((quiz) => quiz.live).length;
@@ -40,52 +20,57 @@ export default function Home() {
       <s-button slot="primary-action" variant="primary" href="/app/quizzes/new">Create quiz</s-button>
       <s-button slot="secondary-actions" href="/app/documentation">Documentation</s-button>
       <s-stack gap="base">
-        <style>{`
-          .dashboard-content { width: 100%; min-width: 0; display: grid; gap: 20px; }
-          .dashboard-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid #dedede; border-radius: 14px; overflow: hidden; background: white; }
-          .dashboard-stat + .dashboard-stat { border-left: 1px solid #ebebeb; }
-          .dashboard-resources { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
-          .dashboard-resource { display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between; gap: 20px; background: white; border: 1px solid #dedede; border-radius: 12px; padding: 20px; }
-          @media(max-width: 850px) { .dashboard-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); } .dashboard-stat:nth-child(3) { border-left: 0; } .dashboard-stat:nth-child(n+3) { border-top: 1px solid #ebebeb; } .dashboard-resources { grid-template-columns: 1fr; } }
-          @media(max-width: 450px) { .dashboard-resource { align-items: flex-start; flex-direction: column; } }
-        `}</style>
-        <div className="dashboard-content">
-        <div className="dashboard-welcome" style={{ background: "#eaf4ed", border: "1px solid #d4e5d9", borderRadius: 14, padding: "24px", display: "flex", alignItems: "center", gap: 16 }}>
-          <span className="dashboard-scan-icon" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0, width: 48, height: 48, borderRadius: 14, background: "#dceee0", color: "#23794e" }}>
-            <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3m13-5h3a2 2 0 0 1 2 2v3M3 16v3a2 2 0 0 0 2 2h3m8 0h3a2 2 0 0 0 2-2v-3" /><path d="M9 9h.01M15 9h.01M9 15c2 1.5 4 1.5 6 0M12 10v3" /></svg>
-          </span>
-          <div style={{ minWidth: 0 }}>
+        <s-banner heading="Welcome to AI Skin Quiz" tone="info">
+          <s-paragraph>Follow the three steps below to build your quiz, connect skin analysis and add it to your store.</s-paragraph>
+        </s-banner>
 
-            <h2 style={{ margin: "0 0 6px", fontSize: "clamp(22px, 2vw, 28px)", lineHeight: 1.25, letterSpacing: "-0.5px", fontWeight: 650, color: "#213c2c" }}>Welcome to AI Skin Quiz</h2>
-            <p style={{ margin: 0, fontSize: 14, lineHeight: 1.5, color: "#52645a", maxWidth: 640 }}>Create your quiz, connect AI photo analysis, and choose how it appears on your store.</p>
-          </div>
-        </div>
-
-        <div className="dashboard-metrics">
-          <Stat label="Quizzes" href="/app/quizzes" value={String(quizzes.length)} detail={quizzes.length === 1 ? "1 quiz created" : `${quizzes.length} quizzes created`} />
-          <Stat label="Storefront" href={themeEditorUrl} value={themeChecked ? themeActivated ? "Enabled" : "Not added" : "Unverified"} detail={themeChecked ? `${liveCount} quiz ${liveCount === 1 ? "block" : "blocks"} enabled in the theme` : "Open the theme editor to check"} />
-          <Stat label="Results" value={String(stats.results)} detail="Quiz and scan results saved ? last 7 days" />
-          <Stat label="Emails" href="/app/emails" value={String(stats.emails)} detail="Email-linked results ? last 7 days" />
-        </div>
-
-        <section aria-label="Manage your app">
-        <h2 style={{margin:"0 0 12px",fontSize:16,fontWeight:600}}>Manage your app</h2>
-        <div className="dashboard-resources">
-          <div className="dashboard-resource">
-            <div><h3 style={{ margin: "0 0 6px", fontSize: 15, fontWeight: 600 }}>Quizzes and products</h3><p style={{ margin: 0, fontSize: 13, lineHeight: 1.5, color: "#616161" }}>Edit questions, card icons and product matches. Copy each quiz?s API URL.</p></div>
-            <s-button href="/app/quizzes">Manage quizzes</s-button>
-          </div>
-          <div className="dashboard-resource">
-            <div><h3 style={{ margin: "0 0 6px", fontSize: 15, fontWeight: 600 }}>AI photo analysis</h3><p style={{ margin: 0, fontSize: 13, lineHeight: 1.5, color: "#616161" }}>Add or replace the provider API key used for skin photo analysis.</p></div>
-            <s-button href="/app/settings">Open AI settings</s-button>
-          </div>
-          <div className="dashboard-resource">
-            <div><h3 style={{ margin: "0 0 6px", fontSize: 15, fontWeight: 600 }}>Floating scan button</h3><p style={{ margin: 0, fontSize: 13, lineHeight: 1.5, color: "#616161" }}>Change its image icon, shape, colors and screen position.</p></div>
-            <s-button href="/app/scan-appearance">Edit scan button</s-button>
-          </div>
-        </div>
-        </section>
-        </div>
+        <s-grid gridTemplateColumns="repeat(auto-fit, minmax(220px, 1fr))" gap="base">
+          {[
+            {label:"Quizzes",value:String(quizzes.length),detail:"Quizzes created",href:"/app/quizzes",icon:"clipboard" as const},
+            {label:"Theme blocks",value:themeChecked ? themeActivated ? "Enabled" : "Not added" : "Unverified",detail:themeChecked ? `${liveCount} quiz blocks enabled in the theme` : "Open the theme editor to check",href:themeEditorUrl,icon:"store" as const},
+            {label:"Results",value:String(stats.results),detail:"Quiz and scan results - last 7 days",href:"",icon:"chart-vertical" as const},
+            {label:"Emails",value:String(stats.emails),detail:"Email-linked results - last 7 days",href:"/app/emails",icon:"email" as const},
+          ].map(item => <s-section key={item.label}>
+            <s-stack gap="base">
+              <s-stack direction="inline" justifyContent="space-between" alignItems="center">
+                <s-text color="subdued">{item.label}</s-text>
+                <s-box padding="small" background="subdued" borderRadius="base"><s-icon type={item.icon} /></s-box>
+              </s-stack>
+              <div style={{fontSize:item.label === "Theme blocks" ? 24 : 34,fontWeight:650,lineHeight:1.15,letterSpacing:"-0.8px",color:item.label === "Theme blocks" && themeChecked && themeActivated ? "#227549" : "#172b3a"}}>{item.value}</div>
+              <s-text color="subdued">{item.detail}</s-text>
+              <s-divider />
+              <s-stack direction="inline">
+                {item.href ? <s-button variant="tertiary" href={item.href} target={item.label === "Theme blocks" ? "_top" : undefined}>View {item.label.toLowerCase()}</s-button> : <s-text color="subdued">Last 7 days</s-text>}
+              </s-stack>
+            </s-stack>
+          </s-section>)}
+        </s-grid>
+        <s-section heading="Set up your customer experience">
+          <s-grid gridTemplateColumns="repeat(auto-fit, minmax(240px, 1fr))" gap="base">
+            {[
+              {title:"1. Build your quiz",text:"Add questions, choose entry icons and link suitable store products.",action:"Edit quizzes and products",href:"/app/quizzes"},
+              {title:"2. Connect skin analysis",text:"For Skin Scan, save your OpenAI key and test the connection. Question-only quizzes can skip this step.",action:"Connect AI",href:"/app/settings"},
+              {title:"3. Add to your store",text:"Add the matching quiz block, enter its widget code and complete a storefront test.",action:"Open theme editor",href:themeEditorUrl},
+            ].map(item => <s-box key={item.title} padding="base" border="base" borderRadius="large" background="subdued">
+              <s-stack gap="base">
+                <s-heading>{item.title}</s-heading>
+                <s-paragraph>{item.text}</s-paragraph>
+                <s-stack direction="inline"><s-button href={item.href} target={item.href === themeEditorUrl ? "_top" : undefined}>{item.action}</s-button></s-stack>
+              </s-stack>
+            </s-box>)}
+          </s-grid>
+        </s-section>
+        <s-section heading="After setup">
+          <s-stack gap="base">
+            <s-paragraph>Customer flow: choose a quiz or Skin Scan, answer questions or capture a photo, then view observations and matching products.</s-paragraph>
+            <s-stack direction="inline" gap="base">
+              <s-button href="/app/scan-appearance">Customize scan button</s-button>
+              <s-button href="/app/emails">View collected emails</s-button>
+              <s-button href="/app/documentation">Setup help</s-button>
+            </s-stack>
+            <s-paragraph color="subdued">A theme block being enabled does not confirm that camera capture and AI analysis work. Complete a real storefront test before sharing with customers.</s-paragraph>
+          </s-stack>
+        </s-section>
       </s-stack>
     </s-page>
   );

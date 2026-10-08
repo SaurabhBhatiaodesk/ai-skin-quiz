@@ -74,12 +74,12 @@ export default function Quizzes() {
       </s-grid>}
       <s-modal id="quiz-developer-modal" heading={developerQuiz ? `${developerQuiz.name}: Quiz API` : "Quiz API"}>
         <s-stack gap="base">
-          <s-paragraph>Fetch this URL from your Shopify storefront to get this quiz?s data.</s-paragraph>
+          <s-paragraph>Fetch this URL from your Shopify storefront to get the quiz data.</s-paragraph>
           <s-stack direction="inline" justifyContent="space-between" alignItems="center">
             <s-text type="strong">Quiz data API</s-text>
             <s-button variant="tertiary" onClick={() => copyDeveloperValue(apiPath,"API URL")}>Copy API URL</s-button>
           </s-stack>
-          <textarea aria-label="Quiz data API" readOnly value={apiPath} rows={2} style={{width:"100%",boxSizing:"border-box",padding:12,border:"1px solid #ccc",borderRadius:8,fontFamily:"monospace",resize:"none"}} onFocus={event => event.currentTarget.select()} />
+          <s-text-field label="Quiz data API" readOnly value={apiPath} />
           <div role="status" aria-live="polite">{copyStatus}</div>
         </s-stack>
         <s-button slot="secondary-actions" commandFor="quiz-developer-modal" command="--hide">Close</s-button>

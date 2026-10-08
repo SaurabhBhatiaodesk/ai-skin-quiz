@@ -21,7 +21,7 @@ export default function Emails() {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12, alignItems: "end" }}>
           <s-search-field label="Search emails" placeholder="Search by email address" value={query} onInput={event => setQuery(event.currentTarget.value)} />
           <s-select label="Latest result date" value={period} onChange={event => setPeriod(event.currentTarget.value)}><s-option value="all">All available (7 days)</s-option><s-option value="1">Last 24 hours</s-option><s-option value="3">Last 3 days</s-option></s-select>
-          <s-select label="Sort by" value={sort} onChange={event => setSort(event.currentTarget.value)}><s-option value="newest">Newest result first</s-option><s-option value="oldest">Oldest result first</s-option><s-option value="email">Email A?Z</s-option><s-option value="results">Most results</s-option></s-select>
+          <s-select label="Sort by" value={sort} onChange={event => setSort(event.currentTarget.value)}><s-option value="newest">Newest result first</s-option><s-option value="oldest">Oldest result first</s-option><s-option value="email">Email A to Z</s-option><s-option value="results">Most results</s-option></s-select>
         </div>
         <s-stack direction="inline" justifyContent="space-between" alignItems="center">
           <s-text color="subdued">{filtered.length} of {emails.length} email addresses</s-text>

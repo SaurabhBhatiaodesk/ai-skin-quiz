@@ -241,7 +241,7 @@ import { createFaceScan } from "./face-scan.js";
 
     // Result copy may use simple emphasis; every other tag is shown as text.
     function safeHtml(value) {
-      return esc(value).replace(/&lt;(\/?)(em|strong|b|i|br)\s*\/?&gt;/gi, "<$1$2>");
+      return esc(value).replace(/&lt;(\/?)(em|strong|b|i|br|p)\s*\/?&gt;/gi, "<$1$2>");
     }
 
     function optHtml(options, selected, attr) {
@@ -594,6 +594,8 @@ import { createFaceScan } from "./face-scan.js";
         if (preview) { preview.removeAttribute("src"); preview.style.display = "none"; }
         var fileInput = q("[data-file]");
         if (fileInput) fileInput.value = "";
+        var uploadZone = q("[data-upload-zone]");
+        if (uploadZone && scanMode === "upload") uploadZone.classList.remove("hidden");
         if (overlay) overlay.classList.remove("active");
       });
     }
