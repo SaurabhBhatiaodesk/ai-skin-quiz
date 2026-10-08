@@ -12,7 +12,7 @@ assert.deepEqual(recommendScanProducts(['dullness'],[{tags:['normal_or_balanced'
 assert.deepEqual(recommendScanProducts(['fine_lines'],[],catalog).map(p=>p.handle),['bakuchiol-night-restorative-serum']);
 assert.equal(recommendScanProducts([],[],catalog).length,0);
 let calls=0;
-globalThis.fetch=async(url,options)=>{calls++; assert.equal(JSON.parse(options.body).store,false); return {ok:true,json:async()=>({output:[{content:[{type:'output_text',text:JSON.stringify({usable:true,summary:'Visible uneven tone.',concerns:[{concern:'pigmentation',observation:'Uneven tone.',regions:['cheeks','cheeks'],intensity:'moderate'},{concern:'pigmentation',observation:'Duplicate.',regions:['nose'],intensity:'mild'}]})}]}]})};};
+globalThis.fetch=async(url,options)=>{calls++; assert.equal(JSON.parse(options.body).store,false); assert.equal(JSON.parse(options.body).max_output_tokens,550); return {ok:true,json:async()=>({output:[{content:[{type:'output_text',text:JSON.stringify({usable:true,summary:'Visible uneven tone.',concerns:[{concern:'pigmentation',observation:'Uneven tone.',regions:['cheeks','cheeks'],intensity:'moderate'},{concern:'pigmentation',observation:'Duplicate.',regions:['nose'],intensity:'mild'}]})}]}]})};};
 const mapped = await analysePhoto('data:image/jpeg;base64,YWJj','dummy');
 assert.equal(mapped.concerns[0].concern,'pigmentation');
 // Duplicate concerns and repeated regions are collapsed.
@@ -45,13 +45,13 @@ const oval = guideOval(640, 480);
 const centred = { minX: oval.centerX - oval.radiusX * 0.8, maxX: oval.centerX + oval.radiusX * 0.8, minY: oval.centerY - oval.radiusY * 0.8, maxY: oval.centerY + oval.radiusY * 0.8 };
 const frame = (extra) => frameCheck({ faces: 1, box: centred, light: 120, yaw: 0, width: 640, height: 480, ...extra });
 assert.equal(frame().ok, true);
-assert.match(frame({ faces: 0 }).message, /Position/);
+assert.match(frame({ faces: 0 }).message, /circle/);
 assert.match(frame({ faces: 2 }).message, /one face/);
-assert.match(frame({ light: 10 }).message, /dark/);
+assert.match(frame({ light: 10 }).message, /brighter/);
 assert.match(frame({ yaw: 0.8 }).message, /straight/);
 assert.match(frame({ box: { minX: 300, maxX: 340, minY: 200, maxY: 250 } }).message, /closer/);
 assert.match(frame({ box: { minX: 0, maxX: 640, minY: 0, maxY: 480 } }).message, /back/);
-assert.match(frame({ box: { ...centred, minX: centred.minX - 150, maxX: centred.maxX - 150 } }).message, /Center/);
+assert.match(frame({ box: { ...centred, minX: centred.minX - 150, maxX: centred.maxX - 150 } }).message, /centre/);
 // Sharpness prefers a detailed frame over a flat (blurred) one.
 const flat = new Uint8ClampedArray(16 * 16 * 4).fill(128);
 const edges = new Uint8ClampedArray(16 * 16 * 4).map((_, i) => ((Math.floor(i / 4) % 2) ? 255 : 0));

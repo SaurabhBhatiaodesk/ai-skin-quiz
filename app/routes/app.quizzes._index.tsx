@@ -26,6 +26,13 @@ export default function Quizzes() {
   const [developerQuiz, setDeveloperQuiz] = useState<{ handle: string; name: string } | null>(null);
   const [copyStatus, setCopyStatus] = useState("");
   const apiPath = developerQuiz ? `/apps/dosha-quiz/quiz?code=${encodeURIComponent(developerQuiz.handle)}` : "";
+  const fetchExample = `const response = await fetch(${JSON.stringify(apiPath)}, {
+  headers: { Accept: "application/json" }
+});
+const quiz = await response.json();
+if (!response.ok) throw new Error(quiz.error || "Could not load quiz");
+// Build your own UI using quiz.layout, quiz.enabledPaths,
+// quiz.quick, quiz.deep, quiz.design and quiz.cardIcons.`;
   async function copyDeveloperValue(value: string, label: string) {
     try { await navigator.clipboard.writeText(value); setCopyStatus(`${label} copied.`); }
     catch { setCopyStatus("Copy is blocked by this browser. Select the text below and copy it manually."); }
@@ -74,12 +81,20 @@ export default function Quizzes() {
       </s-grid>}
       <s-modal id="quiz-developer-modal" heading={developerQuiz ? `${developerQuiz.name}: Quiz API` : "Quiz API"}>
         <s-stack gap="base">
-          <s-paragraph>Fetch this URL from your Shopify storefront to get the quiz data.</s-paragraph>
+          <s-paragraph>Use this saved quiz API to build your own storefront design. Available for Combined Quiz, Single Quiz and AI Skin Scan blocks.</s-paragraph>
           <s-stack direction="inline" justifyContent="space-between" alignItems="center">
             <s-text type="strong">Quiz data API</s-text>
             <s-button variant="tertiary" onClick={() => copyDeveloperValue(apiPath,"API URL")}>Copy API URL</s-button>
           </s-stack>
           <s-text-field label="Quiz data API" readOnly value={apiPath} />
+          <s-stack direction="inline" justifyContent="space-between" alignItems="center">
+            <s-text type="strong">JavaScript example</s-text>
+            <s-button variant="tertiary" onClick={() => copyDeveloperValue(fetchExample, "Example")}>Copy example</s-button>
+          </s-stack>
+          <s-text-area label="Fetch quiz data" readOnly rows={8} value={fetchExample} />
+          <s-paragraph>Render the returned data with your own HTML, CSS or frontend framework. This API returns JSON; it does not insert the app widget.</s-paragraph>
+          <s-paragraph>Submit answers or a consented scan photo to POST /apps/dosha-quiz/result for observations and matching products. Call from the same Shopify storefront domain. No API key is needed in frontend code.</s-paragraph>
+          <s-link href="/app/documentation">API request and response guide</s-link>
           <div role="status" aria-live="polite">{copyStatus}</div>
         </s-stack>
         <s-button slot="secondary-actions" commandFor="quiz-developer-modal" command="--hide">Close</s-button>

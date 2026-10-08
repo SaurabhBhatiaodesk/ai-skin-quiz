@@ -62,6 +62,19 @@ if (!response.ok) throw new Error('Quiz not available');
 const quiz = await response.json();
 // quiz.quick, quiz.deep, quiz.design, quiz.widgetCss, quiz.emailCapture`}</pre>
             <s-paragraph>Score answers with POST /apps/dosha-quiz/result using JSON: code, path (quick or deep), and answers (zero-based option indexes). The response contains result and matching store products. Deep report details remain email-gated.</s-paragraph>
+            <s-paragraph>All saved block types use the same API with their own widget ID: layout three is Combined Quiz, single is Single Quiz, and scan is AI Skin Scan. Use enabledPaths to decide which choices to display; use singleFlow for the Single Quiz path. Design and cardIcons are optional starting points for your custom interface.</s-paragraph>
+            <pre style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{`// Collect one zero-based option index for every question in the selected path.
+const answers = selectedOptionIndexes;
+const response = await fetch('/apps/dosha-quiz/result', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+  body: JSON.stringify({ code: quiz.handle, path: 'quick', answers })
+});
+const data = await response.json();
+if (!response.ok || !data.ok) throw new Error(data.error || 'Submission failed');
+// Render data.result and data.result.products in your custom design.`}</pre>
+            <s-paragraph>For deep questions, use path deep and indexes from quiz.deep. When email capture is required, include email. For a locked deep report, POST intent unlock, reportId and email to the same result endpoint.</s-paragraph>
+            <s-paragraph>For Skin Scan, check scanReady before offering analysis. Capture or upload a clear JPEG, PNG or WebP data URL, then POST code, path scan, images [photoDataUrl], consent true and adult true. Obtain explicit photo-processing consent and age confirmation first; never hardcode them without user agreement. The API returns cosmetic observations and matching products, not a medical diagnosis. Camera access, face tracking and photo preparation belong in your custom frontend. Analysis still uses the merchant&apos;s configured provider credits.</s-paragraph>
             <s-paragraph>These endpoints use Shopify app-proxy authentication. Call them from the storefront domain; direct unauthenticated requests to the app server are rejected. They do not expose API keys, customer reports or scoring weights.</s-paragraph>
           </s-stack>
         </s-section>

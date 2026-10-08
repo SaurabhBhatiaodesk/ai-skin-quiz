@@ -593,6 +593,27 @@ import { buildFaceMap } from "./face-map.js";
       finishScan(captured);
     }
 
+    // Bound vision input dimensions; JPEG compression alone does not reduce image tokens.
+    function compactScanPhoto(value) {
+      return new Promise(function (resolve, reject) {
+        var image = new Image();
+        image.onload = function () {
+          var scale = Math.min(1, 640 / Math.max(image.naturalWidth, image.naturalHeight));
+          var canvas = document.createElement("canvas");
+          canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+          canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+          var context = canvas.getContext("2d");
+          if (!context) { reject(new Error("Could not prepare your photo. Please try again.")); return; }
+          context.fillStyle = "#fff";
+          context.fillRect(0, 0, canvas.width, canvas.height);
+          context.drawImage(image, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL("image/jpeg", 0.88));
+        };
+        image.onerror = function () { reject(new Error("Could not open your photo. Please choose another.")); };
+        image.src = value;
+      });
+    }
+
     function finishScan(images) {
       stopCamera();
       if (!images) {
@@ -606,7 +627,11 @@ import { buildFaceMap } from "./face-map.js";
       scanMirrored = scanMode === "camera";
       var overlay = q("[data-analyzing]");
       if (overlay) overlay.classList.add("active");
-      submit({ path: "scan", image: Array.isArray(images) ? undefined : images, images: Array.isArray(images) ? images : undefined, consent: true, adult: true }).finally(function () {
+      Promise.all((Array.isArray(images) ? images : [images]).map(compactScanPhoto)).then(function (photos) {
+        return submit({ path: "scan", images: photos, consent: true, adult: true });
+      }).catch(function (error) {
+        q("[data-scan-status]").textContent = error.message || "Could not prepare your photo. Please try again.";
+      }).finally(function () {
         captured = null;
         stopCamera();
         var preview = q("[data-upload-preview]");

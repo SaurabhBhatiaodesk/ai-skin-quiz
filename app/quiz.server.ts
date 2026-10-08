@@ -559,6 +559,8 @@ export async function publicQuiz(shop: string, code?: unknown) {
   const quiz = await loadQuiz(shop, code);
   assertHasQuestions(quiz);
   return {
+    handle: quiz.handle,
+    name: quiz.name,
     emailCapture: quiz.emailCapture,
     enabledPaths: quiz.enabledPaths,
     singleFlow: quiz.singleFlow,
