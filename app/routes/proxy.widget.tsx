@@ -5,7 +5,7 @@ import template from "../../extensions/dosha-quiz/snippets/quiz-widget.liquid?ra
 import stylesheet from "../../extensions/dosha-quiz/assets/dosha-quiz.css?raw";
 // Vite ?raw exposes the classic browser bundle as a string.
 // eslint-disable-next-line import/default
-import widgetScript from "../../extensions/dosha-quiz/assets/dosha-quiz.js?raw";
+import widgetScript from "../../extensions/dosha-quiz/assets/dosha-quiz-runtime.js?raw";
 
 const escapeHtml = (value: string) => value.replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]!);
 export const loader = async ({ request }: LoaderFunctionArgs) => {
