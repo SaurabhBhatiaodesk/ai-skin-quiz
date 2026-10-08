@@ -13,9 +13,9 @@ const TYPES = [
 ] as const;
 
 const PATHS: Array<{ value: Path; title: string; detail: string }> = [
-  { value: "quick", title: "Quick Quiz", detail: "A few questions for an instant ritual match." },
-  { value: "deep", title: "Deep Dosha Diagnostic", detail: "A longer reading across constitution, current state and environment." },
-  { value: "scan", title: "AI Skin Scan", detail: "Camera or photo upload. Needs an analysis provider." },
+  { value: "quick", title: "Quick Skin Quiz", detail: "Short skin questions for product recommendations." },
+  { value: "deep", title: "Dosha Quiz", detail: "Detailed Ayurvedic questions for a personal ritual." },
+  { value: "scan", title: "AI Skin Scan", detail: "A selfie for skin observations and product matches." },
 ];
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -67,10 +67,24 @@ export default function NewQuiz() {
               </s-clickable>)}
             </s-grid>
           </s-section>
-          {layout ? <s-section heading={layout === "three" ? "Quiz paths (choose two or three)" : "Quiz path (choose one)"}>
-            <s-choice-list label="Quiz paths" labelAccessibilityVisibility="exclusive" multiple={layout === "three"} values={paths} onChange={event => setPaths(event.currentTarget.values.filter((value): value is Path => ["quick", "deep", "scan"].includes(value)))}>
-              {PATHS.map(path => <s-choice key={path.value} value={path.value}>{path.title}<s-text slot="details">{path.detail}</s-text></s-choice>)}
-            </s-choice-list>
+          {layout ? <s-section heading={layout === "three" ? "Choose quiz options" : "Choose your quiz"}>
+            <s-stack gap="base">
+              <s-paragraph>{layout === "three" ? "Select two or three options." : "Select one option."}</s-paragraph>
+              <s-grid gridTemplateColumns="repeat(auto-fit, minmax(250px, 1fr))" gap="base">
+                {PATHS.map(path => {
+                  const selected = paths.includes(path.value);
+                  return <s-clickable key={path.value} accessibilityLabel={`${path.title}, ${selected ? "selected" : "not selected"}. ${layout === "three" ? "Toggle selection" : "Select this experience"}`} border={selected ? "base strong" : "base"} background={selected ? "subdued" : "base"} borderRadius="large" padding="base" onClick={() => setPaths(current => layout === "single" ? [path.value] : current.includes(path.value) ? current.filter(value => value !== path.value) : [...current, path.value])}>
+                    <s-stack gap="small">
+                      <s-stack direction="inline" justifyContent="space-between" alignItems="center">
+                        <s-text type="strong">{path.title}</s-text>
+                        <s-icon type={selected ? "check-circle" : "circle"} />
+                      </s-stack>
+                      <s-text color="subdued">{path.detail}</s-text>
+                    </s-stack>
+                  </s-clickable>;
+                })}
+              </s-grid>
+            </s-stack>
             {paths.includes("scan") ? <s-banner heading="AI Skin Scan setup">Add your OpenAI API key in Global Settings. Customers must consent to photo analysis before scanning.</s-banner> : null}
           </s-section> : null}
           <s-stack direction="inline" justifyContent="end" gap="small">
