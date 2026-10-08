@@ -1,3 +1,5 @@
+/* global globalThis */
+import { Buffer } from "node:buffer";
 import { readFile } from 'node:fs/promises';
 import { transform } from 'esbuild';
 import assert from 'node:assert/strict';
@@ -15,6 +17,35 @@ assert.equal((await analysePhoto('data:image/jpeg;base64,YWJj','dummy')).concern
 await assert.rejects(()=>analysePhoto('invalid','dummy'),/Upload/);
 await assert.rejects(()=>scanResult({consent:false},'test'),/Confirm/);
 assert.equal(calls,1);
+const photos = Array(5).fill('data:image/jpeg;base64,YWJj');
+globalThis.fetch=async(url,options)=>{const body=JSON.parse(options.body); assert.equal(body.input[0].content.filter(item=>item.type==='input_image').length,5); return {ok:true,json:async()=>({output:[{content:[{type:'output_text',text:JSON.stringify({usable:true,summary:'Multi-angle estimate.',concerns:[]})}]}]})};};
+assert.equal((await analysePhoto(photos,'dummy')).summary,'Multi-angle estimate.');
+await assert.rejects(()=>analysePhoto(Array(6).fill(photos[0]),'dummy'),/Upload/);
+await assert.rejects(()=>analysePhoto([photos[0],'invalid'],'dummy'),/Upload/);
 globalThis.fetch=async()=>({ok:false,status:401,json:async()=>({error:{code:"invalid_api_key"}})});
 await assert.rejects(()=>analysePhoto('data:image/jpeg;base64,YWJj','dummy'),/invalid/);
 console.log('Passed: scan recommendations, consent validation, structured response parsing and API errors. External calls mocked.');
+
+const { landmarkPose, frameCheck, guideOval, sharpness } = await import('../app/face-scan.js');
+const points = Array.from({length: 264},()=>({x:0.5,y:0.5}));
+points[33]={x:0.4,y:0.4}; points[263]={x:0.6,y:0.4}; points[1]={x:0.5,y:0.5};
+assert.ok(Math.abs(landmarkPose(points).yaw) < 0.01);
+points[1]={x:0.56,y:0.5}; assert.ok(landmarkPose(points).yaw > 0.4);
+assert.equal(landmarkPose([]),null);
+// A 640x480 frame: the oval is centred and sized from the shorter side.
+const oval = guideOval(640, 480);
+const centred = { minX: oval.centerX - oval.radiusX * 0.8, maxX: oval.centerX + oval.radiusX * 0.8, minY: oval.centerY - oval.radiusY * 0.8, maxY: oval.centerY + oval.radiusY * 0.8 };
+const frame = (extra) => frameCheck({ faces: 1, box: centred, light: 120, yaw: 0, width: 640, height: 480, ...extra });
+assert.equal(frame().ok, true);
+assert.match(frame({ faces: 0 }).message, /Position/);
+assert.match(frame({ faces: 2 }).message, /one face/);
+assert.match(frame({ light: 10 }).message, /dark/);
+assert.match(frame({ yaw: 0.8 }).message, /straight/);
+assert.match(frame({ box: { minX: 300, maxX: 340, minY: 200, maxY: 250 } }).message, /closer/);
+assert.match(frame({ box: { minX: 0, maxX: 640, minY: 0, maxY: 480 } }).message, /back/);
+assert.match(frame({ box: { ...centred, minX: centred.minX - 150, maxX: centred.maxX - 150 } }).message, /Center/);
+// Sharpness prefers a detailed frame over a flat (blurred) one.
+const flat = new Uint8ClampedArray(16 * 16 * 4).fill(128);
+const edges = new Uint8ClampedArray(16 * 16 * 4).map((_, i) => ((Math.floor(i / 4) % 2) ? 255 : 0));
+assert.ok(sharpness(edges, 16, 16) > sharpness(flat, 16, 16));
+console.log('Passed: single-shot face guidance, framing checks and sharpest-frame selection.');

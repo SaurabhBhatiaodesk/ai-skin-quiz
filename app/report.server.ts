@@ -61,3 +61,11 @@ export async function reportStats(shop: string) {
   );
   return { results: Number(rows[0]?.results || 0), emails: Number(rows[0]?.emails || 0) };
 }
+
+export async function collectedEmails(shop: string) {
+  await prepare();
+  const rows = await prisma.$queryRawUnsafe<Array<{ email: string; total: number | bigint; latest: number }>>(
+    "SELECT email, COUNT(*) AS total, MAX(expires) AS latest FROM QuizReport WHERE shop=? AND email IS NOT NULL GROUP BY email ORDER BY latest DESC LIMIT 500", shop,
+  );
+  return rows.map(row => ({ email: row.email, results: Number(row.total), latestResultAt: Number(row.latest) - 7 * 86400000 }));
+}

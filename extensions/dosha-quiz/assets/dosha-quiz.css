@@ -32,7 +32,7 @@
 
 .prana-quiz .screen {
   display: none;
-  min-height: min(100svh, 760px);
+  min-height: 0;
   animation: pranaFadeIn 0.4s ease;
 }
 
@@ -1670,9 +1670,6 @@
 .prana-quiz.scan-chat-open .screen { min-height: 0; }
 .prana-quiz.scan-chat-open .scanner-wrap { padding: 16px; }
 .prana-quiz.scan-chat-open .hdr { padding: 20px 16px; }
-.prana-quiz .scan-chat-welcome { padding: 18px; margin-bottom: 20px; border-radius: 16px; background: #eee5d7; color: #453828; line-height: 1.6; }
-.prana-quiz .scan-chat-welcome p { margin: 8px 0; }
-.prana-quiz .scan-chat-welcome span { font-size: 12px; }
 .prana-quiz.scan-chat-open .analyzing-overlay { position: absolute; }
 @media(max-width: 600px) { .prana-quiz.scan-chat-open { inset: 0; width: 100%; height: 100dvh; border-radius: 0; } .prana-scan-launcher { right: 16px; bottom: 16px; } }
 
@@ -1683,3 +1680,50 @@
 .prana-quiz [data-capture-email]::placeholder { color: #dbc1c8; }
 .prana-quiz [data-capture-submit] { background: #aa6b16; color: #fff; border: 0; border-radius: 6px; padding: 16px 24px; letter-spacing: 2px; text-transform: uppercase; }
 .prana-quiz [data-capture-skip] { display: block; margin-top: 16px; border: 0; background: transparent; color: #fff; text-decoration: underline; cursor: pointer; padding: 4px 0; }
+
+/* Store-wide floating scan appearance. */
+.prana-quiz.scan-chat-open { --canvas: var(--scan-panel); --ink: var(--scan-text); --gold: var(--scan-accent); color: var(--scan-text); }
+@media (min-width: 601px) { .prana-quiz.scan-chat-open[data-scan-position="left"] { inset: 16px auto 16px 16px; } }
+
+.prana-quiz .sc-btn-icon svg, .prana-quiz .upload-icon svg { display: block; margin-inline: auto; }
+
+.prana-quiz [data-scan-step][hidden] { display: none !important; }
+.prana-quiz .scan-steps { display: flex; gap: 12px; justify-content: space-between; padding: 0 0 20px; margin: 0 0 24px; list-style: none; border-bottom: 1px solid var(--border); }
+.prana-quiz .scan-steps li { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-muted); }
+.prana-quiz .scan-steps li span { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--cream); }
+.prana-quiz .scan-steps li[aria-current] { color: var(--gold); font-weight: 600; }
+.prana-quiz .scan-steps li[aria-current] span { background: var(--gold); color: #fff; }
+.prana-quiz .scan-step-title { margin: 0 0 8px; font-size: 22px; }
+.prana-quiz .scan-step-intro { margin: 0 0 20px; line-height: 1.5; color: var(--text-muted); }
+.prana-quiz .scan-edit-consent { border: 0; background: transparent; color: var(--gold); padding: 0 0 16px; cursor: pointer; font: inherit; }
+.prana-quiz.scan-chat-open .camera-zone { aspect-ratio: 4 / 3; height: auto; min-height: 0; }
+
+/* Tracking overlays align with the full, uncropped camera frame. */
+.prana-quiz .face-tracking-canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.prana-quiz .camera-zone:has(.face-tracking-canvas) .scan-overlay { display: none; }
+.prana-quiz .camera-zone:has(.face-tracking-canvas) { aspect-ratio: 4 / 3; height: auto; }
+.prana-quiz .camera-zone:has(.face-tracking-canvas) .camera-feed { object-fit: fill; }
+
+.prana-quiz .face-scan-guidance { position: absolute; left: 12px; right: 12px; bottom: 12px; display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 4px 10px; background: #101b19eb; color: #fff; border: 1px solid #ffffff30; border-radius: 12px; padding: 12px; pointer-events: none; text-align: left; }
+.prana-quiz .face-scan-direction { grid-row: 1 / 3; display: grid; place-items: center; color: #75e6ae; }
+.prana-quiz .face-scan-direction svg { width: 30px; height: 30px; }
+.prana-quiz .face-scan-guidance strong { font: 600 14px/1.4 system-ui, sans-serif; }
+.prana-quiz .face-scan-hint { font: 12px/1.4 system-ui, sans-serif; color: #d6e2dc; }
+.prana-quiz .face-scan-guidance progress { grid-column: 1 / -1; width: 100%; height: 6px; margin-top: 6px; accent-color: #75e6ae; }
+.prana-quiz .face-scan-guidance.is-paused .face-scan-direction { color: #ffd596; }
+
+/* Single-shot flash scan: countdown and ready state. */
+.prana-quiz .face-scan-guidance { grid-template-columns: minmax(0, 1fr); }
+.prana-quiz .face-scan-guidance.is-ready strong { color: #75e6ae; }
+.prana-quiz .face-scan-countdown {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font: 600 clamp(56px, 18vw, 96px)/1 system-ui, sans-serif;
+  color: #fff;
+  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+}
+.prana-quiz .face-scan-countdown:empty { display: none; }
+

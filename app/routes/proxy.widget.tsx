@@ -3,7 +3,9 @@ import { authenticate } from "../shopify.server";
 import { loadLibrary } from "../quiz.server";
 import template from "../../extensions/dosha-quiz/snippets/quiz-widget.liquid?raw";
 import stylesheet from "../../extensions/dosha-quiz/assets/dosha-quiz.css?raw";
-import widgetScript from "../storefront-quiz.js?raw";
+// Vite ?raw exposes the classic browser bundle as a string.
+// eslint-disable-next-line import/default
+import widgetScript from "../../extensions/dosha-quiz/assets/dosha-quiz.js?raw";
 
 const escapeHtml = (value: string) => value.replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]!);
 export const loader = async ({ request }: LoaderFunctionArgs) => {

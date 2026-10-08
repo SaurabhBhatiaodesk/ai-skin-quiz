@@ -43,6 +43,7 @@ export default function GlobalSettings() {
   useEffect(() => { if (fetcher.data?.ok) { setApiKey(""); setChanging(false); setVisible(false); setCopyStatus(""); } }, [fetcher.data]);
   return <s-page heading="Global Settings">
     <s-link slot="breadcrumb-actions" href="/app/quizzes">Back</s-link>
+    <s-button slot="secondary-actions" href="/app/scan-appearance">Skin Scan appearance</s-button>
     <s-section heading="AI provider">
       <s-stack gap="base">
         <s-select label="AI provider" value={provider} onChange={event => { setProvider(asProvider(event.currentTarget.value)); setApiKey(""); setChanging(false); setVisible(false); }}><s-option value="openai">OpenAI</s-option><s-option value="gemini">Gemini (Google)</s-option><s-option value="claude">Claude (Anthropic)</s-option></s-select>

@@ -278,7 +278,8 @@ function normalizeProfiles(value: unknown) {
 }
 
 // Drafts (new or not yet finished quizzes) may be stored without questions; saves from the editor are strict.
-const DEFAULT_CSS_MARKER = "/* AI Dosha Quiz — storefront styles.";
+// Matches the default stylesheet header, including copies saved with a mis-encoded dash.
+const DEFAULT_CSS_MARKER = /^\/\* AI Dosha Quiz \S+ storefront styles\./;
 
 export function normalizeQuiz(input: unknown, { draft = false }: { draft?: boolean } = {}): StoredQuiz {
   const source = input && typeof input === "object" ? (input as { layout?: unknown; quick?: unknown; deep?: unknown; profiles?: unknown; mappings?: unknown }) : {};
@@ -371,7 +372,7 @@ export function normalizeQuiz(input: unknown, { draft = false }: { draft?: boole
   if (suppliedCss !== undefined && (typeof suppliedCss !== "string" || suppliedCss.length > 100000)) throw new Error("Widget CSS must be text under 100,000 characters.");
   // Widget CSS holds custom overrides only. Older saves stored a full copy of the default stylesheet,
   // which would freeze the widget on outdated styles, so those copies are dropped.
-  const widgetCss = typeof suppliedCss === "string" && !suppliedCss.trimStart().startsWith(DEFAULT_CSS_MARKER) ? suppliedCss : undefined;
+  const widgetCss = typeof suppliedCss === "string" && !DEFAULT_CSS_MARKER.test(suppliedCss.trimStart()) ? suppliedCss : undefined;
   const email = (input as StoredQuiz)?.emailCapture;
   const emailCapture = { enabled: email?.enabled === true, heading: clip(email?.heading, 120) || "Where should we send your ritual?", button: clip(email?.button, 40) || "See my ritual", allowSkip: email?.allowSkip !== false };
   return { emailCapture, enabledPaths, singleFlow, coverImage, profileImage, widgetCss, layout, scanner, design, scanIntegration, quick: enabledPaths.includes("quick") ? quick : [], deep: enabledPaths.includes("deep") ? deep : [], profiles: normalizeProfiles(source.profiles), mappings: normalizeMappings(source.mappings) };

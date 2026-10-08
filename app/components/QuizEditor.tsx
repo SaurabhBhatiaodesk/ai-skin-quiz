@@ -557,7 +557,7 @@ export default function QuizEditor({
         {tab === "edit" && kind !== "scan" ? <s-section heading="Final step: Email capture">
           <s-stack gap="base">
             <s-paragraph color="subdued">Shown after all questions, before the result.</s-paragraph>
-            <s-checkbox label="Add email capture at the end of this quiz" checked={quiz.emailCapture?.enabled === true} onChange={event => setQuiz(current => ({...current, emailCapture: { heading: "Where should we send your ritual?", button: "See my ritual", allowSkip: true, ...current.emailCapture, enabled: event.currentTarget.checked }}))} />
+            <s-checkbox label="Add email capture at the end of this quiz" checked={quiz.emailCapture?.enabled === true} onChange={event => { const enabled = event.currentTarget.checked; setQuiz(current => ({...current, emailCapture: { heading: "Where should we send your ritual?", button: "See my ritual", allowSkip: true, ...current.emailCapture, enabled }})); }} />
             {quiz.emailCapture?.enabled ? <>
               <s-text-field label="Heading" value={quiz.emailCapture.heading} onInput={event => { const heading = event.currentTarget.value; setQuiz(current => ({...current, emailCapture: {...current.emailCapture!, heading}})); }} />
               <s-text-field label="Button text" value={quiz.emailCapture.button} onInput={event => { const button = event.currentTarget.value; setQuiz(current => ({...current, emailCapture: {...current.emailCapture!, button}})); }} />

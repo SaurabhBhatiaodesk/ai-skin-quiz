@@ -20,7 +20,9 @@ export default function App() {
       <s-app-nav>
         <s-link href="/app" {...{ rel: "home" }}>Home</s-link>
         <s-link href="/app/quizzes">Quizzes</s-link>
+        <s-link href="/app/emails">Collected emails</s-link>
         <s-link href="/app/settings">Global Settings</s-link>
+        <s-link href="/app/scan-appearance">Skin Scan appearance</s-link>
         <s-link href="/app/documentation">Documentation</s-link>
       </s-app-nav>
       <Outlet />

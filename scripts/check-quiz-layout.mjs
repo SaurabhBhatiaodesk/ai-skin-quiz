@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 // Regression checks use an in-memory database and a minimal storefront DOM.
 import { readFile } from "node:fs/promises";
-import { transform } from "esbuild";
+import { build, transform } from "esbuild";
 import vm from "node:vm";
 
 const shared = await transform(await readFile("app/quiz-shared.ts", "utf8"), { loader: "ts", format: "esm" });
@@ -101,6 +101,9 @@ const failedProducts = await api.buildQuizResult({ code: loaded.handle, path: "q
 assert.deepEqual(failedProducts.products, []);
 assert.deepEqual(result.products, []);
 
+// The storefront script imports helpers, so test the same bundle the theme extension ships.
+const storefrontBundle = (await build({ entryPoints: ["app/storefront-quiz.js"], bundle: true, write: false, format: "iife" })).outputFiles[0].text;
+
 async function storefront(layout, scanReady = false) {
   const active = new Set(["entry"]);
   const screens = ["entry", "quick", "deep", "scanner"].map(name => ({
@@ -115,7 +118,7 @@ async function storefront(layout, scanReady = false) {
       return match ? screens[["entry", "quick", "deep", "scanner"].indexOf(match[1])] : null;
     },
   };
-  vm.runInNewContext(await readFile("app/storefront-quiz.js", "utf8"), {
+  vm.runInNewContext(storefrontBundle, {
     document: { readyState: "complete", querySelectorAll() { return [root]; }, addEventListener() {} },
     window: { scrollTo() {} },
     URLSearchParams,

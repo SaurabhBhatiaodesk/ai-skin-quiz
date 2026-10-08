@@ -1,3 +1,4 @@
+import { createFaceScan } from "./face-scan.js";
 (function () {
   var PROXY = "/apps/dosha-quiz";
 
@@ -14,6 +15,10 @@
     var doshaKey = "balanced";
     var source = "Quick Quiz";
     var cameraStream = null;
+    var faceScan = null;
+    var cameraGeneration = 0;
+    var scanCapturing = false;
+    var cameraOpening = false;
     var scanMode = "camera";
     var captured = null;
     var reportId = null;
@@ -32,7 +37,7 @@
       var target = q('[data-screen="' + name + '"]');
       if (target) target.classList.add("active");
       if (name !== "scanner") stopCamera();
-      if (name === "scanner") selectMode(scanMode);
+      if (name === "scanner") showScanStep(1);
       if (name === "quick") resetQuick();
       if (name === "deep") resetDeep();
       // Only move the page when the shopper navigates, never on load (blocks may sit below the fold).
@@ -79,7 +84,7 @@
       q("[data-dosha-name]").textContent = profile.name;
       q("[data-dosha-sub]").textContent = profile.sub;
       q("[data-dosha-essence]").textContent = profile.essence;
-      q("[data-dosha-source]").textContent = "via " + source;
+      q("[data-dosha-source]").textContent = (source === "AI Skin Scan" ? "Scan Complete | " : "via ") + source;
       q("[data-insight]").innerHTML = safeHtml(result.insight || profile.insight);
       var learn = q("[data-open-modal]");
       if (learn) learn.textContent = "Explore your full " + profile.name + " guide →";
@@ -141,7 +146,7 @@
       var box = q("[data-products]");
       if (box) {
         box.innerHTML = (result.products || []).map(function (product) {
-          var img = product.image ? '<img src="' + esc(product.image) + '" alt="" loading="lazy">' : '<span class="no-img" aria-hidden="true">✦</span>';
+          var img = product.image ? '<img src="' + esc(product.image) + '" alt="" loading="lazy">' : '<span class="no-img" aria-hidden="true">âœ¦</span>';
           var href = "/products/" + encodeURIComponent(product.handle || "") + (product.variantId ? "?variant=" + encodeURIComponent(String(product.variantId).split("/").pop()) : "");
           return '<div class="product-card"><div class="pc-img">' + img + '</div><div class="pc-body"><div class="pc-name">' + esc(product.title) + "</div>" + (product.why ? '<div class="pc-why">' + esc(product.why) + "</div>" : "") + '<div class="pc-bottom"><span class="pc-price">' + esc(product.price) + '</span><a class="btn-shop" href="' + esc(href) + '" aria-label="Shop ' + esc(product.title) + '">Shop Now →</a></div></div></div>';
         }).join("");
@@ -194,7 +199,10 @@
         signal: controller.signal
       }).then(function (res) {
         return res.json().catch(function () { return {}; }).then(function (body) { if (!res.ok) throw new Error(body.error || "Quiz service unavailable. Please try again."); if (!body.result) throw new Error(body.error || "The server returned no result. Please try again."); return body; });
-      }).then(paintResult).catch(function (error) {
+      }).then(function (data) {
+        if (payload.path === "scan") q("[data-scan-status]").textContent = "Scan Complete";
+        paintResult(data);
+      }).catch(function (error) {
         if (error.name === "AbortError") error = new Error("Analysis took too long. Check your connection and try again with a smaller photo.");
         var captureError = q('[data-screen="email-capture"].active [data-capture-error]');
         if (captureError) captureError.textContent = error.message;
@@ -310,6 +318,15 @@
       });
     }
 
+    function showScanStep(step) {
+      root.querySelectorAll("[data-scan-step]").forEach(function (section) { section.hidden = section.getAttribute("data-scan-step") !== String(step); });
+      root.querySelectorAll("[data-scan-step-label]").forEach(function (label) {
+        if (label.getAttribute("data-scan-step-label") === String(step)) label.setAttribute("aria-current", "step");
+        else label.removeAttribute("aria-current");
+      });
+      if (step === 2) selectMode(scanMode); else stopCamera();
+    }
+
     function consentGiven() {
       var bio = q("[data-consent='biometric']");
       var age = q("[data-consent='age']");
@@ -339,12 +356,26 @@
     }
 
     function startCamera() {
-      if (cameraStream || !navigator.mediaDevices) return;
-      navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false }).then(function (stream) {
+      if (cameraStream || cameraOpening) return;
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { q("[data-scan-status]").textContent = "Camera is unavailable. Use a secure browser connection or upload a photo."; return; }
+      cameraOpening = true;
+      var generation = ++cameraGeneration;
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 960 } }, audio: false }).then(function (stream) {
+        cameraOpening = false;
+        if (generation !== cameraGeneration) { stream.getTracks().forEach(function (track) { track.stop(); }); return; }
         cameraStream = stream;
         var feed = q("[data-camera-feed]");
-        if (feed) feed.srcObject = stream;
+        if (feed) {
+          feed.srcObject = stream;
+          q("[data-scan-status]").textContent = "Loading face tracking...";
+          createFaceScan(feed, q("[data-camera-zone]"), function (text) { q("[data-scan-status]").textContent = text; }).then(function (tracker) {
+            if (generation !== cameraGeneration) { tracker.close(); return; }
+            faceScan = tracker;
+          }).catch(function () { if (generation === cameraGeneration) { stopCamera(); q("[data-scan-status]").textContent = "Face tracking could not load. Check your connection, retry the camera, or upload a photo."; } });
+        }
       }).catch(function () {
+        cameraOpening = false;
+        if (generation !== cameraGeneration) return;
         var status = q("[data-scan-status]");
         if (status) status.textContent = "Camera access denied — please use Upload instead";
         scanMode = "upload";
@@ -360,6 +391,8 @@
     }
 
     function stopCamera() {
+      cameraGeneration++; cameraOpening = false;
+      if (faceScan) { faceScan.close(); faceScan = null; }
       if (cameraStream) {
         cameraStream.getTracks().forEach(function (track) { track.stop(); });
         cameraStream = null;
@@ -371,6 +404,16 @@
       if (!origin) return;
       var goto = origin.closest("[data-goto]");
       if (goto) { go(goto.getAttribute("data-goto"), true); return; }
+      if (origin.closest("[data-scan-continue]")) {
+        var consentError = q("[data-consent-error]");
+        if (!consentGiven()) { if (consentError) consentError.classList.add("show"); return; }
+        if (consentError) consentError.classList.remove("show");
+        showScanStep(2);
+        var photoHeading = q('[data-scan-step="2"] .scan-step-title');
+        if (photoHeading) { photoHeading.setAttribute("tabindex", "-1"); photoHeading.focus(); }
+        return;
+      }
+      if (origin.closest("[data-scan-back]")) { showScanStep(1); return; }
       var mode = origin.closest("[data-mode]");
       if (mode) { selectMode(mode.getAttribute("data-mode")); return; }
       if (origin.closest("[data-upload-zone]")) { var file = q("[data-file]"); if (file) file.click(); return; }
@@ -495,31 +538,34 @@
         return;
       }
       err.classList.remove("show");
+      if (scanCapturing) return;
       if (scanMode === "camera") {
-        var video = q("[data-camera-feed]");
-        if (video && video.videoWidth) {
-          var canvas = document.createElement("canvas");
-          var scale = Math.min(1, 1024 / Math.max(video.videoWidth, video.videoHeight));
-          canvas.width = Math.round(video.videoWidth * scale);
-          canvas.height = Math.round(video.videoHeight * scale);
-          canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
-          captured = canvas.toDataURL("image/jpeg", 0.85);
-        }
+        if (!faceScan) { q("[data-scan-status]").textContent = "Wait for face tracking to load, or retry the camera."; return; }
+        scanCapturing = true;
+        faceScan.start().then(function (images) {
+          scanCapturing = false;
+          finishScan(images);
+        }).catch(function (error) { scanCapturing = false; q("[data-scan-status]").textContent = error.message; });
+        return;
       }
+      finishScan(captured);
+    }
+
+    function finishScan(images) {
       stopCamera();
-      if (!captured) {
+      if (!images) {
         q("[data-scan-status]").textContent = "Please enable camera or upload a photo first";
         if (scanMode === "camera") startCamera();
         return;
       }
       var overlay = q("[data-analyzing]");
       if (overlay) overlay.classList.add("active");
-      submit({ path: "scan", image: captured, consent: true, adult: true }).finally(function () {
+      submit({ path: "scan", image: Array.isArray(images) ? undefined : images, images: Array.isArray(images) ? images : undefined, consent: true, adult: true }).finally(function () {
         captured = null;
         stopCamera();
         var preview = q("[data-upload-preview]");
         if (preview) { preview.removeAttribute("src"); preview.style.display = "none"; }
-        var fileInput = q("[data-upload-input]");
+        var fileInput = q("[data-file]");
         if (fileInput) fileInput.value = "";
         if (overlay) overlay.classList.remove("active");
       });
@@ -541,7 +587,7 @@
         .finally(function () { button.disabled = false; });
     }
     root.addEventListener("change", function (event) {
-      if (event.target && event.target.matches && event.target.matches("[data-consent]") && scanMode === "camera" && consentGiven()) selectMode("camera");
+      if (event.target && event.target.matches && event.target.matches("[data-consent]") && !consentGiven()) stopCamera();
     });
 
     var fileInput = q("[data-file]");
@@ -576,10 +622,10 @@
       var plural = function (count) { return count + (count === 1 ? " question" : " questions"); };
       var copy = {
         "[data-quick-desc]": plural(quickCount) + " about your skin. Instant ritual match — no camera needed.",
-        "[data-quick-time]": "✦ About " + minutes(quickCount, 20) + " min",
+        "[data-quick-time]": "âœ¦ About " + minutes(quickCount, 20) + " min",
         "[data-quick-sub]": plural(quickCount) + ". Your personal ritual.",
         "[data-deep-desc]": plural(deepCount) + " across constitution, current state, and environment. The full Ayurvedic reading.",
-        "[data-deep-time]": "✦ About " + minutes(deepCount, 15) + " min"
+        "[data-deep-time]": "âœ¦ About " + minutes(deepCount, 15) + " min"
       };
       Object.keys(copy).forEach(function (selector) { var node = q(selector); if (node) node.textContent = copy[selector]; });
       if (data.widgetCss) {
@@ -630,24 +676,45 @@
         for (var scanIndex = 0; scanIndex < quizLinks.length; scanIndex++) quizLinks[scanIndex].style.display = "none";
         go("scanner");
       }
-      if (scanReady && enabledPaths.indexOf("scan") !== -1 && !document.querySelector("[data-scan-chat-launcher]")) {
+      var appearance = data.scanAppearance || {};
+      if (appearance.enabled !== false && scanReady && enabledPaths.indexOf("scan") !== -1 && !document.querySelector("[data-scan-chat-launcher]")) {
         var launcher = document.createElement("button");
         launcher.type = "button"; launcher.className = "prana-scan-launcher";
         launcher.setAttribute("data-scan-chat-launcher", "");
         launcher.setAttribute("aria-label", "Open skin scan assistant");
         launcher.setAttribute("aria-expanded", "false");
-        launcher.textContent = "Skin Scan";
+        launcher.textContent = appearance.label || "Skin Scan";
+        launcher.style.background = appearance.buttonColor || "#ee5368";
+        launcher.style.color = appearance.buttonTextColor || "#ffffff";
+        launcher.style.borderRadius = (appearance.radius == null ? 32 : appearance.radius) + "px";
+        if (appearance.shape === "circle") {
+          launcher.textContent = "";
+          launcher.setAttribute("aria-label", appearance.label || "Open skin scan assistant");
+          var scanIcon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+          scanIcon.setAttribute("viewBox", "0 0 24 24"); scanIcon.setAttribute("width", "28"); scanIcon.setAttribute("height", "28"); scanIcon.setAttribute("fill", "none"); scanIcon.setAttribute("stroke", "currentColor"); scanIcon.setAttribute("stroke-width", "1.7"); scanIcon.setAttribute("stroke-linecap", "round"); scanIcon.setAttribute("stroke-linejoin", "round"); scanIcon.setAttribute("aria-hidden", "true");
+          var scanPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+          scanPath.setAttribute("d", "M8 3H5a2 2 0 0 0-2 2v3m13-5h3a2 2 0 0 1 2 2v3M3 16v3a2 2 0 0 0 2 2h3m8 0h3a2 2 0 0 0 2-2v-3M9 9h.01M15 9h.01M9 15c2 1.5 4 1.5 6 0");
+          scanIcon.appendChild(scanPath); launcher.appendChild(scanIcon);
+          Object.assign(launcher.style, { width: "64px", height: "64px", padding: "0", borderRadius: "50%", display: "inline-flex", alignItems: "center", justifyContent: "center" });
+        }
+        launcher.style.bottom = (appearance.offset == null ? 24 : appearance.offset) + "px";
+        launcher.style[appearance.position === "left" ? "left" : "right"] = (appearance.offset == null ? 24 : appearance.offset) + "px";
+        launcher.style[appearance.position === "left" ? "right" : "left"] = "auto";
+        root.style.setProperty("--scan-panel", appearance.panelColor || "#faf7f2");
+        root.style.setProperty("--scan-text", appearance.textColor || "#1a1208");
+        root.style.setProperty("--scan-accent", appearance.accentColor || "#8f6330");
+        root.setAttribute("data-scan-position", appearance.position === "left" ? "left" : "right");
         document.body.appendChild(launcher);
         var close = document.createElement("button");
         close.type = "button"; close.className = "scan-chat-close"; close.textContent = "Close";
         close.setAttribute("aria-label", "Close skin scan assistant"); root.appendChild(close);
         var previousOverflow = "";
-        function closeScanChat() {
+        var closeScanChat = function () {
           if (!root.classList.contains("scan-chat-open")) return;
           root.classList.remove("scan-chat-open"); root.removeAttribute("role"); root.removeAttribute("aria-modal"); root.removeAttribute("aria-label");
           document.body.style.overflow = previousOverflow;
           stopCamera(); launcher.setAttribute("aria-expanded", "false"); launcher.focus();
-        }
+        };
         launcher.addEventListener("click", function () {
           previousOverflow = document.body.style.overflow; document.body.style.overflow = "hidden";
           root.classList.add("scan-chat-open"); root.setAttribute("role", "dialog"); root.setAttribute("aria-modal", "true"); root.setAttribute("aria-label", "Skin scan assistant");
