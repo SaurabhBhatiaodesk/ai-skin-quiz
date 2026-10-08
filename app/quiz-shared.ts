@@ -37,6 +37,7 @@ export type StoredQuiz = {
   widgetCss?: string;
   enabledPaths?: Array<"quick" | "deep" | "scan">;
   singleFlow?: "quick" | "deep";
+  cardIcons?: Partial<Record<"scan" | "quick" | "deep", string>>;
   coverImage?: string;
   profileImage?: string;
   layout?: "three" | "single" | "scan";

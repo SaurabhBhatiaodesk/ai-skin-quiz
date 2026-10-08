@@ -23,6 +23,13 @@ export default function Quizzes() {
   const { quizzes, themeActivated, themeEditorUrl } = useLoaderData<typeof loader>();
   const submit = useSubmit();
   const pending = useNavigation().state !== "idle";
+  const [developerQuiz, setDeveloperQuiz] = useState<{ handle: string; name: string } | null>(null);
+  const [copyStatus, setCopyStatus] = useState("");
+  const apiPath = developerQuiz ? `/apps/dosha-quiz/quiz?code=${encodeURIComponent(developerQuiz.handle)}` : "";
+  async function copyDeveloperValue(value: string, label: string) {
+    try { await navigator.clipboard.writeText(value); setCopyStatus(`${label} copied.`); }
+    catch { setCopyStatus("Copy is blocked by this browser. Select the text below and copy it manually."); }
+  }
   const [deleting, setDeleting] = useState<{ handle: string; name: string } | null>(null);
 
   return (
@@ -58,12 +65,25 @@ export default function Quizzes() {
               <s-text color="subdued">{quiz.layout === "scan" ? "Camera or photo upload" : `${quiz.questions} ${quiz.questions === 1 ? "question" : "questions"}`}</s-text>
               <s-stack direction="inline" gap="small">
                 <s-button href={`/app/editor?quiz=${encodeURIComponent(quiz.handle)}`}>Edit quiz</s-button>
+                <s-button commandFor="quiz-developer-modal" command="--show" onClick={() => { setDeveloperQuiz({handle:quiz.handle,name:quiz.name}); setCopyStatus(""); }}>Quiz API</s-button>
                 {!themeActivated ? <s-button variant="tertiary" href={quiz.addUrl} target="_top">Activate in theme</s-button> : null}
               </s-stack>
             </s-stack>
           </s-box>
         </s-box>)}
       </s-grid>}
+      <s-modal id="quiz-developer-modal" heading={developerQuiz ? `${developerQuiz.name}: Quiz API` : "Quiz API"}>
+        <s-stack gap="base">
+          <s-paragraph>Fetch this URL from your Shopify storefront to get this quiz?s data.</s-paragraph>
+          <s-stack direction="inline" justifyContent="space-between" alignItems="center">
+            <s-text type="strong">Quiz data API</s-text>
+            <s-button variant="tertiary" onClick={() => copyDeveloperValue(apiPath,"API URL")}>Copy API URL</s-button>
+          </s-stack>
+          <textarea aria-label="Quiz data API" readOnly value={apiPath} rows={2} style={{width:"100%",boxSizing:"border-box",padding:12,border:"1px solid #ccc",borderRadius:8,fontFamily:"monospace",resize:"none"}} onFocus={event => event.currentTarget.select()} />
+          <div role="status" aria-live="polite">{copyStatus}</div>
+        </s-stack>
+        <s-button slot="secondary-actions" commandFor="quiz-developer-modal" command="--hide">Close</s-button>
+      </s-modal>
       <s-modal id="delete-quiz-modal" heading="Delete quiz?">
         <s-paragraph>{deleting ? `"${deleting.name}" will be deleted with its questions, results and product mappings. Theme blocks using it will stop showing the quiz. This cannot be undone.` : ""}</s-paragraph>
         <s-button slot="primary-action" variant="primary" tone="critical" commandFor="delete-quiz-modal" command="--hide" onClick={() => { if (deleting) submit({ intent: "delete", handle: deleting.handle }, { method: "post" }); setDeleting(null); }}>Delete quiz</s-button>

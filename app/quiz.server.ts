@@ -300,6 +300,14 @@ export function normalizeQuiz(input: unknown, { draft = false }: { draft?: boole
     }
     return url.href.slice(0, 1500);
   };
+  const cardIcons: Partial<Record<"scan" | "quick" | "deep", string>> = {};
+  for (const path of ["scan", "quick", "deep"] as const) {
+    const value = options?.cardIcons?.[path];
+    if (!value) continue;
+    if (typeof value === "string" && value.length <= 90000 && /^data:image\/(?:png|jpeg|webp|svg\+xml);base64,[A-Za-z0-9+/]+={0,2}$/.test(value)) cardIcons[path] = value;
+    else if (typeof value === "string" && value.length <= 1500 && value.startsWith("https://")) cardIcons[path] = imageUrl(value);
+    else if (!draft) throw new Error("Use an SVG, PNG, JPG or WebP icon under 64 KB, or an HTTPS image URL.");
+  }
   const coverImage = imageUrl(options?.coverImage);
   const profileImage = imageUrl(options?.profileImage);
   const quick = (Array.isArray(source.quick) ? source.quick : []).slice(0, layout === "single" ? 40 : 12).flatMap((item) => {
@@ -376,7 +384,7 @@ export function normalizeQuiz(input: unknown, { draft = false }: { draft?: boole
   const widgetCss = typeof suppliedCss === "string" && !DEFAULT_CSS_MARKER.test(suppliedCss.trimStart()) ? suppliedCss : undefined;
   const email = (input as StoredQuiz)?.emailCapture;
   const emailCapture = { enabled: email?.enabled === true, heading: clip(email?.heading, 120) || "Where should we send your ritual?", button: clip(email?.button, 40) || "See my ritual", allowSkip: email?.allowSkip !== false };
-  return { emailCapture, enabledPaths, singleFlow, coverImage, profileImage, widgetCss, layout, scanner, design, scanIntegration, quick: enabledPaths.includes("quick") ? quick : [], deep: enabledPaths.includes("deep") ? deep : [], profiles: normalizeProfiles(source.profiles), mappings: normalizeMappings(source.mappings) };
+  return { cardIcons, emailCapture, enabledPaths, singleFlow, coverImage, profileImage, widgetCss, layout, scanner, design, scanIntegration, quick: enabledPaths.includes("quick") ? quick : [], deep: enabledPaths.includes("deep") ? deep : [], profiles: normalizeProfiles(source.profiles), mappings: normalizeMappings(source.mappings) };
 }
 
 function normalizeMappings(value: unknown): ProductMapping[] {
@@ -556,6 +564,7 @@ export async function publicQuiz(shop: string, code?: unknown) {
     singleFlow: quiz.singleFlow,
     layout: quiz.layout || "three",
     scanner: quiz.scanner,
+    cardIcons: quiz.cardIcons,
     scanReady: scanAnalysisReady(),
     design: quiz.design,
     widgetCss: quiz.widgetCss,

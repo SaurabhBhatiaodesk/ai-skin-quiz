@@ -377,6 +377,29 @@ export default function QuizEditor({
                 <s-stack direction="inline" gap="small"><s-button href="/app/quizzes">All quizzes</s-button></s-stack>
               </s-stack>
             </s-section> : null}
+            {tab === "settings" ? <s-section heading="Quiz card icons">
+              <s-stack gap="base">
+                <s-paragraph>Upload an SVG, PNG, JPG or WebP icon (up to 64 KB) for each entry card, then save the quiz.</s-paragraph>
+                {(["scan", "quick", "deep"] as const).map(path => <div key={path}>
+                  <s-heading>{path === "scan" ? "AI Skin Scan" : path === "quick" ? "Quick Quiz" : "Deep Dosha"}</s-heading>
+                  {quiz.cardIcons?.[path] ? <img src={quiz.cardIcons[path]} alt={`${path} card icon preview`} style={{width:48,height:48,objectFit:"contain",display:"block",margin:"8px 0"}} /> : null}
+                  <input type="file" accept="image/svg+xml,image/png,image/jpeg,image/webp" aria-label={`Upload ${path} card icon`} onChange={event => {
+                    const input = event.currentTarget;
+                    const file = input.files?.[0];
+                    if (!file) return;
+                    if (file.size > 65536 || !["image/svg+xml","image/png","image/jpeg","image/webp"].includes(file.type)) { input.setCustomValidity("Choose an SVG, PNG, JPG or WebP file under 64 KB."); input.reportValidity(); input.value=""; return; }
+                    input.setCustomValidity("");
+                    const reader = new FileReader();
+                    reader.onload = () => { const value = reader.result; if (typeof value === "string") setQuiz(current => ({...current,cardIcons:{...current.cardIcons,[path]:value}})); };
+                    reader.onerror = () => { input.setCustomValidity("Could not read this file. Please try again."); input.reportValidity(); };
+                    reader.readAsDataURL(file);
+                  }} />
+                  <s-text-field label="Or HTTPS icon image URL" value={quiz.cardIcons?.[path]?.startsWith("https://") ? quiz.cardIcons[path] : ""} onInput={event => { const value = event.currentTarget.value; setQuiz(current => ({...current,cardIcons:{...current.cardIcons,[path]:value}})); }} />
+                  <s-button variant="tertiary" disabled={!quiz.cardIcons?.[path]} onClick={() => setQuiz(current => ({...current,cardIcons:{...current.cardIcons,[path]:""}}))}>Reset to default icon</s-button>
+                </div>)}
+                <s-stack direction="inline"><s-button variant="primary" loading={pending} onClick={save}>Save icons</s-button></s-stack>
+              </s-stack>
+            </s-section> : null}
             {tab === "settings" ? <s-section heading="Widget CSS">
               <s-stack gap="base">
                 <s-paragraph color="subdued">Add custom CSS on top of the default quiz styles. Leave empty to use the defaults. Rules apply only inside this widget and override the defaults, for example: .entry-card {"{"} border-radius: 24px; {"}"}</s-paragraph>

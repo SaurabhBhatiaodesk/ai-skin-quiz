@@ -673,6 +673,15 @@ import { createFaceScan } from "./face-scan.js";
       var scanReady = data.scanReady === true;
       // Without a connected analysis provider a scan cannot produce a result, so it is never offered to shoppers.
       if (!scanReady && data.layout === "scan") throw new Error("AI Skin Scan analysis is not connected yet, so this block stays hidden on your store. Use a question quiz block for now.");
+      ["scan", "quick", "deep"].forEach(function(path) {
+        var icon = q('.ec-icon.' + path);
+        var value = data.cardIcons && data.cardIcons[path];
+        if (!icon || !value || !(value.indexOf("https://") === 0 || /^data:image\/(png|jpeg|webp|svg\+xml);base64,/.test(value))) return;
+        var image = document.createElement("img"); image.alt = "";
+        image.style.cssText = "width:32px;height:32px;object-fit:contain";
+        image.addEventListener("load", function() { icon.textContent = ""; icon.appendChild(image); });
+        image.src = value;
+      });
       var scanner = data.scanner || { title: "AI Skin Scan", description: "Camera or photo upload for visible cosmetic skin observations.", camera: true, upload: true };
       var scanCard = q('[data-goto="scanner"].entry-card');
       if (scanCard) {
