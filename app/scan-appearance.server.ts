@@ -1,10 +1,14 @@
 import prisma from "./db.server";
-export const scanAppearanceDefaults = { enabled: true, shape: "rounded", label: "Skin Scan", position: "right", buttonColor: "#ee5368", buttonTextColor: "#ffffff", panelColor: "#faf7f2", textColor: "#1a1208", accentColor: "#8f6330", radius: 32, offset: 24 };
+export const scanAppearanceDefaults = { enabled: true, iconImage: "", shape: "rounded", label: "Skin Scan", position: "right", buttonColor: "#ee5368", buttonTextColor: "#ffffff", panelColor: "#faf7f2", textColor: "#1a1208", accentColor: "#8f6330", radius: 32, offset: 24 };
 export type ScanAppearance = typeof scanAppearanceDefaults;
 async function prepare() { await prisma.$executeRawUnsafe("CREATE TABLE IF NOT EXISTS ScanAppearance (shop TEXT PRIMARY KEY, payload TEXT NOT NULL)"); }
 export function normalizeAppearance(value: unknown): ScanAppearance {
   const input = value as Partial<ScanAppearance>;
   const result = { ...scanAppearanceDefaults };
+  const icon = input?.iconImage || "";
+  if (typeof icon !== "string" || (icon && !(icon.length <= 700000 && /^data:image\/(?:png|jpeg|webp|svg\+xml);base64,[A-Za-z0-9+/]+={0,2}$/.test(icon)) && !(icon.length <= 1500 && /^https:\/\//.test(icon)))) throw new Error("Use an SVG, PNG, JPG or WebP icon up to 512 KB, or an HTTPS image URL.");
+  if (icon.startsWith("https://")) { try { new URL(icon); } catch { throw new Error("Use a valid HTTPS image URL."); } }
+  result.iconImage = icon;
   result.enabled = input?.enabled !== false;
   result.shape = input?.shape === "circle" ? "circle" : "rounded";
   result.label = String(input?.label || "Skin Scan").trim().slice(0, 40) || "Skin Scan";

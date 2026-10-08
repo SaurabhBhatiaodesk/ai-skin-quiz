@@ -18,21 +18,21 @@ const statIcons: Record<string, ReactNode> = {
   Results: <><path d="M4 3v18h17M8 16v-4M13 16V8M18 16V5" /></>,
   Emails: <><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3 7 9 6 9-6" /></>,
 };
-function Stat({ label, value, detail }: { label: string; value: string; detail: string }) {
+function Stat({ label, value, detail, href }: { label: string; value: string; detail: string; href?: string }) {
   return (
     <div className="dashboard-stat" style={{ background: "#fff", padding: 20, display: "grid", gridTemplateColumns: "36px minmax(0, 1fr)", alignContent: "start", columnGap: 12, rowGap: 10 }}>
       <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, borderRadius: 9, background: "#e3f1df", color: "#29845a", gridRow: "1 / 3" }}>
         <svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">{statIcons[label]}</svg>
       </span>
-      <span style={{ fontSize: 13, lineHeight: "18px", color: "#616161" }}>{label === "Emails" ? <s-link href="/app/emails">{label}</s-link> : label}</span>
-      <strong style={{ fontSize: label === "Storefront" ? 20 : 26, lineHeight: "28px", color: label === "Storefront" && value === "Active" ? "#29845a" : "#303030", marginTop: -6 }}>{value}</strong>
+      <span style={{ fontSize: 13, lineHeight: "18px", color: "#616161" }}>{href ? <s-link href={href}>{label === "Storefront" ? "Theme blocks" : label}</s-link> : label}</span>
+      <strong style={{ fontSize: label === "Storefront" ? 20 : 26, lineHeight: "28px", color: label === "Storefront" && value === "Enabled" ? "#29845a" : "#303030", marginTop: -6 }}>{value}</strong>
       <span style={{ gridColumn: "1 / -1", fontSize: 13, lineHeight: "18px", color: "#616161", overflowWrap: "anywhere" }}>{detail}</span>
     </div>
   );
 }
 
 export default function Home() {
-  const { quizzes, themeChecked, themeActivated, stats } = useLoaderData<typeof loader>();
+  const { quizzes, themeChecked, themeActivated, themeEditorUrl, stats } = useLoaderData<typeof loader>();
   const liveCount = quizzes.filter((quiz) => quiz.live).length;
 
   return (
@@ -44,8 +44,8 @@ export default function Home() {
           .dashboard-content { width: 100%; min-width: 0; display: grid; gap: 20px; }
           .dashboard-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid #dedede; border-radius: 14px; overflow: hidden; background: white; }
           .dashboard-stat + .dashboard-stat { border-left: 1px solid #ebebeb; }
-          .dashboard-resources { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-          .dashboard-resource { display: flex; align-items: center; justify-content: space-between; gap: 20px; background: white; border: 1px solid #dedede; border-radius: 12px; padding: 20px; }
+          .dashboard-resources { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+          .dashboard-resource { display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between; gap: 20px; background: white; border: 1px solid #dedede; border-radius: 12px; padding: 20px; }
           @media(max-width: 850px) { .dashboard-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); } .dashboard-stat:nth-child(3) { border-left: 0; } .dashboard-stat:nth-child(n+3) { border-top: 1px solid #ebebeb; } .dashboard-resources { grid-template-columns: 1fr; } }
           @media(max-width: 450px) { .dashboard-resource { align-items: flex-start; flex-direction: column; } }
         `}</style>
@@ -57,27 +57,34 @@ export default function Home() {
           <div style={{ minWidth: 0 }}>
 
             <h2 style={{ margin: "0 0 6px", fontSize: "clamp(22px, 2vw, 28px)", lineHeight: 1.25, letterSpacing: "-0.5px", fontWeight: 650, color: "#213c2c" }}>Welcome to AI Skin Quiz</h2>
-            <p style={{ margin: 0, fontSize: 14, lineHeight: 1.5, color: "#52645a", maxWidth: 640 }}>Manage your quizzes, review results and personalize your customers’ skin rituals.</p>
+            <p style={{ margin: 0, fontSize: 14, lineHeight: 1.5, color: "#52645a", maxWidth: 640 }}>Create your quiz, connect AI photo analysis, and choose how it appears on your store.</p>
           </div>
         </div>
 
         <div className="dashboard-metrics">
-          <Stat label="Quizzes" value={String(quizzes.length)} detail={quizzes.length === 1 ? "1 quiz created" : `${quizzes.length} quizzes created`} />
-          <Stat label="Storefront" value={themeActivated ? "Active" : "Not active"} detail={themeChecked ? `${liveCount} live in your theme` : themeActivated ? "Quiz block added to your theme" : "Add the quiz block to your theme"} />
-          <Stat label="Results" value={String(stats.results)} detail="Completed in the last 7 days" />
-          <Stat label="Emails" value={String(stats.emails)} detail="Collected in the last 7 days" />
+          <Stat label="Quizzes" href="/app/quizzes" value={String(quizzes.length)} detail={quizzes.length === 1 ? "1 quiz created" : `${quizzes.length} quizzes created`} />
+          <Stat label="Storefront" href={themeEditorUrl} value={themeChecked ? themeActivated ? "Enabled" : "Not added" : "Unverified"} detail={themeChecked ? `${liveCount} quiz ${liveCount === 1 ? "block" : "blocks"} enabled in the theme` : "Open the theme editor to check"} />
+          <Stat label="Results" value={String(stats.results)} detail="Quiz and scan results saved ? last 7 days" />
+          <Stat label="Emails" href="/app/emails" value={String(stats.emails)} detail="Email-linked results ? last 7 days" />
         </div>
 
+        <section aria-label="Manage your app">
+        <h2 style={{margin:"0 0 12px",fontSize:16,fontWeight:600}}>Manage your app</h2>
         <div className="dashboard-resources">
           <div className="dashboard-resource">
-            <div><h3 style={{ margin: "0 0 6px", fontSize: 15, fontWeight: 600, color: "#303030" }}>Skin Scan appearance</h3><p style={{ margin: 0, fontSize: 13, lineHeight: 1.5, color: "#616161" }}>Customize your scan button, colors and position.</p></div>
-            <s-button href="/app/scan-appearance">Customize</s-button>
+            <div><h3 style={{ margin: "0 0 6px", fontSize: 15, fontWeight: 600 }}>Quizzes and products</h3><p style={{ margin: 0, fontSize: 13, lineHeight: 1.5, color: "#616161" }}>Edit questions, card icons and product matches. Copy each quiz?s API URL.</p></div>
+            <s-button href="/app/quizzes">Manage quizzes</s-button>
           </div>
           <div className="dashboard-resource">
-            <div><h3 style={{ margin: "0 0 6px", fontSize: 15, fontWeight: 600, color: "#303030" }}>Help and documentation</h3><p style={{ margin: 0, fontSize: 13, lineHeight: 1.5, color: "#616161" }}>Guides for questions, product matching and design.</p></div>
-            <s-button href="/app/documentation">View guides</s-button>
+            <div><h3 style={{ margin: "0 0 6px", fontSize: 15, fontWeight: 600 }}>AI photo analysis</h3><p style={{ margin: 0, fontSize: 13, lineHeight: 1.5, color: "#616161" }}>Add or replace the provider API key used for skin photo analysis.</p></div>
+            <s-button href="/app/settings">Open AI settings</s-button>
+          </div>
+          <div className="dashboard-resource">
+            <div><h3 style={{ margin: "0 0 6px", fontSize: 15, fontWeight: 600 }}>Floating scan button</h3><p style={{ margin: 0, fontSize: 13, lineHeight: 1.5, color: "#616161" }}>Change its image icon, shape, colors and screen position.</p></div>
+            <s-button href="/app/scan-appearance">Edit scan button</s-button>
           </div>
         </div>
+        </section>
         </div>
       </s-stack>
     </s-page>

@@ -205,3 +205,16 @@ assert.equal(concurrent.filter(item => item.status === "fulfilled").length, 1);
 assert.equal(concurrent.filter(item => item.status === "rejected").length, 1);
 assert.equal((await api.loadLibrary("concurrency-test")).length, 1);
 console.log("Passed: simultaneous library writes fail safely instead of silently losing changes.");
+
+// Uploaded SVG stays an isolated image and persists through the real quiz storage path.
+const iconQuiz = await api.createQuiz("icons-test", "Icons", "three");
+const svgIcon = "data:image/svg+xml;base64," + Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg>').toString("base64");
+await api.saveQuiz("icons-test", {...withQuestions(iconQuiz),cardIcons:{scan:svgIcon,quick:"https://example.com/quick.png"}},iconQuiz.handle);
+const iconReload = await api.loadQuiz("icons-test",iconQuiz.handle);
+assert.equal(iconReload.cardIcons.scan,svgIcon);
+assert.equal((await api.publicQuiz("icons-test",iconQuiz.handle)).cardIcons.quick,"https://example.com/quick.png");
+assert.throws(()=>api.normalizeQuiz({...iconReload,cardIcons:{scan:"javascript:alert(1)"}}),/icon/);
+assert.throws(()=>api.normalizeQuiz({...iconReload,cardIcons:{scan:"data:image/png;base64,"+"A".repeat(90001)}}),/icon/);
+await api.saveQuiz("icons-test",{...iconReload,cardIcons:{scan:""}},iconQuiz.handle);
+assert.equal((await api.loadQuiz("icons-test",iconQuiz.handle)).cardIcons.scan,undefined);
+console.log("PASS: SVG icon upload, save/reload, public API, unsafe URL/oversize rejection, and reset.");

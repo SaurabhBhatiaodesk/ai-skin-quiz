@@ -733,6 +733,16 @@ import { createFaceScan } from "./face-scan.js";
           scanIcon.appendChild(scanPath); launcher.appendChild(scanIcon);
           Object.assign(launcher.style, { width: "64px", height: "64px", padding: "0", borderRadius: "50%", display: "inline-flex", alignItems: "center", justifyContent: "center" });
         }
+        if (appearance.iconImage && (appearance.iconImage.indexOf("https://") === 0 || /^data:image\/(png|jpeg|webp|svg\+xml);base64,/.test(appearance.iconImage))) {
+          var launcherImage = document.createElement("img"); launcherImage.alt = "";
+          launcherImage.style.cssText = "width:28px;height:28px;object-fit:contain;flex-shrink:0";
+          launcherImage.addEventListener("load", function() {
+            if (appearance.shape === "circle") launcher.textContent = "";
+            else { launcher.style.display = "inline-flex"; launcher.style.alignItems = "center"; launcher.style.gap = "8px"; }
+            launcher.prepend(launcherImage);
+          });
+          launcherImage.src = appearance.iconImage;
+        }
         launcher.style.bottom = (appearance.offset == null ? 24 : appearance.offset) + "px";
         launcher.style[appearance.position === "left" ? "left" : "right"] = (appearance.offset == null ? 24 : appearance.offset) + "px";
         launcher.style[appearance.position === "left" ? "right" : "left"] = "auto";
