@@ -32,15 +32,13 @@ export default function Home() {
             {label:"Emails",value:String(stats.emails),detail:"Email-linked results - last 7 days",href:"/app/emails",icon:"email" as const},
           ].map(item => <s-section key={item.label}>
             <s-stack gap="base">
-              <s-stack direction="inline" justifyContent="space-between" alignItems="center">
+              <s-stack direction="inline" gap="small" alignItems="center">
+                <s-icon type={item.icon} />
                 <s-text color="subdued">{item.label}</s-text>
-                <s-box padding="small" background="subdued" borderRadius="base"><s-icon type={item.icon} /></s-box>
               </s-stack>
-              <div style={{fontSize:item.label === "Theme blocks" ? 24 : 34,fontWeight:650,lineHeight:1.15,letterSpacing:"-0.8px",color:item.label === "Theme blocks" && themeChecked && themeActivated ? "#227549" : "#172b3a"}}>{item.value}</div>
-              <s-text color="subdued">{item.detail}</s-text>
-              <s-divider />
-              <s-stack direction="inline">
-                {item.href ? <s-button variant="tertiary" href={item.href} target={item.label === "Theme blocks" ? "_top" : undefined}>View {item.label.toLowerCase()}</s-button> : <s-text color="subdued">Last 7 days</s-text>}
+              <s-stack direction="inline" justifyContent="space-between" alignItems="end" gap="base">
+                <div style={{fontSize:item.label === "Theme blocks" ? 24 : 34,fontWeight:650,lineHeight:1.1,letterSpacing:"-0.8px",color:item.label === "Theme blocks" && themeChecked && themeActivated ? "#227549" : "#172b3a"}}>{item.value}</div>
+                <s-text color="subdued">{item.label === "Results" || item.label === "Emails" ? "Last 7 days" : item.label === "Theme blocks" ? `${liveCount} ${liveCount === 1 ? "block" : "blocks"} in theme` : "Total quizzes"}</s-text>
               </s-stack>
             </s-stack>
           </s-section>)}
