@@ -1,4 +1,5 @@
 import { createFaceScan } from "./face-scan.js";
+import { buildFaceMap } from "./face-map.js";
 (function () {
   var PROXY = "/apps/dosha-quiz";
 
@@ -22,6 +23,9 @@ import { createFaceScan } from "./face-scan.js";
     var scanMode = "camera";
     var captured = null;
     var scanPhoto = null;
+    var scanLandmarks = null;
+    var scanMirrored = false;
+    var faceMapToken = 0;
     var reportId = null;
     var reportLocked = false;
     var submitting = false;
@@ -89,22 +93,16 @@ import { createFaceScan } from "./face-scan.js";
       q("[data-insight]").innerHTML = safeHtml(result.insight || profile.insight);
       var oldMap = q("[data-face-map]");
       if (oldMap) oldMap.remove();
+      var mapToken = ++faceMapToken;
       if (source === "AI Skin Scan" && scanPhoto) {
-        var map = document.createElement("figure"); map.setAttribute("data-face-map", "");
-        map.style.cssText = "margin:20px 0;text-align:left";
-        var photoBox = document.createElement("div"); photoBox.style.cssText = "position:relative;max-width:420px;margin:auto;line-height:0";
-        var photo = document.createElement("img"); photo.src = scanPhoto; photo.alt = "Your captured photo with approximate cosmetic observation markers";
-        photo.style.cssText = "width:100%;height:auto;display:block;border-radius:16px"; photoBox.appendChild(photo);
-        var legend = document.createElement("figcaption"); legend.style.cssText = "line-height:1.6;margin-top:12px";
-        var note = document.createElement("p"); note.textContent = "Approximate areas observed in your photo. Cosmetic estimates, not a diagnosis. Your photo stays in this browser result and is not saved in the report."; legend.appendChild(note);
-        (result.scanAreas || []).forEach(function(area, index) {
-          if (!Number.isFinite(area.x) || !Number.isFinite(area.y) || area.x < 0 || area.x > 1 || area.y < 0 || area.y > 1) return;
-          var pin = document.createElement("span"); pin.textContent = String(index + 1); pin.title = area.area + ": " + area.observation;
-          pin.style.cssText = "position:absolute;transform:translate(-50%,-50%);width:30px;height:30px;border-radius:50%;background:#fff;color:#222;border:2px solid currentColor;display:grid;place-items:center;line-height:1;font:700 15px sans-serif;box-shadow:0 0 0 6px #ffffff40;left:" + (area.x*100) + "%;top:" + (area.y*100) + "%";
-          photoBox.appendChild(pin);
-          var row = document.createElement("p"); row.textContent = (index+1) + ". " + area.area + " ? " + area.observation; legend.appendChild(row);
-        });
-        map.appendChild(photoBox); map.appendChild(legend); q("[data-insight]").before(map);
+        var insightBox = q("[data-insight]");
+        buildFaceMap({ photo: scanPhoto, areas: result.scanAreas, landmarks: scanLandmarks, mirrored: scanMirrored }).then(function (map) {
+          // Ignore a map that finishes after a newer result was painted.
+          if (!map || mapToken !== faceMapToken || !insightBox) return;
+          var stale = q("[data-face-map]");
+          if (stale) stale.remove();
+          insightBox.before(map);
+        }).catch(function () { /* the written observations still show without the map */ });
       }
       if (source !== "AI Skin Scan") scanPhoto = null;
       var learn = q("[data-open-modal]");
@@ -376,6 +374,18 @@ import { createFaceScan } from "./face-scan.js";
       if (mode !== "camera") stopCamera();
     }
 
+    // Explains why the camera could not open, so shoppers know what to do next.
+    function cameraErrorMessage(error) {
+      var name = error && error.name;
+      var framed = false;
+      try { framed = window.top !== window.self; } catch (frameError) { framed = true; }
+      if ((name === "NotAllowedError" || name === "SecurityError") && framed) return "The camera is blocked in this preview. Open your store page to use the scan, or upload a photo.";
+      if (name === "NotAllowedError" || name === "SecurityError") return "Camera permission is blocked. Allow camera access in your browser settings and tap Live Camera, or upload a photo.";
+      if (name === "NotFoundError" || name === "OverconstrainedError") return "No camera was found on this device. Please upload a photo instead.";
+      if (name === "NotReadableError" || name === "AbortError") return "Your camera is being used by another app. Close it and tap Live Camera, or upload a photo.";
+      return "The camera could not start. Tap Live Camera to retry, or upload a photo.";
+    }
+
     function startCamera() {
       if (cameraStream) {
         var currentFeed = q("[data-camera-feed]");
@@ -386,7 +396,13 @@ import { createFaceScan } from "./face-scan.js";
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { q("[data-scan-status]").textContent = "Camera is unavailable. Use a secure browser connection or upload a photo."; return; }
       cameraOpening = true;
       var generation = ++cameraGeneration;
-      navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 960 } }, audio: false }).then(function (stream) {
+      // Prefer an HD front camera, but fall back to any camera when a device cannot meet that.
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 960 } }, audio: false }).catch(function (error) {
+        if (error && (error.name === "OverconstrainedError" || error.name === "NotReadableError" || error.name === "AbortError" || error.name === "NotFoundError")) {
+          return navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        }
+        throw error;
+      }).then(function (stream) {
         if (generation !== cameraGeneration) { stream.getTracks().forEach(function (track) { track.stop(); }); return; }
         cameraOpening = false;
         cameraStream = stream;
@@ -400,11 +416,11 @@ import { createFaceScan } from "./face-scan.js";
             faceScan = tracker;
           }).catch(function () { if (generation === cameraGeneration) { stopCamera(); q("[data-scan-status]").textContent = "Face tracking could not load. Check your connection, retry the camera, or upload a photo."; } });
         }
-      }).catch(function () {
+      }).catch(function (error) {
         if (generation !== cameraGeneration) return;
         cameraOpening = false;
         var status = q("[data-scan-status]");
-        if (status) status.textContent = "Camera access denied — please use Upload instead";
+        if (status) status.textContent = cameraErrorMessage(error);
         scanMode = "upload";
         var zone = q("[data-camera-zone]");
         var upload = q("[data-upload-zone]");
@@ -585,6 +601,9 @@ import { createFaceScan } from "./face-scan.js";
         return;
       }
       scanPhoto = Array.isArray(images) ? images[0] : images;
+      // Camera captures carry the landmarks seen at capture and are shown mirrored like the live preview.
+      scanLandmarks = Array.isArray(images) && images.landmarks ? images.landmarks : null;
+      scanMirrored = scanMode === "camera";
       var overlay = q("[data-analyzing]");
       if (overlay) overlay.classList.add("active");
       submit({ path: "scan", image: Array.isArray(images) ? undefined : images, images: Array.isArray(images) ? images : undefined, consent: true, adult: true }).finally(function () {

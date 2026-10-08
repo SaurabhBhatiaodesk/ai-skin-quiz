@@ -12,7 +12,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.public.appProxy(request);
   const params = new URL(request.url).searchParams;
   const shop = session?.shop || params.get("shop") || "";
-  const quiz = (await loadLibrary(shop)).find(item => item.handle === params.get("code"));
+  // The theme editor can append its preview session with a second question
+  // mark to iframe URLs. Strip only that known suffix, not arbitrary input.
+  const code = params.get("code")?.trim().replace(/\?oseid=[^?&]*(?:&.*)?$/, "");
+  const quiz = (await loadLibrary(shop)).find(item => item.handle === code);
   if (!quiz) return new Response("Quiz not found. Check its widget code.", { status: 404 });
   const values: Record<string, string> = {
     "block.id": `embed-${quiz.handle}`,

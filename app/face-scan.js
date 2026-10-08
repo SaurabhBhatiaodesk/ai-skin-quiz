@@ -19,7 +19,7 @@ export function guideOval(width, height) {
 // Decides whether the current frame is good enough to start the flash capture, and what to tell the shopper.
 // box is the face bounding box in pixels; light is the average face brightness (0-255).
 export function frameCheck({ faces, box, light, yaw, width, height }) {
-  if (!faces) return { ok: false, message: "Position your face inside the oval." };
+  if (!faces) return { ok: false, message: "Keep your face in the circle." };
   if (faces > 1) return { ok: false, message: "Only one face should be visible." };
   const oval = guideOval(width, height);
   const faceWidth = box.maxX - box.minX;
@@ -27,10 +27,10 @@ export function frameCheck({ faces, box, light, yaw, width, height }) {
   if (faceWidth > oval.radiusX * 2 * 1.15) return { ok: false, message: "Move back a little." };
   const offsetX = ((box.minX + box.maxX) / 2 - oval.centerX) / oval.radiusX;
   const offsetY = ((box.minY + box.maxY) / 2 - oval.centerY) / oval.radiusY;
-  if (Math.hypot(offsetX, offsetY) > 0.45) return { ok: false, message: "Center your face in the oval." };
-  if (light < 30) return { ok: false, message: "It is too dark. Face a window or a lamp." };
+  if (Math.hypot(offsetX, offsetY) > 0.45) return { ok: false, message: "Move your face to the centre." };
+  if (light < 30) return { ok: false, message: "Move to a brighter spot." };
   if (Math.abs(yaw) > 0.4) return { ok: false, message: "Look straight at the camera." };
-  return { ok: true, message: "Perfect. Hold still." };
+  return { ok: true, message: "Hold still." };
 }
 
 // Variance of a Laplacian filter over greyscale pixels: higher means a sharper, less blurred frame.
@@ -50,26 +50,93 @@ export function sharpness(pixels, width, height) {
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+const VISION_URL = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.21";
+const MODEL_URL = "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task";
+let visionModule = null;
+function loadVision() {
+  visionModule ||= import(/* @vite-ignore */ VISION_URL + "/vision_bundle.mjs").then(async (module) => ({ module, files: await module.FilesetResolver.forVisionTasks(VISION_URL + "/wasm") }));
+  visionModule.catch(() => { visionModule = null; });
+  return visionModule;
+}
+
+// Landmarks for a still photo (used for uploaded photos, which have no live tracking).
+export async function detectImageLandmarks(src) {
+  const { module, files } = await loadVision();
+  const detector = await module.FaceLandmarker.createFromOptions(files, { baseOptions: { modelAssetPath: MODEL_URL, delegate: "CPU" }, runningMode: "IMAGE", numFaces: 1 });
+  try {
+    const image = new Image();
+    image.src = src;
+    await image.decode();
+    const result = detector.detect(image);
+    return result.faceLandmarks.length === 1 ? result.faceLandmarks[0].map((point) => ({ x: point.x, y: point.y })) : null;
+  } finally {
+    detector.close();
+  }
+}
+
+// Mesh lines drawn over the face for the scan look (face outline, eyes, lips, nose).
+export const FACE_CONTOURS = [
+  [10,338,297,332,284,251,389,356,454,323,361,288,397,365,379,378,400,377,152,148,176,149,150,136,172,58,132,93,234,127,162,21,54,103,67,109,10],
+  [33,160,158,133,153,144,33], [263,387,385,362,380,373,263],
+  [61,40,37,0,267,270,291,321,314,17,84,91,61], [168,6,197,195,5,4,1],
+  [70,63,105,66,107], [336,296,334,293,300],
+];
+
+// Circles marking each facial region, placed from landmarks (normalised 0-1) on a photo of width x height pixels.
+// Sizes scale with the distance between the outer eye corners, so they fit any face size.
+export function regionCircles(points, width, height, region) {
+  const p = (index) => points[index] ? { x: points[index].x * width, y: points[index].y * height } : null;
+  const mix = (a, b, t) => ({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
+  const leftEye = p(33), rightEye = p(263);
+  if (!leftEye || !rightEye) return [];
+  const span = Math.hypot(rightEye.x - leftEye.x, rightEye.y - leftEye.y);
+  const circle = (point, size) => point ? { x: point.x, y: point.y, r: span * size } : null;
+  const below = (point, amount) => point ? { x: point.x, y: point.y + span * amount } : null;
+  const shapes = {
+    forehead: () => [circle(p(9) && p(10) ? mix(p(9), p(10), 0.6) : null, 0.34)],
+    between_brows: () => [circle(p(9), 0.15)],
+    under_eyes: () => [circle(below(p(145), 0.14), 0.15), circle(below(p(374), 0.14), 0.15)],
+    nose: () => [circle(p(6) && p(1) ? mix(p(6), p(1), 0.6) : null, 0.17)],
+    // Cheek centres sit between the inner cheek (50/280) and the face edge (234/454), a little lower.
+    cheeks: () => [circle(p(50) && p(234) ? below(mix(p(50), p(234), 0.35), 0.08) : null, 0.24), circle(p(280) && p(454) ? below(mix(p(280), p(454), 0.35), 0.08) : null, 0.24)],
+    mouth_area: () => [circle(p(13), 0.3)],
+    chin: () => [circle(p(17) && p(152) ? mix(p(17), p(152), 0.55) : null, 0.2)],
+    jawline: () => [circle(p(172), 0.17), circle(p(397), 0.17)],
+  };
+  return (shapes[region] ? shapes[region]() : []).filter(Boolean);
+}
+
 export async function createFaceScan(video, zone, onStatus) {
-  const moduleUrl = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.21/vision_bundle.mjs";
-  const { FaceLandmarker, FilesetResolver } = await import(/* @vite-ignore */ moduleUrl);
-  const files = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.21/wasm");
-  const detector = await FaceLandmarker.createFromOptions(files, { baseOptions: { modelAssetPath: "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task", delegate: "CPU" }, runningMode: "VIDEO", numFaces: 2, minFaceDetectionConfidence: 0.5, minFacePresenceConfidence: 0.5, minTrackingConfidence: 0.5, outputFacialTransformationMatrixes: false });
+  const { module, files } = await loadVision();
+  const detector = await module.FaceLandmarker.createFromOptions(files, { baseOptions: { modelAssetPath: MODEL_URL, delegate: "CPU" }, runningMode: "VIDEO", numFaces: 2, minFaceDetectionConfidence: 0.5, minFacePresenceConfidence: 0.5, minTrackingConfidence: 0.5, outputFacialTransformationMatrixes: false });
 
   const overlay = document.createElement("canvas"); overlay.className = "face-tracking-canvas"; overlay.setAttribute("aria-hidden", "true"); zone.appendChild(overlay);
   const guide = document.createElement("div"); guide.className = "face-scan-guidance";
   const instruction = document.createElement("strong");
   const hint = document.createElement("span"); hint.className = "face-scan-hint";
   const quality = document.createElement("span"); quality.className = "face-scan-quality";
-  quality.style.cssText = "display:block;font-size:11px;letter-spacing:.03em;margin-top:6px;opacity:.9";
-  guide.append(instruction, hint, quality); zone.appendChild(guide);
+  quality.hidden = true;
+  guide.append(instruction, hint, quality); zone.after(guide);
   const countdown = document.createElement("div"); countdown.className = "face-scan-countdown"; countdown.setAttribute("aria-hidden", "true"); zone.appendChild(countdown);
   const context = overlay.getContext("2d");
   const sample = document.createElement("canvas"); sample.width = 64; sample.height = 64;
   const sampleContext = sample.getContext("2d", { willReadFrequently: true });
 
-  let disposed = false, timer = 0, frameTime = -1, lastCheck = { ok: false, message: "Loading camera..." }, readySince = 0;
-  let scanning = false, flashEl = null, checkedAt = 0, trackingFailed = false, faceBox = null, sweepTime = 0, previousTick = 0;
+  let disposed = false, timer = 0, lastCheck = { ok: false, message: "Loading camera..." }, readySince = 0;
+  let scanning = false, flashEl = null, checkedAt = 0, trackingFailed = false, faceBox = null, facePoints = null, sweepTime = 0, previousTick = 0;
+  // Count presented frames. Some mobile browsers never advance video.currentTime for a live camera,
+  // so it cannot be used to tell whether a new frame has arrived.
+  let presentedFrames = 0, processedFrames = -1, processedAt = 0;
+  const startedAt = performance.now();
+  if (video.requestVideoFrameCallback) {
+    const onFrame = () => { presentedFrames++; if (!disposed) video.requestVideoFrameCallback(onFrame); };
+    video.requestVideoFrameCallback(onFrame);
+  }
+  function hasNewFrame(now) {
+    if (!video.requestVideoFrameCallback) return true;
+    // Fall back to time-based sampling if frame callbacks stall while the video is playing.
+    return presentedFrames !== processedFrames || now - processedAt > 400;
+  }
 
   function draw(points, ok) {
     overlay.width = video.videoWidth; overlay.height = video.videoHeight;
@@ -112,8 +179,11 @@ export async function createFaceScan(video, zone, onStatus) {
   function tick() {
     if (disposed) return;
     try {
-      if (video.readyState < 2 || video.currentTime === frameTime || video.paused || video.ended || document.hidden) {
-        if (checkedAt && performance.now()-checkedAt >= 600) {
+      const now = performance.now();
+      const playing = video.readyState >= 2 && !video.paused && !video.ended && !document.hidden && video.videoWidth > 0;
+      if (!playing || !hasNewFrame(now)) {
+        // Tell the shopper when the camera never starts (for example, autoplay blocked in low-power mode).
+        if (!playing && now - (checkedAt || startedAt) >= (checkedAt ? 600 : 1500)) {
           readySince = 0; lastCheck = { ok: false, message: "Camera paused. Tap Live Camera to resume, or upload a photo." };
           instruction.textContent = lastCheck.message; quality.textContent = "Waiting for live camera";
           guide.classList.remove("is-ready");
@@ -122,8 +192,8 @@ export async function createFaceScan(video, zone, onStatus) {
         }
         timer = setTimeout(tick, 80); return;
       }
-      frameTime = video.currentTime;
-      zone.style.aspectRatio = video.videoWidth + " / " + video.videoHeight;
+      processedFrames = presentedFrames; processedAt = now;
+      // Video and landmark canvas share the same centered cover crop in CSS.
       const result = detector.detectForVideo(video, performance.now());
       const faces = result.faceLandmarks.length;
       const points = faces === 1 ? result.faceLandmarks[0] : null;
@@ -140,18 +210,18 @@ export async function createFaceScan(video, zone, onStatus) {
       }
       lastCheck = frameCheck({ faces, box, light, yaw, width: video.videoWidth, height: video.videoHeight });
       checkedAt = performance.now();
-      faceBox = box;
+      faceBox = box; facePoints = points;
       if (lastCheck.ok && scanning && previousTick) sweepTime += Math.min(checkedAt-previousTick,160);
       previousTick = checkedAt;
-      quality.textContent = (faces === 1 ? "Face detected" : "Face needed") + "  ?  " + (light >= 30 ? "Lighting ready" : "More light needed") + "  ?  " + (lastCheck.ok ? "Position ready" : "Adjust position");
+      quality.textContent = [faces === 1 ? "Face detected" : "Face needed", light >= 30 ? "Lighting ready" : "More light needed", lastCheck.ok ? "Position ready" : "Adjust position"].join("  \u00b7  ");
       readySince = lastCheck.ok ? readySince || performance.now() : 0;
       if (!scanning) {
-        instruction.textContent = lastCheck.ok ? "Ready. Tap Analyse My Skin." : lastCheck.message;
-        hint.textContent = "Keep your face inside the oval. The screen will flash to light your skin.";
+        instruction.textContent = lastCheck.ok ? "Ready when you are." : lastCheck.message;
+        hint.textContent = "Tap Analyse My Skin to take your photo.";
       }
       guide.classList.toggle("is-ready", lastCheck.ok);
       draw(points, lastCheck.ok);
-      if (!scanning) onStatus(lastCheck.ok ? "Face detected. Tap Analyse My Skin." : lastCheck.message);
+      if (!scanning) onStatus(lastCheck.ok ? "Ready to take your photo." : lastCheck.message);
       timer = setTimeout(tick, 80);
     } catch {
       trackingFailed = true; lastCheck = { ok: false, message: "Face tracking failed. Please retry or upload a photo." }; readySince = 0;
@@ -189,7 +259,8 @@ export async function createFaceScan(video, zone, onStatus) {
     // Rank facial detail, not sharp wallpaper or objects behind the shopper.
     if (faceBox) smallContext.drawImage(video, Math.max(0,faceBox.minX), Math.max(0,faceBox.minY), Math.max(1,faceBox.maxX-faceBox.minX), Math.max(1,faceBox.maxY-faceBox.minY), 0, 0, small.width, small.height);
     else smallContext.drawImage(canvas, 0, 0, small.width, small.height);
-    return { canvas, score: sharpness(smallContext.getImageData(0, 0, small.width, small.height).data, small.width, small.height) };
+    // Keep the landmarks seen with this frame so the result can mark facial regions on the photo.
+    return { canvas, points: facePoints ? facePoints.map((point) => ({ x: point.x, y: point.y })) : null, score: sharpness(smallContext.getImageData(0, 0, small.width, small.height).data, small.width, small.height) };
   }
 
   function assertActive() {
@@ -206,7 +277,7 @@ export async function createFaceScan(video, zone, onStatus) {
       while (!(freshFace() && readySince && performance.now() - readySince > 400)) {
         assertActive();
         if (performance.now() > deadline) throw new Error("We could not see your face clearly. Try better light, or upload a photo.");
-        instruction.textContent = lastCheck.message; hint.textContent = "Center your face and hold still.";
+        instruction.textContent = lastCheck.message; hint.textContent = "Keep your face in the circle.";
         onStatus(lastCheck.message); await wait(100);
       }
       countdownDone = true;
@@ -233,7 +304,9 @@ export async function createFaceScan(video, zone, onStatus) {
       }
       if (disposed) throw new Error("Scan cancelled. You can start again.");
       frames.sort((a, b) => b.score - a.score);
-      return [frames[0].canvas.toDataURL("image/jpeg", 0.88)];
+      const images = [frames[0].canvas.toDataURL("image/jpeg", 0.88)];
+      images.landmarks = frames[0].points;
+      return images;
     } finally {
       await flash(false);
     }
@@ -245,7 +318,7 @@ export async function createFaceScan(video, zone, onStatus) {
       if (disposed) return Promise.reject(new Error("Camera closed. Please reopen it."));
       if (scanning) return Promise.reject(new Error("A scan is already running."));
       scanning = true;
-      return capture().then((images) => { onStatus("Photo captured. Analysing your skin..."); return images; }).finally(() => { scanning = false; countdown.textContent = ""; });
+      return capture().then((images) => { onStatus("Photo taken. Checking your skin..."); return images; }).finally(() => { scanning = false; countdown.textContent = ""; });
     },
     close() {
       disposed = true; clearTimeout(timer); flash(false); detector.close();

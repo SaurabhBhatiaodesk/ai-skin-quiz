@@ -12,8 +12,12 @@ assert.deepEqual(recommendScanProducts(['dullness'],[{tags:['normal_or_balanced'
 assert.deepEqual(recommendScanProducts(['fine_lines'],[],catalog).map(p=>p.handle),['bakuchiol-night-restorative-serum']);
 assert.equal(recommendScanProducts([],[],catalog).length,0);
 let calls=0;
-globalThis.fetch=async(url,options)=>{calls++; assert.equal(JSON.parse(options.body).store,false); return {ok:true,json:async()=>({output:[{content:[{type:'output_text',text:JSON.stringify({usable:true,summary:'Visible uneven tone.',concerns:[{concern:'pigmentation',observation:'Uneven tone.',area:'Left cheek',x:0.65,y:0.55}]})}]}]})};};
-assert.equal((await analysePhoto('data:image/jpeg;base64,YWJj','dummy')).concerns[0].concern,'pigmentation');
+globalThis.fetch=async(url,options)=>{calls++; assert.equal(JSON.parse(options.body).store,false); return {ok:true,json:async()=>({output:[{content:[{type:'output_text',text:JSON.stringify({usable:true,summary:'Visible uneven tone.',concerns:[{concern:'pigmentation',observation:'Uneven tone.',regions:['cheeks','cheeks'],intensity:'moderate'},{concern:'pigmentation',observation:'Duplicate.',regions:['nose'],intensity:'mild'}]})}]}]})};};
+const mapped = await analysePhoto('data:image/jpeg;base64,YWJj','dummy');
+assert.equal(mapped.concerns[0].concern,'pigmentation');
+// Duplicate concerns and repeated regions are collapsed.
+assert.equal(mapped.concerns.length,1);
+assert.deepEqual(mapped.concerns[0].regions,['cheeks']);
 await assert.rejects(()=>analysePhoto('invalid','dummy'),/Upload/);
 await assert.rejects(()=>scanResult({consent:false},'test'),/Confirm/);
 assert.equal(calls,1);
@@ -22,7 +26,9 @@ globalThis.fetch=async(url,options)=>{const body=JSON.parse(options.body); asser
 assert.equal((await analysePhoto(photos,'dummy')).summary,'Multi-angle estimate.');
 await assert.rejects(()=>analysePhoto(Array(6).fill(photos[0]),'dummy'),/Upload/);
 await assert.rejects(()=>analysePhoto([photos[0],'invalid'],'dummy'),/Upload/);
-globalThis.fetch=async()=>({ok:true,json:async()=>({output:[{content:[{type:'output_text',text:JSON.stringify({usable:true,summary:'Observation',concerns:[{concern:'pigmentation',observation:'Tone',area:'Cheek',x:1.5,y:0.5}]})}]}]})});
+globalThis.fetch=async()=>({ok:true,json:async()=>({output:[{content:[{type:'output_text',text:JSON.stringify({usable:true,summary:'Observation',concerns:[{concern:'pigmentation',observation:'Tone',regions:['left_ear'],intensity:'mild'}]})}]}]})});
+await assert.rejects(()=>analysePhoto(photos[0],'dummy'),/Invalid analysis/);
+globalThis.fetch=async()=>({ok:true,json:async()=>({output:[{content:[{type:'output_text',text:JSON.stringify({usable:true,summary:'Observation',concerns:[{concern:'redness',observation:'Red',regions:['cheeks'],intensity:'extreme'}]})}]}]})});
 await assert.rejects(()=>analysePhoto(photos[0],'dummy'),/Invalid analysis/);
 globalThis.fetch=async()=>({ok:false,status:401,json:async()=>({error:{code:"invalid_api_key"}})});
 await assert.rejects(()=>analysePhoto('data:image/jpeg;base64,YWJj','dummy'),/invalid/);
@@ -51,3 +57,22 @@ const flat = new Uint8ClampedArray(16 * 16 * 4).fill(128);
 const edges = new Uint8ClampedArray(16 * 16 * 4).map((_, i) => ((Math.floor(i / 4) % 2) ? 255 : 0));
 assert.ok(sharpness(edges, 16, 16) > sharpness(flat, 16, 16));
 console.log('Passed: single-shot face guidance, framing checks and sharpest-frame selection.');
+
+// Skin map circles are placed from landmarks on the face, scaled to the eye span.
+const { regionCircles } = await import('../app/face-scan.js');
+const face = Array.from({length: 478}, () => ({ x: 0.5, y: 0.5 }));
+Object.assign(face, { 33: {x:0.4,y:0.4}, 263: {x:0.6,y:0.4}, 9: {x:0.5,y:0.38}, 10: {x:0.5,y:0.2}, 50: {x:0.38,y:0.55}, 280: {x:0.62,y:0.55}, 145: {x:0.42,y:0.43}, 234: {x:0.25,y:0.45}, 454: {x:0.75,y:0.45}, 374: {x:0.58,y:0.43}, 17: {x:0.5,y:0.68}, 152: {x:0.5,y:0.78} });
+const forehead = regionCircles(face, 1000, 1000, 'forehead');
+assert.equal(forehead.length, 1);
+assert.ok(forehead[0].y < 380 && forehead[0].y > 200, 'forehead sits between brows and hairline');
+assert.equal(regionCircles(face, 1000, 1000, 'cheeks').length, 2);
+const [leftCheek, rightCheek] = regionCircles(face, 1000, 1000, 'cheeks');
+assert.ok(leftCheek.x < 500 && rightCheek.x > 500);
+assert.ok(Math.abs(leftCheek.r - 200 * 0.24) < 0.01, 'radius scales with eye span');
+assert.ok(leftCheek.x < 380 && rightCheek.x > 620, 'cheeks sit outside the inner cheek points');
+assert.ok(regionCircles(face, 1000, 1000, 'under_eyes').every(c => c.y > 430));
+assert.ok(regionCircles(face, 1000, 1000, 'chin')[0].y > 680);
+assert.deepEqual(regionCircles(face, 1000, 1000, 'unknown'), []);
+assert.deepEqual(regionCircles([], 1000, 1000, 'cheeks'), []);
+console.log('Passed: skin map regions are placed on the face from landmarks.');
+

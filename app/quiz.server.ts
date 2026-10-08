@@ -32,7 +32,7 @@ export type QuizProduct = {
   why: string;
 };
 export type QuizResult = {
-  scanAreas?: Array<{concern: string; observation: string; area: string; x: number; y: number}>;
+  scanAreas?: Array<{concern: string; observation: string; regions: string[]; intensity: string}>;
   percentages?: Record<string, number>;
   dosha: string;
   source: string;

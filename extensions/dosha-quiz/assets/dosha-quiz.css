@@ -1727,3 +1727,69 @@
 }
 .prana-quiz .face-scan-countdown:empty { display: none; }
 
+/* Show the selfie camera mirrored, like a phone camera, so moving left moves the face left on screen.
+   The guide overlay is mirrored with it; captured photos are not. */
+.prana-quiz .camera-feed,
+.prana-quiz .face-tracking-canvas { transform: scaleX(-1); }
+
+
+/* Premium skin map: circled areas on the shopper's photo. */
+.prana-quiz .face-map { margin: 24px 0; padding: 20px; background: #fff; border: 1px solid var(--border); border-radius: 20px; text-align: left; }
+.prana-quiz .face-map-header { margin-bottom: 14px; }
+.prana-quiz .face-map-title { margin: 0; font-family: var(--heading-font, "Cormorant Garamond", serif); font-size: 1.6rem; font-weight: 500; color: var(--ink); }
+.prana-quiz .face-map-subtitle { margin: 2px 0 0; font-size: 13px; color: var(--text-muted); }
+.prana-quiz .face-map-stage { position: relative; max-width: 440px; margin: 0 auto; border-radius: 16px; overflow: hidden; line-height: 0; background: #111; box-shadow: 0 12px 36px rgba(26, 18, 8, 0.18); }
+.prana-quiz .face-map-stage img { display: block; width: 100%; height: auto; }
+.prana-quiz .face-map-overlay { position: absolute; inset: 0; width: 100%; height: 100%; }
+.prana-quiz .face-map-mesh { animation: pranaMapFade 0.9s ease both; }
+.prana-quiz .face-map-area { transform-box: fill-box; transform-origin: center; animation: pranaMapPop 0.6s cubic-bezier(.2, .9, .3, 1.25) both; animation-delay: var(--delay, 0.3s); }
+.prana-quiz .face-map-glow { animation: pranaMapPulse 2.4s ease-in-out infinite; animation-delay: var(--delay, 0.3s); }
+.prana-quiz .face-map-badge { animation: pranaMapFade 0.4s ease both; animation-delay: calc(var(--delay, 0.3s) + 0.2s); }
+.prana-quiz .face-map-sweep { position: absolute; left: 0; right: 0; top: 0; height: 22%; pointer-events: none; background: linear-gradient(180deg, rgba(117, 230, 174, 0), rgba(117, 230, 174, 0.35) 80%, rgba(198, 255, 230, 0.9)); animation: pranaMapSweep 1.6s ease-in-out 1 both; }
+.prana-quiz .face-map-list { list-style: none; margin: 18px 0 0; padding: 0; display: grid; gap: 10px; }
+.prana-quiz .face-map-item { display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 12px; align-items: start; padding: 12px 14px; border: 1px solid var(--border); border-left: 4px solid var(--area-color); border-radius: 12px; background: #fdfbf8; line-height: 1.45; }
+.prana-quiz .face-map-number { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: #fff; border: 2px solid var(--area-color); color: var(--ink); font: 700 14px/1 system-ui, sans-serif; }
+.prana-quiz .face-map-item-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.prana-quiz .face-map-item-head strong { font-size: 15px; color: var(--ink); }
+.prana-quiz .face-map-chip { font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; color: #fff; background: var(--area-color); }
+.prana-quiz .face-map-where { display: block; margin-top: 2px; font-size: 12px; color: var(--text-muted); }
+.prana-quiz .face-map-item p { margin: 6px 0 0; font-size: 14px; color: var(--ink); }
+.prana-quiz .face-map-note { margin: 14px 0 0; font-size: 12px; line-height: 1.5; color: var(--text-muted); }
+@keyframes pranaMapPop { from { opacity: 0; transform: scale(0.4); } to { opacity: 1; transform: scale(1); } }
+@keyframes pranaMapFade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pranaMapPulse { 0%, 100% { stroke-opacity: 0.15; } 50% { stroke-opacity: 0.55; } }
+@keyframes pranaMapSweep { from { transform: translateY(-100%); opacity: 1; } 85% { opacity: 1; } to { transform: translateY(460%); opacity: 0; } }
+@media (max-width: 600px) { .prana-quiz .face-map { padding: 14px; } }
+
+/* Circular live camera: use an identical crop for video and tracked landmarks. */
+.prana-quiz .camera-zone,
+.prana-quiz.scan-chat-open .camera-zone,
+.prana-quiz .camera-zone:has(.face-tracking-canvas) {
+  width: min(100%, 380px);
+  aspect-ratio: 1;
+  height: auto;
+  min-height: 0;
+  border-radius: 50%;
+  margin: 0 auto 20px;
+  overflow: hidden;
+  isolation: isolate;
+  border: 2px solid var(--gold);
+}
+.prana-quiz .camera-zone .camera-feed,
+.prana-quiz .camera-zone:has(.face-tracking-canvas) .camera-feed,
+.prana-quiz .camera-zone .face-tracking-canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+.prana-quiz .camera-zone + .face-scan-guidance {
+  position: relative;
+  inset: auto;
+  max-width: 380px;
+  margin: 0 auto 20px;
+}
+.prana-quiz .camera-zone:not(.active) + .face-scan-guidance { display: none; }
