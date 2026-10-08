@@ -7,11 +7,11 @@ async function ensureSetupTable() {
 
 export async function isThemeActivated(shop: string) {
   await ensureSetupTable();
-  const rows = await prisma.$queryRawUnsafe<Array<{ themeActivatedAt: number | bigint | null }>>(
-    `SELECT "themeActivatedAt" FROM "QuizShopSetup" WHERE "shop" = ? LIMIT 1`,
+  const rows = await prisma.$queryRawUnsafe<Array<{ activated: number | bigint }> >(
+    `SELECT CASE WHEN "themeActivatedAt" IS NOT NULL AND "themeActivatedAt" > 0 THEN 1 ELSE 0 END AS "activated" FROM "QuizShopSetup" WHERE "shop" = ? LIMIT 1`,
     shop,
   );
-  return Boolean(rows[0]?.themeActivatedAt);
+  return Number(rows[0]?.activated || 0) === 1;
 }
 
 export async function markThemeActivated(shop: string) {

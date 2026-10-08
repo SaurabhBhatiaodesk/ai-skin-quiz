@@ -1,3 +1,4 @@
+import { readBoundedJson } from "../request-body.server";
 import { scanResult } from "../scan.server";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { authenticate } from "../shopify.server";
@@ -12,10 +13,12 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 export const action = async ({ request }: ActionFunctionArgs) => {
   const { admin, session } = await authenticate.public.appProxy(request);
   const shop = session?.shop || new URL(request.url).searchParams.get("shop") || "";
-  if (Number(request.headers.get("content-length") || 0) > 7500000) return Response.json({ ok: false, error: "Photo too large." }, { status: 413 });
-  const submission = await request.json().catch(() => null);
-  if (!submission || typeof submission !== "object") return Response.json({ ok: false, error: "Invalid request." }, { status: 400 });
+  let submission;
+  try { submission = await readBoundedJson(request); }
+  catch (error) { const tooLarge = error instanceof Error && error.message === "Photo too large."; return Response.json({ ok: false, error: tooLarge ? "Photo too large." : "Invalid request." }, { status: tooLarge ? 413 : 400 }); }
+  if (!submission || typeof submission !== "object" || Array.isArray(submission)) return Response.json({ ok: false, error: "Invalid request." }, { status: 400 });
   try {
+    if (submission.email && (typeof submission.email !== "string" || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(submission.email) || submission.email.length > 254)) throw new Error("Enter a valid email address.");
     if (submission.intent === "unlock") return Response.json({ ok: true, ...await unlockReport(shop, submission.reportId, submission.email) });
     if (!["quick", "deep", "scan"].includes(submission.path)) throw new Error("Choose a valid quiz path.");
     if (submission.path !== "scan") {

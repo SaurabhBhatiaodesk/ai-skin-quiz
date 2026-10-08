@@ -21,6 +21,7 @@ import { createFaceScan } from "./face-scan.js";
     var cameraOpening = false;
     var scanMode = "camera";
     var captured = null;
+    var scanPhoto = null;
     var reportId = null;
     var reportLocked = false;
     var submitting = false;
@@ -86,6 +87,26 @@ import { createFaceScan } from "./face-scan.js";
       q("[data-dosha-essence]").textContent = profile.essence;
       q("[data-dosha-source]").textContent = (source === "AI Skin Scan" ? "Scan Complete | " : "via ") + source;
       q("[data-insight]").innerHTML = safeHtml(result.insight || profile.insight);
+      var oldMap = q("[data-face-map]");
+      if (oldMap) oldMap.remove();
+      if (source === "AI Skin Scan" && scanPhoto) {
+        var map = document.createElement("figure"); map.setAttribute("data-face-map", "");
+        map.style.cssText = "margin:20px 0;text-align:left";
+        var photoBox = document.createElement("div"); photoBox.style.cssText = "position:relative;max-width:420px;margin:auto;line-height:0";
+        var photo = document.createElement("img"); photo.src = scanPhoto; photo.alt = "Your captured photo with approximate cosmetic observation markers";
+        photo.style.cssText = "width:100%;height:auto;display:block;border-radius:16px"; photoBox.appendChild(photo);
+        var legend = document.createElement("figcaption"); legend.style.cssText = "line-height:1.6;margin-top:12px";
+        var note = document.createElement("p"); note.textContent = "Approximate areas observed in your photo. Cosmetic estimates, not a diagnosis. Your photo stays in this browser result and is not saved in the report."; legend.appendChild(note);
+        (result.scanAreas || []).forEach(function(area, index) {
+          if (!Number.isFinite(area.x) || !Number.isFinite(area.y) || area.x < 0 || area.x > 1 || area.y < 0 || area.y > 1) return;
+          var pin = document.createElement("span"); pin.textContent = String(index + 1); pin.title = area.area + ": " + area.observation;
+          pin.style.cssText = "position:absolute;transform:translate(-50%,-50%);width:30px;height:30px;border-radius:50%;background:#fff;color:#222;border:2px solid currentColor;display:grid;place-items:center;line-height:1;font:700 15px sans-serif;box-shadow:0 0 0 6px #ffffff40;left:" + (area.x*100) + "%;top:" + (area.y*100) + "%";
+          photoBox.appendChild(pin);
+          var row = document.createElement("p"); row.textContent = (index+1) + ". " + area.area + " ? " + area.observation; legend.appendChild(row);
+        });
+        map.appendChild(photoBox); map.appendChild(legend); q("[data-insight]").before(map);
+      }
+      if (source !== "AI Skin Scan") scanPhoto = null;
       var learn = q("[data-open-modal]");
       if (learn) learn.textContent = "Explore your full " + profile.name + " guide →";
       var markers = q("[data-markers]");
@@ -356,17 +377,23 @@ import { createFaceScan } from "./face-scan.js";
     }
 
     function startCamera() {
-      if (cameraStream || cameraOpening) return;
+      if (cameraStream) {
+        var currentFeed = q("[data-camera-feed]");
+        if (currentFeed) currentFeed.play().catch(function () { q("[data-scan-status]").textContent = "Camera playback is blocked. Allow camera access or use Upload Photo."; });
+        return;
+      }
+      if (cameraOpening) return;
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { q("[data-scan-status]").textContent = "Camera is unavailable. Use a secure browser connection or upload a photo."; return; }
       cameraOpening = true;
       var generation = ++cameraGeneration;
       navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 960 } }, audio: false }).then(function (stream) {
-        cameraOpening = false;
         if (generation !== cameraGeneration) { stream.getTracks().forEach(function (track) { track.stop(); }); return; }
+        cameraOpening = false;
         cameraStream = stream;
         var feed = q("[data-camera-feed]");
         if (feed) {
           feed.srcObject = stream;
+          feed.play().catch(function () { if (generation === cameraGeneration) q("[data-scan-status]").textContent = "Tap Live Camera to resume playback."; });
           q("[data-scan-status]").textContent = "Loading face tracking...";
           createFaceScan(feed, q("[data-camera-zone]"), function (text) { q("[data-scan-status]").textContent = text; }).then(function (tracker) {
             if (generation !== cameraGeneration) { tracker.close(); return; }
@@ -374,8 +401,8 @@ import { createFaceScan } from "./face-scan.js";
           }).catch(function () { if (generation === cameraGeneration) { stopCamera(); q("[data-scan-status]").textContent = "Face tracking could not load. Check your connection, retry the camera, or upload a photo."; } });
         }
       }).catch(function () {
-        cameraOpening = false;
         if (generation !== cameraGeneration) return;
+        cameraOpening = false;
         var status = q("[data-scan-status]");
         if (status) status.textContent = "Camera access denied — please use Upload instead";
         scanMode = "upload";
@@ -532,12 +559,11 @@ import { createFaceScan } from "./face-scan.js";
       var bio = q("[data-consent='biometric']");
       var age = q("[data-consent='age']");
       var err = q("[data-consent-error]");
-      if (!bio.checked || !age.checked) {
-        err.classList.add("show");
-        err.textContent = "Please accept the required consents before scanning.";
+      if (!bio || !age || !bio.checked || !age.checked) {
+        if (err) { err.classList.add("show"); err.textContent = "Please accept the required consents before scanning."; }
         return;
       }
-      err.classList.remove("show");
+      if (err) err.classList.remove("show");
       if (scanCapturing) return;
       if (scanMode === "camera") {
         if (!faceScan) { q("[data-scan-status]").textContent = "Wait for face tracking to load, or retry the camera."; return; }
@@ -558,6 +584,7 @@ import { createFaceScan } from "./face-scan.js";
         if (scanMode === "camera") startCamera();
         return;
       }
+      scanPhoto = Array.isArray(images) ? images[0] : images;
       var overlay = q("[data-analyzing]");
       if (overlay) overlay.classList.add("active");
       submit({ path: "scan", image: Array.isArray(images) ? undefined : images, images: Array.isArray(images) ? images : undefined, consent: true, adult: true }).finally(function () {
@@ -693,7 +720,7 @@ import { createFaceScan } from "./face-scan.js";
           var scanIcon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
           scanIcon.setAttribute("viewBox", "0 0 24 24"); scanIcon.setAttribute("width", "28"); scanIcon.setAttribute("height", "28"); scanIcon.setAttribute("fill", "none"); scanIcon.setAttribute("stroke", "currentColor"); scanIcon.setAttribute("stroke-width", "1.7"); scanIcon.setAttribute("stroke-linecap", "round"); scanIcon.setAttribute("stroke-linejoin", "round"); scanIcon.setAttribute("aria-hidden", "true");
           var scanPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
-          scanPath.setAttribute("d", "M8 3H5a2 2 0 0 0-2 2v3m13-5h3a2 2 0 0 1 2 2v3M3 16v3a2 2 0 0 0 2 2h3m8 0h3a2 2 0 0 0 2-2v-3M9 9h.01M15 9h.01M9 15c2 1.5 4 1.5 6 0");
+          scanPath.setAttribute("d", "M7 3H5a2 2 0 0 0-2 2v2m14-4h2a2 2 0 0 1 2 2v2M3 17v2a2 2 0 0 0 2 2h2m10 0h2a2 2 0 0 0 2-2v-2M12 6c-2.5 0-4 2-4 4v2c0 3 1.8 6 4 6s4-3 4-6v-2c0-2-1.5-4-4-4ZM6 12h12M10 10h.01M14 10h.01");
           scanIcon.appendChild(scanPath); launcher.appendChild(scanIcon);
           Object.assign(launcher.style, { width: "64px", height: "64px", padding: "0", borderRadius: "50%", display: "inline-flex", alignItems: "center", justifyContent: "center" });
         }

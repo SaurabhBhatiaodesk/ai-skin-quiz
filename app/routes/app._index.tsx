@@ -41,7 +41,7 @@ export default function Home() {
       <s-button slot="secondary-actions" href="/app/documentation">Documentation</s-button>
       <s-stack gap="base">
         <style>{`
-          .dashboard-content { max-width: 1200px; margin-inline: auto; display: grid; gap: 20px; }
+          .dashboard-content { width: 100%; min-width: 0; display: grid; gap: 20px; }
           .dashboard-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid #dedede; border-radius: 14px; overflow: hidden; background: white; }
           .dashboard-stat + .dashboard-stat { border-left: 1px solid #ebebeb; }
           .dashboard-resources { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
@@ -57,7 +57,7 @@ export default function Home() {
           <div style={{ minWidth: 0 }}>
 
             <h2 style={{ margin: "0 0 6px", fontSize: "clamp(22px, 2vw, 28px)", lineHeight: 1.25, letterSpacing: "-0.5px", fontWeight: 650, color: "#213c2c" }}>Welcome to AI Skin Quiz</h2>
-            <p style={{ margin: 0, fontSize: 14, lineHeight: 1.5, color: "#52645a", maxWidth: 640 }}>Manage your quizzes, review results and personalize your customers? skin rituals.</p>
+            <p style={{ margin: 0, fontSize: 14, lineHeight: 1.5, color: "#52645a", maxWidth: 640 }}>Manage your quizzes, review results and personalize your customers’ skin rituals.</p>
           </div>
         </div>
 

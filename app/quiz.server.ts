@@ -32,6 +32,7 @@ export type QuizProduct = {
   why: string;
 };
 export type QuizResult = {
+  scanAreas?: Array<{concern: string; observation: string; area: string; x: number; y: number}>;
   percentages?: Record<string, number>;
   dosha: string;
   source: string;
@@ -457,20 +458,19 @@ async function readPayload(shop: string) {
   );
   if (!rows[0]?.payload) return null;
   try {
-    return JSON.parse(rows[0].payload) as unknown;
+    return { value: JSON.parse(rows[0].payload) as unknown, raw: rows[0].payload };
   } catch {
     return null;
   }
 }
 
-async function writePayload(shop: string, quizzes: QuizEntry[]) {
+async function writePayload(shop: string, quizzes: QuizEntry[], expected: string | null) {
   await ensureQuizTable();
-  await prisma.$executeRawUnsafe(
-    `INSERT INTO "QuizConfig" ("shop", "payload", "updatedAt") VALUES (?, ?, CURRENT_TIMESTAMP)
-     ON CONFLICT("shop") DO UPDATE SET "payload" = excluded."payload", "updatedAt" = CURRENT_TIMESTAMP`,
-    shop,
-    JSON.stringify({ quizzes }),
-  );
+  const payload = JSON.stringify({ quizzes });
+  const changed = expected === null
+    ? await prisma.$executeRawUnsafe(`INSERT INTO "QuizConfig" ("shop", "payload", "updatedAt") VALUES (?, ?, CURRENT_TIMESTAMP) ON CONFLICT("shop") DO NOTHING`, shop, payload)
+    : await prisma.$executeRawUnsafe(`UPDATE "QuizConfig" SET "payload"=?, "updatedAt"=CURRENT_TIMESTAMP WHERE "shop"=? AND "payload"=?`, payload, shop, expected);
+  if (changed === 0) throw new Error("Another update changed your quiz library. Refresh and try again.");
 }
 
 export async function deleteShopQuizzes(shop: string) {
@@ -480,7 +480,7 @@ export async function deleteShopQuizzes(shop: string) {
 
 export async function loadLibrary(shop: string): Promise<QuizEntry[]> {
   const payload = await readPayload(shop);
-  const quizzes = payload ? normalizeLibrary(payload) : [];
+  const quizzes = payload ? normalizeLibrary(payload.value) : [];
   if (quizzes.length) return quizzes;
   return [];
 }
@@ -494,7 +494,8 @@ export async function loadQuiz(shop: string, code?: unknown): Promise<QuizEntry>
 }
 
 export async function saveQuiz(shop: string, input: unknown, code?: unknown) {
-  const library = await loadLibrary(shop);
+  const snapshot = await readPayload(shop);
+  const library = snapshot ? normalizeLibrary(snapshot.value) : [];
   const handle = quizCode(code || (input && typeof input === "object" ? (input as { handle?: string }).handle : "") || "dosha-quiz");
   const current = library.find((item) => item.handle === handle);
   const merged = {
@@ -507,12 +508,14 @@ export async function saveQuiz(shop: string, input: unknown, code?: unknown) {
   const quizzes = library.some((item) => item.handle === handle)
     ? library.map((item) => (item.handle === handle ? entry : item))
     : [...library, entry];
-  await writePayload(shop, quizzes);
+  await writePayload(shop, quizzes, snapshot?.raw ?? null);
   return entry;
 }
 
 export async function createQuiz(shop: string, name: string, layout: "three" | "single" | "scan" = "three", paths?: Array<"quick" | "deep" | "scan">) {
-  const library = await loadLibrary(shop);
+  const snapshot = await readPayload(shop);
+  const library = snapshot ? normalizeLibrary(snapshot.value) : [];
+  if (library.length >= 20) throw new Error("This store supports up to 20 quizzes. Delete an unused quiz before creating another.");
   const base = quizCode(name || `quiz-${library.length + 1}`);
   let handle = base;
   for (let suffix = 2; library.some((item) => item.handle === handle); suffix++) handle = quizCode(`${base.slice(0, 34)}-${suffix}`);
@@ -524,16 +527,17 @@ export async function createQuiz(shop: string, name: string, layout: "three" | "
   starter.quick = [];
   starter.deep = [];
   const entry = namedQuiz(normalizeQuiz(starter, { draft: true }), handle, clip(name, 80) || "New quiz");
-  await writePayload(shop, [...library, entry]);
+  await writePayload(shop, [...library, entry], snapshot?.raw ?? null);
   return entry;
 }
 
 export async function deleteQuiz(shop: string, code: unknown) {
-  const library = await loadLibrary(shop);
+  const snapshot = await readPayload(shop);
+  const library = snapshot ? normalizeLibrary(snapshot.value) : [];
   const handle = quizCode(code);
   const quizzes = library.filter((item) => item.handle !== handle);
   if (quizzes.length === library.length) return library;
-  await writePayload(shop, quizzes);
+  await writePayload(shop, quizzes, snapshot?.raw ?? null);
   return quizzes;
 }
 

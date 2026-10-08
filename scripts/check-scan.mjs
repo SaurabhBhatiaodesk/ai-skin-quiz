@@ -12,7 +12,7 @@ assert.deepEqual(recommendScanProducts(['dullness'],[{tags:['normal_or_balanced'
 assert.deepEqual(recommendScanProducts(['fine_lines'],[],catalog).map(p=>p.handle),['bakuchiol-night-restorative-serum']);
 assert.equal(recommendScanProducts([],[],catalog).length,0);
 let calls=0;
-globalThis.fetch=async(url,options)=>{calls++; assert.equal(JSON.parse(options.body).store,false); return {ok:true,json:async()=>({output:[{content:[{type:'output_text',text:JSON.stringify({usable:true,summary:'Visible uneven tone.',concerns:[{concern:'pigmentation',observation:'Uneven tone.'}]})}]}]})};};
+globalThis.fetch=async(url,options)=>{calls++; assert.equal(JSON.parse(options.body).store,false); return {ok:true,json:async()=>({output:[{content:[{type:'output_text',text:JSON.stringify({usable:true,summary:'Visible uneven tone.',concerns:[{concern:'pigmentation',observation:'Uneven tone.',area:'Left cheek',x:0.65,y:0.55}]})}]}]})};};
 assert.equal((await analysePhoto('data:image/jpeg;base64,YWJj','dummy')).concerns[0].concern,'pigmentation');
 await assert.rejects(()=>analysePhoto('invalid','dummy'),/Upload/);
 await assert.rejects(()=>scanResult({consent:false},'test'),/Confirm/);
@@ -22,6 +22,8 @@ globalThis.fetch=async(url,options)=>{const body=JSON.parse(options.body); asser
 assert.equal((await analysePhoto(photos,'dummy')).summary,'Multi-angle estimate.');
 await assert.rejects(()=>analysePhoto(Array(6).fill(photos[0]),'dummy'),/Upload/);
 await assert.rejects(()=>analysePhoto([photos[0],'invalid'],'dummy'),/Upload/);
+globalThis.fetch=async()=>({ok:true,json:async()=>({output:[{content:[{type:'output_text',text:JSON.stringify({usable:true,summary:'Observation',concerns:[{concern:'pigmentation',observation:'Tone',area:'Cheek',x:1.5,y:0.5}]})}]}]})});
+await assert.rejects(()=>analysePhoto(photos[0],'dummy'),/Invalid analysis/);
 globalThis.fetch=async()=>({ok:false,status:401,json:async()=>({error:{code:"invalid_api_key"}})});
 await assert.rejects(()=>analysePhoto('data:image/jpeg;base64,YWJj','dummy'),/invalid/);
 console.log('Passed: scan recommendations, consent validation, structured response parsing and API errors. External calls mocked.');

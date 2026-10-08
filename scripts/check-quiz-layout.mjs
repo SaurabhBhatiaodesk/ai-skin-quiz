@@ -3,13 +3,19 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { build, transform } from "esbuild";
 import vm from "node:vm";
+import { DatabaseSync } from "node:sqlite";
+globalThis.quizTestDatabase = new DatabaseSync(":memory:");
 
 const shared = await transform(await readFile("app/quiz-shared.ts", "utf8"), { loader: "ts", format: "esm" });
 globalThis.quizTestPayload = null;
 let source = await readFile("app/quiz.server.ts", "utf8");
 source = source.replace('import prisma from "./db.server";', `const prisma = {
-  async $executeRawUnsafe(sql, shop, payload) { if (payload) globalThis.quizTestPayload = payload; },
-  async $queryRawUnsafe() { return globalThis.quizTestPayload ? [{ payload: globalThis.quizTestPayload }] : []; }
+  async $executeRawUnsafe(sql, ...args) {
+    const result = globalThis.quizTestDatabase.prepare(sql).run(...args);
+    globalThis.quizTestPayload = JSON.stringify(globalThis.quizTestDatabase.prepare('SELECT shop,payload FROM QuizConfig ORDER BY shop').all());
+    return Number(result.changes);
+  },
+  async $queryRawUnsafe(sql, ...args) { return globalThis.quizTestDatabase.prepare(sql).all(...args); }
 };`);
 source = source.replace('from "./quiz-shared";', `from "data:text/javascript;base64,${Buffer.from(shared.code).toString("base64")}";`);
 const compiled = await transform(source, { loader: "ts", format: "esm" });
@@ -193,3 +199,9 @@ assert.equal((await api.loadQuiz("test", twoPaths.handle)).coverImage, twoPaths.
 assert.equal((await api.loadQuiz("test", twoPaths.handle)).profileImage, twoPaths.profileImage);
 await assert.rejects(api.loadQuiz("test", "does-not-exist"));
 console.log("Passed: standalone Deep, selected combined paths, image metadata persistence and unknown quiz rejection.");
+
+const concurrent = await Promise.allSettled([api.createQuiz("concurrency-test", "First", "single", ["quick"]), api.createQuiz("concurrency-test", "Second", "single", ["quick"])]);
+assert.equal(concurrent.filter(item => item.status === "fulfilled").length, 1);
+assert.equal(concurrent.filter(item => item.status === "rejected").length, 1);
+assert.equal((await api.loadLibrary("concurrency-test")).length, 1);
+console.log("Passed: simultaneous library writes fail safely instead of silently losing changes.");

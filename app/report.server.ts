@@ -4,6 +4,8 @@ import type { QuizResult } from "./quiz.server";
 
 async function prepare() {
   await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS QuizReport (id TEXT PRIMARY KEY, shop TEXT NOT NULL, payload TEXT NOT NULL, email TEXT, sent INTEGER NOT NULL DEFAULT 0, expires INTEGER NOT NULL)`);
+  await prisma.$executeRawUnsafe("CREATE INDEX IF NOT EXISTS QuizReport_expiry ON QuizReport(expires)");
+  await prisma.$executeRawUnsafe("CREATE INDEX IF NOT EXISTS QuizReport_shop_email ON QuizReport(shop,email)");
   await prisma.$executeRawUnsafe("DELETE FROM QuizReport WHERE expires < ?", Date.now());
 }
 export function publicReport(result: QuizResult, id: string, unlocked = false) {
@@ -64,8 +66,8 @@ export async function reportStats(shop: string) {
 
 export async function collectedEmails(shop: string) {
   await prepare();
-  const rows = await prisma.$queryRawUnsafe<Array<{ email: string; total: number | bigint; latest: number }>>(
-    "SELECT email, COUNT(*) AS total, MAX(expires) AS latest FROM QuizReport WHERE shop=? AND email IS NOT NULL GROUP BY email ORDER BY latest DESC LIMIT 500", shop,
+  const rows = await prisma.$queryRawUnsafe<Array<{ email: string; total: number | bigint; latest: string }>>(
+    "SELECT email, COUNT(*) AS total, CAST(MAX(expires) AS TEXT) AS latest FROM QuizReport WHERE shop=? AND email IS NOT NULL GROUP BY email ORDER BY latest DESC LIMIT 500", shop,
   );
   return rows.map(row => ({ email: row.email, results: Number(row.total), latestResultAt: Number(row.latest) - 7 * 86400000 }));
 }

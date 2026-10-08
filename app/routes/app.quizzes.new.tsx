@@ -30,9 +30,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const layout = form.get("layout") === "single" ? "single" : "three";
   const paths = String(form.get("paths") || "").split(",").filter((path): path is Path => ["quick", "deep", "scan"].includes(path));
   if (!name || !paths.length || (layout === "three" ? paths.length < 2 : paths.length !== 1)) return { error: "Enter a quiz name and choose its quiz paths." };
+  try {
   const quiz = await createQuiz(session.shop, name, paths.length === 1 && paths[0] === "scan" ? "scan" : layout, paths);
   // Go straight to the new quiz so the merchant can add questions.
   return redirect(`/app/editor?quiz=${encodeURIComponent(quiz.handle)}`);
+  } catch (error) { return { error: error instanceof Error ? error.message : "Could not create quiz." }; }
 };
 
 export default function NewQuiz() {

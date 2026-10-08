@@ -31,3 +31,8 @@ export async function saveScanAppearance(shop: string, value: unknown) {
   await prisma.$executeRawUnsafe("INSERT INTO ScanAppearance (shop,payload) VALUES (?,?) ON CONFLICT(shop) DO UPDATE SET payload=excluded.payload", shop, JSON.stringify(appearance));
   return appearance;
 }
+
+export async function deleteScanAppearance(shop: string) {
+  await prepare();
+  await prisma.$executeRawUnsafe("DELETE FROM ScanAppearance WHERE shop=?", shop);
+}

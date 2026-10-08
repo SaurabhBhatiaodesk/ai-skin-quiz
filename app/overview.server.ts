@@ -31,7 +31,7 @@ export async function quizOverview(shop: string, admin: AdminGraphql) {
   const apiKey = process.env.SHOPIFY_API_KEY || "";
   return {
     themeChecked: theme.checked,
-    themeActivated: activatedBefore || activatedNow,
+    themeActivated: theme.checked ? live.some(Boolean) : activatedBefore,
     themeEditorUrl: `https://admin.shopify.com/store/${store}/themes/current/editor`,
     quizzes: quizzes.map((quiz, index) => ({
       handle: quiz.handle,

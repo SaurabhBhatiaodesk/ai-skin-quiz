@@ -1,3 +1,4 @@
+import { deleteScanAppearance } from "../scan-appearance.server";
 import { deleteOpenAIKey } from "../settings.server";
 import type { ActionFunctionArgs } from "react-router";
 import { authenticate } from "../shopify.server";
@@ -25,6 +26,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       await deleteReports(shop);
       await deleteShopQuizzes(shop);
       await deleteShopSetup(shop);
+      await deleteScanAppearance(shop);
       await deleteOpenAIKey(shop);
       // Scan provider settings (table created by the Global Settings page, if it has been used).
       await db.$executeRawUnsafe("DELETE FROM GlobalSettings WHERE shop=?", shop).catch(() => undefined);

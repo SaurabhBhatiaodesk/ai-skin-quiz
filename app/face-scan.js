@@ -60,14 +60,16 @@ export async function createFaceScan(video, zone, onStatus) {
   const guide = document.createElement("div"); guide.className = "face-scan-guidance";
   const instruction = document.createElement("strong");
   const hint = document.createElement("span"); hint.className = "face-scan-hint";
-  guide.append(instruction, hint); zone.appendChild(guide);
+  const quality = document.createElement("span"); quality.className = "face-scan-quality";
+  quality.style.cssText = "display:block;font-size:11px;letter-spacing:.03em;margin-top:6px;opacity:.9";
+  guide.append(instruction, hint, quality); zone.appendChild(guide);
   const countdown = document.createElement("div"); countdown.className = "face-scan-countdown"; countdown.setAttribute("aria-hidden", "true"); zone.appendChild(countdown);
   const context = overlay.getContext("2d");
   const sample = document.createElement("canvas"); sample.width = 64; sample.height = 64;
   const sampleContext = sample.getContext("2d", { willReadFrequently: true });
 
   let disposed = false, timer = 0, frameTime = -1, lastCheck = { ok: false, message: "Loading camera..." }, readySince = 0;
-  let scanning = false, flashEl = null;
+  let scanning = false, flashEl = null, checkedAt = 0, trackingFailed = false, faceBox = null, sweepTime = 0, previousTick = 0;
 
   function draw(points, ok) {
     overlay.width = video.videoWidth; overlay.height = video.videoHeight;
@@ -78,15 +80,48 @@ export async function createFaceScan(video, zone, onStatus) {
     context.beginPath(); context.ellipse(oval.centerX, oval.centerY, oval.radiusX, oval.radiusY, 0, 0, Math.PI * 2); context.stroke();
     if (!points || !ok) return;
     context.save(); context.beginPath(); context.ellipse(oval.centerX, oval.centerY, oval.radiusX, oval.radiusY, 0, 0, Math.PI * 2); context.clip();
-    context.fillStyle = "#75e6ae80";
-    for (let i = 0; i < points.length; i += 6) { context.beginPath(); context.arc(points[i].x * w, points[i].y * h, 1.4, 0, Math.PI * 2); context.fill(); }
+    // These contours follow the detected landmarks; they are never drawn for a missing or invalid face.
+    const contours = [
+      [10,338,297,332,284,251,389,356,454,323,361,288,397,365,379,378,400,377,152,148,176,149,150,136,172,58,132,93,234,127,162,21,54,103,67,109,10],
+      [33,160,158,133,153,144,33], [263,387,385,362,380,373,263],
+      [61,40,37,0,267,270,291,321,314,17,84,91,61], [168,6,197,195,5,4,1],
+      [50,101,205,187,147,123,50], [280,330,425,411,376,352,280]
+    ];
+    context.strokeStyle = "#a4f5cd70"; context.lineWidth = Math.max(1, w/800);
+    for (const contour of contours) {
+      context.beginPath();
+      contour.forEach((index, i) => { const point = points[index]; if (!point) return; if (i === 0) context.moveTo(point.x*w,point.y*h); else context.lineTo(point.x*w,point.y*h); });
+      context.stroke();
+    }
+    context.fillStyle = "#c2ffe3b0";
+    for (let i = 0; i < points.length; i += 9) { context.beginPath(); context.arc(points[i].x * w, points[i].y * h, Math.max(1,w/650), 0, Math.PI * 2); context.fill(); }
+    if (scanning && faceBox) {
+      // Sweep is visual capture guidance, not a claim to measure skin. Time pauses when framing fails.
+      const phase = (sweepTime % 2400) / 1200;
+      const position = phase <= 1 ? phase : 2-phase;
+      const x = faceBox.minX + (faceBox.maxX-faceBox.minX)*position;
+      const glow = context.createLinearGradient(x-18,0,x+18,0);
+      glow.addColorStop(0,"#91ffd000"); glow.addColorStop(.5,"#91ffd070"); glow.addColorStop(1,"#91ffd000");
+      context.fillStyle = glow; context.fillRect(x-18,faceBox.minY,36,faceBox.maxY-faceBox.minY);
+      context.strokeStyle = "#c6ffe6"; context.lineWidth = 2;
+      context.beginPath(); context.moveTo(x,faceBox.minY); context.lineTo(x,faceBox.maxY); context.stroke();
+    }
     context.restore();
   }
 
   function tick() {
     if (disposed) return;
     try {
-      if (video.readyState < 2 || video.currentTime === frameTime) { timer = setTimeout(tick, 80); return; }
+      if (video.readyState < 2 || video.currentTime === frameTime || video.paused || video.ended || document.hidden) {
+        if (checkedAt && performance.now()-checkedAt >= 600) {
+          readySince = 0; lastCheck = { ok: false, message: "Camera paused. Tap Live Camera to resume, or upload a photo." };
+          instruction.textContent = lastCheck.message; quality.textContent = "Waiting for live camera";
+          guide.classList.remove("is-ready");
+          if (video.videoWidth && video.videoHeight) draw(null,false);
+          if (!scanning) onStatus(lastCheck.message);
+        }
+        timer = setTimeout(tick, 80); return;
+      }
       frameTime = video.currentTime;
       zone.style.aspectRatio = video.videoWidth + " / " + video.videoHeight;
       const result = detector.detectForVideo(video, performance.now());
@@ -104,6 +139,11 @@ export async function createFaceScan(video, zone, onStatus) {
         yaw = landmarkPose(points)?.yaw || 0;
       }
       lastCheck = frameCheck({ faces, box, light, yaw, width: video.videoWidth, height: video.videoHeight });
+      checkedAt = performance.now();
+      faceBox = box;
+      if (lastCheck.ok && scanning && previousTick) sweepTime += Math.min(checkedAt-previousTick,160);
+      previousTick = checkedAt;
+      quality.textContent = (faces === 1 ? "Face detected" : "Face needed") + "  ?  " + (light >= 30 ? "Lighting ready" : "More light needed") + "  ?  " + (lastCheck.ok ? "Position ready" : "Adjust position");
       readySince = lastCheck.ok ? readySince || performance.now() : 0;
       if (!scanning) {
         instruction.textContent = lastCheck.ok ? "Ready. Tap Analyse My Skin." : lastCheck.message;
@@ -114,7 +154,8 @@ export async function createFaceScan(video, zone, onStatus) {
       if (!scanning) onStatus(lastCheck.ok ? "Face detected. Tap Analyse My Skin." : lastCheck.message);
       timer = setTimeout(tick, 80);
     } catch {
-      onStatus("Face tracking failed. Please retry or upload a photo.");
+      trackingFailed = true; lastCheck = { ok: false, message: "Face tracking failed. Please retry or upload a photo." }; readySince = 0;
+      onStatus(lastCheck.message);
     }
   }
 
@@ -145,27 +186,38 @@ export async function createFaceScan(video, zone, onStatus) {
     canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
     const small = document.createElement("canvas"); small.width = 160; small.height = Math.round(160 * canvas.height / canvas.width);
     const smallContext = small.getContext("2d", { willReadFrequently: true });
-    smallContext.drawImage(canvas, 0, 0, small.width, small.height);
+    // Rank facial detail, not sharp wallpaper or objects behind the shopper.
+    if (faceBox) smallContext.drawImage(video, Math.max(0,faceBox.minX), Math.max(0,faceBox.minY), Math.max(1,faceBox.maxX-faceBox.minX), Math.max(1,faceBox.maxY-faceBox.minY), 0, 0, small.width, small.height);
+    else smallContext.drawImage(canvas, 0, 0, small.width, small.height);
     return { canvas, score: sharpness(smallContext.getImageData(0, 0, small.width, small.height).data, small.width, small.height) };
   }
 
+  function assertActive() {
+    if (disposed) throw new Error("Scan cancelled. You can start again.");
+    if (trackingFailed) throw new Error("Face tracking stopped. Switch to Upload, or reopen the camera.");
+  }
+  function freshFace() { return lastCheck.ok && performance.now() - checkedAt < 600 && !document.hidden && !video.paused && !video.ended; }
   async function capture() {
-    // Wait for a steady, well-placed face (up to 15 seconds).
-    const started = performance.now();
-    while (!(lastCheck.ok && readySince && performance.now() - readySince > 400)) {
-      if (disposed) throw new Error("Scan cancelled. You can start again.");
-      if (performance.now() - started > 15000) throw new Error("We could not see your face clearly. Try better light, or upload a photo.");
-      instruction.textContent = lastCheck.message; hint.textContent = "The scan starts as soon as your face is in place.";
-      onStatus(lastCheck.message);
-      await wait(100);
-    }
-    for (const count of [3, 2, 1]) {
-      if (disposed) throw new Error("Scan cancelled. You can start again.");
-      if (!lastCheck.ok) { countdown.textContent = ""; return capture(); }
-      countdown.textContent = String(count);
-      instruction.textContent = "Hold still"; hint.textContent = "Capturing in " + count + "...";
-      onStatus("Hold still. Capturing in " + count);
-      await wait(550);
+    const deadline = performance.now() + 20000;
+    let countdownDone = false;
+    while (!countdownDone) {
+      assertActive();
+      if (performance.now() > deadline) throw new Error("We could not capture a steady face. Improve the lighting and retry, or upload a photo.");
+      while (!(freshFace() && readySince && performance.now() - readySince > 400)) {
+        assertActive();
+        if (performance.now() > deadline) throw new Error("We could not see your face clearly. Try better light, or upload a photo.");
+        instruction.textContent = lastCheck.message; hint.textContent = "Center your face and hold still.";
+        onStatus(lastCheck.message); await wait(100);
+      }
+      countdownDone = true;
+      for (const count of [3, 2, 1]) {
+        assertActive();
+        if (!freshFace()) { countdown.textContent = ""; countdownDone = false; break; }
+        countdown.textContent = String(count);
+        instruction.textContent = "Hold still"; hint.textContent = "Capturing in " + count + "...";
+        onStatus("Hold still. Capturing in " + count); await wait(550);
+      }
+      if (!freshFace()) countdownDone = false;
     }
     countdown.textContent = "";
     onStatus("Capturing...");
@@ -173,7 +225,13 @@ export async function createFaceScan(video, zone, onStatus) {
     try {
       await wait(450); // let the camera adjust its exposure to the flash
       const frames = [];
-      for (let i = 0; i < 3; i++) { frames.push(grabFrame()); await wait(90); }
+      for (let i = 0; i < 3; i++) {
+        if (disposed) throw new Error("Scan cancelled. You can start again.");
+        assertActive();
+        if (!freshFace()) throw new Error("Your face moved during capture. Position your face and retry.");
+        frames.push(grabFrame()); await wait(90);
+      }
+      if (disposed) throw new Error("Scan cancelled. You can start again.");
       frames.sort((a, b) => b.score - a.score);
       return [frames[0].canvas.toDataURL("image/jpeg", 0.88)];
     } finally {
@@ -184,6 +242,7 @@ export async function createFaceScan(video, zone, onStatus) {
   tick();
   return {
     start() {
+      if (disposed) return Promise.reject(new Error("Camera closed. Please reopen it."));
       if (scanning) return Promise.reject(new Error("A scan is already running."));
       scanning = true;
       return capture().then((images) => { onStatus("Photo captured. Analysing your skin..."); return images; }).finally(() => { scanning = false; countdown.textContent = ""; });

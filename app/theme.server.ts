@@ -31,6 +31,7 @@ function parseThemeJson(content: string) {
 function collectBlocks(node: unknown, found: ThemeStatus["blocks"]) {
   if (!node || typeof node !== "object") return;
   const item = node as { type?: unknown; disabled?: unknown; settings?: { quiz_code?: unknown } };
+  if (item.disabled === true) return;
   const match = typeof item.type === "string" ? item.type.match(BLOCK_TYPE) : null;
   if (match && item.disabled !== true) found.push({ layout: LAYOUTS[match[1]], code: quizHandle(item.settings?.quiz_code) });
   for (const value of Object.values(node)) collectBlocks(value, found);
