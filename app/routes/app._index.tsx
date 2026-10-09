@@ -1,7 +1,8 @@
+import prisma from "../db.server";
 import HomeIllustration from "../components/HomeIllustration";
 import { useState } from "react";
 import type { HeadersFunction, LoaderFunctionArgs } from "react-router";
-import { useLoaderData } from "react-router";
+import { Link, useLoaderData } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
 import { quizOverview } from "../overview.server";
@@ -9,12 +10,12 @@ import { reportStats } from "../report.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session, admin } = await authenticate.admin(request);
-  const [overview, stats] = await Promise.all([quizOverview(session.shop, admin), reportStats(session.shop)]);
-  return { ...overview, stats };
+  const [overview, stats, installedStores] = await Promise.all([quizOverview(session.shop, admin), reportStats(session.shop), prisma.session.groupBy({ by: ["shop"], where: { accessToken: { not: "" } } })]);
+  return { ...overview, stats, installCount: installedStores.length };
 };
 
 export default function Home() {
-  const { quizzes, themeChecked, themeActivated, themeEditorUrl, stats } = useLoaderData<typeof loader>();
+  const { quizzes, themeChecked, themeActivated, themeEditorUrl, stats, installCount } = useLoaderData<typeof loader>();
   const [calloutDismissed, setCalloutDismissed] = useState(false);
   const scanWidget = quizzes.find(quiz => quiz.layout === "scan");
   const liveCount = quizzes.filter((quiz) => quiz.live).length;
@@ -30,6 +31,7 @@ export default function Home() {
 
         <s-grid gridTemplateColumns="repeat(auto-fit, minmax(min(100%, 240px), 1fr))" gap="base">
           {[
+            {label:"Installed stores",value:String(installCount),detail:"Current installations",href:"",icon:"theme"},
             {label:"Quizzes",value:String(quizzes.length),detail:"Quizzes created",href:"/app/quizzes",icon:"quiz"},
             {label:"Theme blocks",value:themeChecked ? themeActivated ? "Enabled" : "Not added" : "Unverified",detail:themeChecked ? `${liveCount} quiz blocks enabled in the theme` : "Open the theme editor to check",href:themeEditorUrl,icon:"theme"},
             {label:"Results",value:String(stats.results),detail:"Quiz and scan results - last 7 days",href:"",icon:"results"},
@@ -42,7 +44,7 @@ export default function Home() {
               <div style={{display:"grid",gap:4,minWidth:0}}>
                 <div style={{fontSize:12,fontWeight:500,lineHeight:"18px",color:"#000000"}}>{item.label}</div>
                 <div style={{minHeight:38,display:"flex",alignItems:"center",fontSize:item.label === "Theme blocks" ? 22 : 28,fontWeight:600,lineHeight:"38px",letterSpacing:"-0.6px",fontVariantNumeric:"tabular-nums",color:"#000000"}}>{item.value}</div>
-                <div style={{fontSize:11,lineHeight:"17px",color:"#000000"}}>{item.label === "Results" || item.label === "Emails" ? "Last 7 days" : item.label === "Theme blocks" ? themeChecked ? `${liveCount} ${liveCount === 1 ? "block" : "blocks"} in theme` : "Check theme setup" : "Total quizzes"}</div>
+                <div style={{fontSize:11,lineHeight:"17px",color:"#000000"}}>{item.label === "Results" || item.label === "Emails" ? "Last 7 days" : item.label === "Theme blocks" ? themeChecked ? `${liveCount} ${liveCount === 1 ? "block" : "blocks"} in theme` : "Check theme setup" : item.label === "Installed stores" ? "Current installations" : "Total quizzes"}</div>
               </div>
             </div>
           </s-section>)}
@@ -95,7 +97,7 @@ export default function Home() {
                 <s-paragraph>{quizzes.length ? "Choose your floating button icon, colors and position, then preview it on your storefront." : "Choose a question quiz or Skin Scan, then add your questions and product recommendations."}</s-paragraph>
                 <s-stack direction="inline" gap="small">
                   <s-button variant="primary" href={quizzes.length ? "/app/scan-appearance" : "/app/quizzes/new"}>{quizzes.length ? "Customize Skin Scan" : "Create Quiz"}</s-button>
-                  <s-button variant="tertiary" href="/app/documentation">View setup guide</s-button>
+                  <Link to="/app/documentation" style={{display:"inline-flex",alignItems:"center",justifyContent:"center",minHeight:34,padding:"0 14px",boxSizing:"border-box",border:"1px solid #B6CCBE",borderRadius:8,background:"#DCEBE1",color:"#284D37",fontSize:13,fontWeight:600,lineHeight:"20px",textDecoration:"none",boxShadow:"0 1px 1px #0000000D"}}>View setup guide</Link>
                 </s-stack>
               </s-stack>
               <s-box inlineSize="140px">

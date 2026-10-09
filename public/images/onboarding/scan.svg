@@ -10,6 +10,13 @@
 <path d="M75.5 42c-9 0-13 6-12 15 1 10 6 16 12 16s11-6 12-16c1-9-3-15-12-15Z"/>
 <path d="M69 54h1M81 54h1M72 64c2 2 5 2 7 0"/>
 </g>
+<g>
+<animateTransform attributeName="transform" type="translate" values="0 -14;0 18;0 -14" dur="2.8s" repeatCount="indefinite"/>
+<rect x="58" y="51" width="35" height="7" rx="3.5" fill="#92B9A0" opacity=".18"/>
+<path d="M59 54.5h33" stroke="#6C9C7C" stroke-width="2" stroke-linecap="round"/>
+<circle cx="59" cy="54.5" r="2.5" fill="#E1B6A4"/>
+<circle cx="92" cy="54.5" r="2.5" fill="#E1B6A4"/>
+</g>
 <rect x="60" y="94" width="31" height="7" rx="3.5" fill="#DCE7DE"/>
 <circle cx="114" cy="86" r="19" fill="#F5D8CE" stroke="white" stroke-width="4"/>
 <path d="M114 76v20M104 86h20" stroke="#805749" stroke-width="2" stroke-linecap="round"/>

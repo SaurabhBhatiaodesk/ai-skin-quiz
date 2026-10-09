@@ -405,7 +405,7 @@ export default function QuizEditor({
                     reader.readAsDataURL(file);
                   }} />
                   <s-text-field label="Or HTTPS icon image URL" value={quiz.cardIcons?.[path]?.startsWith("https://") ? quiz.cardIcons[path] : ""} onInput={event => { const value = event.currentTarget.value; setQuiz(current => ({...current,cardIcons:{...current.cardIcons,[path]:value}})); }} />
-                  <s-button icon="delete" variant="tertiary" disabled={!quiz.cardIcons?.[path]} onClick={() => setQuiz(current => ({...current,cardIcons:{...current.cardIcons,[path]:""}}))}>Remove image / use default</s-button>
+                  <s-button icon="delete" variant="secondary" disabled={!quiz.cardIcons?.[path]} onClick={() => setQuiz(current => ({...current,cardIcons:{...current.cardIcons,[path]:""}}))}>Remove image / use default</s-button>
                 </div>)}
                 <s-stack direction="inline"><s-button variant="primary" loading={pending} onClick={save}>Save icons</s-button></s-stack>
               </s-stack>
@@ -559,14 +559,14 @@ export default function QuizEditor({
             </s-section> : null}
             {showQuestions && question && (tab !== "edit" || questionOpen) ? <s-section heading={`Question ${safeIndex + 1}`}>
               <s-stack gap="base">
-                {tab === "edit" ? <s-stack direction="inline" justifyContent="space-between" gap="small"><s-button icon="arrow-left" onClick={() => setQuestionOpen(false)}>Back to questions</s-button><s-button icon="delete" tone="critical" variant="tertiary" commandFor="delete-question-modal" command="--show" disabled={questions.length <= 1}>Delete question</s-button></s-stack> : null}
+                {tab === "edit" ? <s-stack direction="inline" justifyContent="space-between" gap="small"><s-button icon="arrow-left" onClick={() => setQuestionOpen(false)}>Back to questions</s-button><s-button icon="delete" tone="critical" variant="secondary" commandFor="delete-question-modal" command="--show" disabled={questions.length <= 1}>Delete question</s-button></s-stack> : null}
                 <s-text-area label="Question" rows={3} value={question.text} onInput={event => patch({ text: event.currentTarget.value })} />
                 <s-grid gridTemplateColumns={tab === "tags" ? "repeat(2, minmax(0, 1fr))" : "repeat(auto-fit, minmax(240px, 1fr))"} gap="base">
                   {question.options.map((option, optionIndex) => <s-box key={optionIndex} border="base" borderRadius="base" padding="base">
                     <s-stack gap="small">
                       {tab === "tags" ? <s-text type="strong">{option.label}</s-text> : <>
                         <s-text-field label={`Answer ${optionIndex + 1}`} value={option.label} onInput={event => patchOption(optionIndex, { label: event.currentTarget.value })} />
-                        <s-button variant="tertiary" tone="critical" disabled={question.options.length <= 2} onClick={() => removeOption(optionIndex)}>Delete answer</s-button>
+                        <s-button variant="secondary" tone="critical" disabled={question.options.length <= 2} onClick={() => removeOption(optionIndex)}>Delete answer</s-button>
                       </>}
                       {tab === "tags" ? <>
                         <s-stack direction="inline" gap="small">{tagsFor(option).map(tag => <s-clickable-chip key={tag} removable accessibilityLabel={`Remove ${tag}`} onRemove={() => applyTags(optionIndex, tagsFor(option).filter(item => item !== tag))}>{tag}</s-clickable-chip>)}</s-stack>

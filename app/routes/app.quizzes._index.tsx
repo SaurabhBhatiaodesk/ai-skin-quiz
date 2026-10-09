@@ -76,7 +76,7 @@ if (!response.ok) throw new Error(quiz.error || "Could not load quiz");
               <s-stack direction="inline" gap="small">
                 <s-button href={`/app/editor?quiz=${encodeURIComponent(quiz.handle)}`}>{quiz.layout === "scan" ? "Edit Skin Scan" : "Edit quiz"}</s-button>
                 <s-button commandFor="quiz-developer-modal" command="--show" onClick={() => { setDeveloperQuiz({handle:quiz.handle,name:quiz.name,layout:quiz.layout}); setCopyStatus(""); }}>{quiz.layout === "scan" ? "Skin Scan actions" : "Quiz actions"}</s-button>
-                {!themeActivated ? <s-button icon="store" variant="tertiary" href={quiz.addUrl} target="_top">Activate in theme</s-button> : null}
+                {!themeActivated ? <s-button icon="store" variant="secondary" href={quiz.addUrl} target="_top">Activate in theme</s-button> : null}
               </s-stack>
             </s-stack>
           </s-box>
@@ -94,12 +94,12 @@ if (!response.ok) throw new Error(quiz.error || "Could not load quiz");
           <s-paragraph>Use this saved quiz API to build your own storefront design. Available for Combined Quiz, Single Quiz and AI Skin Scan blocks.</s-paragraph>
           <s-stack direction="inline" justifyContent="space-between" alignItems="center">
             <s-text type="strong">Quiz data API</s-text>
-            <s-button variant="tertiary" onClick={() => copyDeveloperValue(apiPath,"API URL")}>Copy API URL</s-button>
+            <s-button variant="secondary" onClick={() => copyDeveloperValue(apiPath,"API URL")}>Copy API URL</s-button>
           </s-stack>
           <s-text-field label="Quiz data API" readOnly value={apiPath} />
           <s-stack direction="inline" justifyContent="space-between" alignItems="center">
             <s-text type="strong">JavaScript example</s-text>
-            <s-button variant="tertiary" onClick={() => copyDeveloperValue(fetchExample, "Example")}>Copy example</s-button>
+            <s-button variant="secondary" onClick={() => copyDeveloperValue(fetchExample, "Example")}>Copy example</s-button>
           </s-stack>
           <s-text-area label="Fetch quiz data" readOnly rows={8} value={fetchExample} />
           <s-paragraph>Render the returned data with your own HTML, CSS or frontend framework. This API returns JSON; it does not insert the app widget.</s-paragraph>

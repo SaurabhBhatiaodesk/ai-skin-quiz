@@ -68,7 +68,7 @@ export default function MappingEditor({ draft, products, tags, onChange, onSave,
           </s-stack>
         </s-grid>
         {!compact ? <s-stack direction="inline" gap="small" justifyContent="end">
-          <s-button variant="tertiary" onClick={onCancel}>Cancel</s-button><s-button onClick={onSave} loading={pending} disabled={!draft.tags.length || !draft.productHandle}>Save mapping</s-button>
+          <s-button variant="secondary" onClick={onCancel}>Cancel</s-button><s-button onClick={onSave} loading={pending} disabled={!draft.tags.length || !draft.productHandle}>Save mapping</s-button>
         </s-stack> : null}
       </s-stack>
       <s-modal ref={modal} id={`${id}-resources`} heading={`Select ${resourceType}`}>

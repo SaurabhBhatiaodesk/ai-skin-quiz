@@ -30,7 +30,7 @@ export default function Emails() {
         </div>
         <s-stack direction="inline" justifyContent="space-between" alignItems="center">
           <s-text color="subdued">{filtered.length} of {emails.length} email addresses</s-text>
-          {query || period !== "all" || sort !== "newest" ? <s-button variant="tertiary" onClick={() => { setQuery(""); setPeriod("all"); setSort("newest"); setPage(0); }}>Reset filters</s-button> : null}
+          {query || period !== "all" || sort !== "newest" ? <s-button variant="secondary" onClick={() => { setQuery(""); setPeriod("all"); setSort("newest"); setPage(0); }}>Reset filters</s-button> : null}
         </s-stack>
       </s-stack>
     </s-section>

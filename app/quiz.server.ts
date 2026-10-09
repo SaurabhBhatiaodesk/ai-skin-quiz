@@ -472,10 +472,11 @@ async function readPayload(shop: string) {
   }
 }
 
-async function writePayload(shop: string, quizzes: QuizEntry[], expected: string | null, scanDefaultInitialized = false) {
+async function writePayload(shop: string, quizzes: QuizEntry[], expected: string | null, scanDefaultInitialized = false, sampleQuizInitialized = false) {
   await ensureQuizTable();
   const initialized = scanDefaultInitialized || Boolean(expected && JSON.parse(expected).scanDefaultInitialized);
-  const payload = JSON.stringify({ quizzes, ...(initialized ? { scanDefaultInitialized: true } : {}) });
+  const sampleInitialized = sampleQuizInitialized || Boolean(expected && JSON.parse(expected).sampleStarterInitialized);
+  const payload = JSON.stringify({ quizzes, ...(initialized ? { scanDefaultInitialized: true } : {}), ...(sampleInitialized ? { sampleStarterInitialized: true } : {}) });
   const changed = expected === null
     ? await prisma.$executeRawUnsafe(`INSERT INTO "QuizConfig" ("shop", "payload", "updatedAt") VALUES (?, ?, CURRENT_TIMESTAMP) ON CONFLICT("shop") DO NOTHING`, shop, payload)
     : await prisma.$executeRawUnsafe(`UPDATE "QuizConfig" SET "payload"=?, "updatedAt"=CURRENT_TIMESTAMP WHERE "shop"=? AND "payload"=?`, payload, shop, expected);
@@ -498,9 +499,10 @@ export async function loadLibrary(shop: string): Promise<QuizEntry[]> {
 export async function ensureDefaultScanWidget(shop: string) {
   for (let attempt = 0; attempt < 3; attempt++) {
     const snapshot = await readPayload(shop);
-    if (snapshot?.value && typeof snapshot.value === "object" && (snapshot.value as { scanDefaultInitialized?: boolean }).scanDefaultInitialized) return;
+    const flags = snapshot?.value && typeof snapshot.value === "object" ? snapshot.value as { scanDefaultInitialized?: boolean; sampleStarterInitialized?: boolean } : {};
+    if (flags.scanDefaultInitialized && flags.sampleStarterInitialized) return;
     const library = snapshot ? normalizeLibrary(snapshot.value) : [];
-    if (!library.some(item => item.layout === "scan") && library.length < 20) {
+    if (!flags.scanDefaultInitialized && !library.some(item => item.layout === "scan") && library.length < 20) {
       let number = Date.now();
       while (library.some(item => item.handle === String(number))) number++;
       const starter = defaultQuiz();
@@ -510,7 +512,18 @@ export async function ensureDefaultScanWidget(shop: string) {
       starter.deep = [];
       library.push(namedQuiz(normalizeQuiz(starter, { draft: true }), String(number), "Only Skin Scan"));
     }
-    try { await writePayload(shop, library, snapshot?.raw ?? null, true); return; }
+    if (!flags.sampleStarterInitialized && !library.some(item => item.name === "Sample Skin Quiz" && item.layout === "single") && library.length < 20) {
+      let number = Date.now();
+      while (library.some(item => item.handle === String(number))) number++;
+      const sample = defaultQuiz();
+      sample.layout = "single";
+      sample.enabledPaths = ["quick"];
+      sample.singleFlow = "quick";
+      sample.quick = structuredClone(QUICK_QUESTIONS);
+      sample.deep = [];
+      library.push(namedQuiz(normalizeQuiz(sample, { draft: true }), String(number), "Sample Skin Quiz"));
+    }
+    try { await writePayload(shop, library, snapshot?.raw ?? null, true, true); return; }
     catch (error) { if (attempt === 2) throw error; }
   }
 }
