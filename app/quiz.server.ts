@@ -350,7 +350,7 @@ export function normalizeQuiz(input: unknown, { draft = false }: { draft?: boole
   }
   const scan = (input as StoredQuiz)?.scanner;
   const scanner = {
-    title: clip(scan?.title, 80) || "AI Skin Scan",
+    title: !scan?.title || scan.title === "AI Skin Scan" ? "Skin Insights" : clip(scan.title, 80),
     description: !scan?.description || scan.description === "Skin scan analysis is not configured. Try the question quiz." ? "Use a camera or upload a photo for cosmetic skin observations." : clip(scan.description, 240),
     camera: scan?.camera !== false,
     upload: scan?.upload !== false,

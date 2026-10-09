@@ -2,7 +2,6 @@
   class="prana-quiz"
   id="prana-quiz-{{ block.id }}"
   data-block-layout="{{ expected_layout | default: 'three' }}"
-  data-block-settings="{{ block.settings | json | escape }}"
   data-configured="false"
   data-design-mode="{{ request.design_mode }}"
   data-prana-quiz
@@ -114,7 +113,7 @@
       <div class="entry-card featured" data-goto="scanner">
         <div class="ec-badge">Photo analysis</div>
         <div class="ec-icon scan">📷</div>
-        <div class="ec-name">AI Skin Scan</div>
+        <div class="ec-name">Skin Insights</div>
         <div class="ec-desc">Camera or photo upload for visible cosmetic skin observations.</div>
         <div class="ec-time">✦ 30 seconds</div>
         <button class="btn-entry" type="button">Start Scan</button>

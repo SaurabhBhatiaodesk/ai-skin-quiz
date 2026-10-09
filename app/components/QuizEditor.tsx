@@ -1,6 +1,5 @@
 import { widgetEmbedCode } from "../widget-embed";
 import UnsavedChangesBar from "./UnsavedChangesBar";
-import referenceQuizCss from "../reference-quiz.css?raw";
 import { useEffect, useRef, useState } from "react";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import MappingEditor from "./MappingEditor";
@@ -336,27 +335,17 @@ export default function QuizEditor({
             </s-box> : null}
           </s-section> : null}
           <s-stack gap="base">
-            {tab === "design" ? <s-section heading={scanOnly ? "Scan design" : "Quiz design"}>
+            {tab === "design" || tab === "settings" ? <s-section heading="Widget appearance settings">
               <s-stack gap="base">
-                <s-paragraph color="subdued">{scanOnly ? "Customize this Skin Scan widget on your storefront. These settings are saved for this widget." : "Customize the appearance of this quiz on your storefront."}</s-paragraph>
-                <s-grid gridTemplateColumns="repeat(auto-fit, minmax(240px, 1fr))" gap="base">
-                  {!scanOnly ? <><s-button onClick={() => setQuiz(current => ({ ...current, widgetCss: referenceQuizCss, design: { ...design, background: "#f3ecd9", text: "#180d0c", accent: "#4c1428", buttonText: "#ffffff", font: "classic", radius: "rounded" } }))}>Apply cream and burgundy design</s-button>
-                  <s-paragraph color="subdued">Cream and burgundy question cards with visible radio selections. This applies only to this widget. Edit its CSS in Settings / Widget CSS, then Save.</s-paragraph></> : null}
-                  {([{ key: "background", label: "Background color" }, { key: "text", label: "Text color" }, { key: "accent", label: "Button and accent color" }, { key: "buttonText", label: "Button text color" }] as const).map(field => <s-color-field key={field.key} label={field.label} required details={scanOnly ? field.key === "background" ? "Scan widget background." : field.key === "text" ? "Scan instructions and body text." : field.key === "accent" ? "Scan buttons and highlights." : "Text on scan buttons." : field.key === "background" ? "Background of this quiz." : field.key === "text" ? "Questions and body text." : field.key === "accent" ? "Quiz buttons and highlights." : "Text on quiz buttons."} value={design[field.key]} onInput={event => { const value = event.currentTarget.value; setQuiz(current => ({ ...current, design: { ...design, [field.key]: value } })); }} />)}
-                  <s-paragraph color="subdued">Heading and body fonts automatically follow your Shopify theme.</s-paragraph>
-                  <s-color-field label="Heading color" value={design.headingColor || "#000000"} onInput={event => setQuiz(current => ({ ...current, design: { ...design, headingColor: event.currentTarget.value } }))} />
-                  <s-color-field label="Question card background" value={design.cardColor || "#fff9ee"} onInput={event => setQuiz(current => ({ ...current, design: { ...design, cardColor: event.currentTarget.value } }))} />
-                  <s-color-field label="Answer background" value={design.answerColor || "#e4c3a0"} onInput={event => setQuiz(current => ({ ...current, design: { ...design, answerColor: event.currentTarget.value } }))} />
-                  <s-color-field label="Answer text color" value={design.answerText || "#651d30"} onInput={event => setQuiz(current => ({ ...current, design: { ...design, answerText: event.currentTarget.value } }))} />
-                  <s-color-field label="Selected answer background" value={design.selectedColor || "#571c29"} onInput={event => setQuiz(current => ({ ...current, design: { ...design, selectedColor: event.currentTarget.value } }))} />
-                  <s-color-field label="Selected answer text" value={design.selectedText || "#ffffff"} onInput={event => setQuiz(current => ({ ...current, design: { ...design, selectedText: event.currentTarget.value } }))} />
-                  <s-number-field label="Heading size" suffix="px" min={10} max={64} value={String(design.headingSize ?? 36)} onInput={event => setQuiz(current => ({ ...current, design: { ...design, headingSize: Number(event.currentTarget.value) } }))} />
-                  <s-number-field label="Question size" suffix="px" min={10} max={64} value={String(design.questionSize ?? 26)} onInput={event => setQuiz(current => ({ ...current, design: { ...design, questionSize: Number(event.currentTarget.value) } }))} />
-                  <s-number-field label="Body text size" suffix="px" min={10} max={64} value={String(design.bodySize ?? 14)} onInput={event => setQuiz(current => ({ ...current, design: { ...design, bodySize: Number(event.currentTarget.value) } }))} />
-                  <s-number-field label="Answer text size" suffix="px" min={10} max={64} value={String(design.answerSize ?? 18)} onInput={event => setQuiz(current => ({ ...current, design: { ...design, answerSize: Number(event.currentTarget.value) } }))} />
-                  <s-number-field label="Button text size" suffix="px" min={10} max={64} value={String(design.buttonSize ?? 20)} onInput={event => setQuiz(current => ({ ...current, design: { ...design, buttonSize: Number(event.currentTarget.value) } }))} />
-                  <s-select label="Button shape" value={design.radius} onChange={event => { const radius = event.currentTarget.value === "square" ? "square" : event.currentTarget.value === "pill" ? "pill" : "rounded"; setQuiz(current => ({ ...current, design: { ...design, radius } })); }}><s-option value="square">Square</s-option><s-option value="rounded">Rounded</s-option><s-option value="pill">Pill</s-option></s-select>
-                </s-grid>
+                <s-paragraph color="subdued">{scanOnly ? "Customize this Skin Scan widget on your storefront. These settings are saved for this widget." : "Colors and font sizes are saved only for this widget and apply to its theme block and embed code."}</s-paragraph>
+                <s-paragraph color="subdued">Heading and body fonts follow your Shopify theme.</s-paragraph>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(300px, 1fr))",gap:16}}>
+                  <div style={{border:"1px solid #E1E3E1",borderRadius:12,padding:20,background:"#FFFFFF"}}><s-stack gap="base"><s-heading>Background and body</s-heading><s-color-field label="Background color" value={design.background} onInput={event => setQuiz(current => ({ ...current, design: { ...design, background: event.currentTarget.value } }))} /><s-color-field label="Body text color" value={design.text} onInput={event => setQuiz(current => ({ ...current, design: { ...design, text: event.currentTarget.value } }))} /><s-number-field label="Body text size" suffix="px" min={10} max={64} value={String(design.bodySize ?? 14)} onInput={event => setQuiz(current => ({ ...current, design: { ...design, bodySize: Number(event.currentTarget.value) } }))} /></s-stack></div>
+                  <div style={{border:"1px solid #E1E3E1",borderRadius:12,padding:20,background:"#FFFFFF"}}><s-stack gap="base"><s-heading>Heading</s-heading><s-color-field label="Heading color" value={design.headingColor || "#000000"} onInput={event => setQuiz(current => ({ ...current, design: { ...design, headingColor: event.currentTarget.value } }))} /><s-number-field label="Heading size" suffix="px" min={10} max={64} value={String(design.headingSize ?? 36)} onInput={event => setQuiz(current => ({ ...current, design: { ...design, headingSize: Number(event.currentTarget.value) } }))} /></s-stack></div>
+                  <div style={{border:"1px solid #E1E3E1",borderRadius:12,padding:20,background:"#FFFFFF"}}><s-stack gap="base"><s-heading>Question card</s-heading><s-color-field label="Question card background" value={design.cardColor || "#fff9ee"} onInput={event => setQuiz(current => ({ ...current, design: { ...design, cardColor: event.currentTarget.value } }))} /><s-number-field label="Question size" suffix="px" min={10} max={64} value={String(design.questionSize ?? 26)} onInput={event => setQuiz(current => ({ ...current, design: { ...design, questionSize: Number(event.currentTarget.value) } }))} /></s-stack></div>
+                  <div style={{border:"1px solid #E1E3E1",borderRadius:12,padding:20,background:"#FFFFFF"}}><s-stack gap="base"><s-heading>Answers</s-heading><s-color-field label="Answer background" value={design.answerColor || "#e4c3a0"} onInput={event => setQuiz(current => ({ ...current, design: { ...design, answerColor: event.currentTarget.value } }))} /><s-color-field label="Answer text color" value={design.answerText || "#651d30"} onInput={event => setQuiz(current => ({ ...current, design: { ...design, answerText: event.currentTarget.value } }))} /><s-number-field label="Answer text size" suffix="px" min={10} max={64} value={String(design.answerSize ?? 18)} onInput={event => setQuiz(current => ({ ...current, design: { ...design, answerSize: Number(event.currentTarget.value) } }))} /><s-color-field label="Selected answer background" value={design.selectedColor || "#571c29"} onInput={event => setQuiz(current => ({ ...current, design: { ...design, selectedColor: event.currentTarget.value } }))} /><s-color-field label="Selected answer text" value={design.selectedText || "#ffffff"} onInput={event => setQuiz(current => ({ ...current, design: { ...design, selectedText: event.currentTarget.value } }))} /></s-stack></div>
+                  <div style={{border:"1px solid #E1E3E1",borderRadius:12,padding:20,background:"#FFFFFF"}}><s-stack gap="base"><s-heading>Buttons</s-heading><s-color-field label="Button background" value={design.accent} onInput={event => setQuiz(current => ({ ...current, design: { ...design, accent: event.currentTarget.value } }))} /><s-color-field label="Button text color" value={design.buttonText} onInput={event => setQuiz(current => ({ ...current, design: { ...design, buttonText: event.currentTarget.value } }))} /><s-number-field label="Button text size" suffix="px" min={10} max={64} value={String(design.buttonSize ?? 20)} onInput={event => setQuiz(current => ({ ...current, design: { ...design, buttonSize: Number(event.currentTarget.value) } }))} /><s-select label="Button shape" value={design.radius} onChange={event => { const radius = event.currentTarget.value === "square" ? "square" : event.currentTarget.value === "pill" ? "pill" : "rounded"; setQuiz(current => ({ ...current, design: { ...design, radius } })); }}><s-option value="square">Square</s-option><s-option value="rounded">Rounded</s-option><s-option value="pill">Pill</s-option></s-select></s-stack></div>
+                </div>
                 <s-stack direction="inline" justifyContent="end"><s-button variant="primary" loading={pending} onClick={save}>Save design</s-button></s-stack>
               </s-stack>
             </s-section> : null}
@@ -365,7 +354,7 @@ export default function QuizEditor({
                 <s-paragraph color="subdued">Colors and button shape update as you edit. Storefront heading and body fonts follow your theme.</s-paragraph>
                 <div style={{background:design.background,color:design.text,padding:"clamp(20px, 4vw, 40px)",border:"1px solid #DADDD9",borderRadius:12}}>
                   <div style={{maxWidth:720,margin:"0 auto",display:"grid",gap:18}}>
-                    <div style={{fontSize:22,fontWeight:600,lineHeight:1.4,textAlign:"center"}}>{scanOnly ? scanner.title : (quiz.quick[0] || quiz.deep[0])?.text || "How does your skin feel most days?"}</div>
+                    <div style={{fontSize:design.questionSize ?? 26,color:design.headingColor || design.text,fontWeight:600,lineHeight:1.4,textAlign:"center"}}>{scanOnly ? scanner.title : (quiz.quick[0] || quiz.deep[0])?.text || "How does your skin feel most days?"}</div>
                     {scanOnly ? <><div style={{textAlign:"center",fontSize:14,lineHeight:1.6}}>{scanner.description}</div><div style={{padding:28,border:`1px dashed ${design.accent}`,borderRadius:12,textAlign:"center"}}>Camera or photo upload</div></> : ((quiz.quick[0] || quiz.deep[0])?.options || [{label:"Dry or very dry"},{label:"Normal or balanced"},{label:"Oily or combination"}]).slice(0,4).map((option,i) => <div key={i} style={{display:"flex",alignItems:"center",gap:14,padding:"16px 20px",border:`1px solid ${design.accent}`,borderRadius:8,background:i===1 ? design.selectedColor || "#571c29" : design.answerColor || "#e4c3a0",color:i===1 ? design.selectedText || "#ffffff" : design.answerText || "#651d30"}}><span style={{width:18,height:18,border:`2px solid ${i===1 ? design.buttonText : design.accent}`,borderRadius:"50%",display:"grid",placeItems:"center",flexShrink:0}}>{i===1 ? <span style={{width:8,height:8,borderRadius:"50%",background:design.buttonText}} /> : null}</span><span style={{flex:1,textAlign:"center",fontSize:design.answerSize ?? 18,lineHeight:1.5}}>{option.label}</span></div>)}
                     <div style={{justifySelf:"center",padding:"13px 32px",background:design.accent,color:design.buttonText,borderRadius:design.radius === "pill" ? 999 : design.radius === "square" ? 0 : 8,fontSize:design.buttonSize ?? 20,fontWeight:600}}>{scanOnly ? "Continue to photo" : "Continue"} &rarr;</div>
                   </div>
@@ -413,6 +402,7 @@ export default function QuizEditor({
             {tab === "settings" ? <s-section heading={scanOnly ? "Skin Scan icon" : "Quiz card icons"}>
               <s-stack gap="base">
                 <s-paragraph>Upload an SVG, PNG, JPG or WebP icon (up to 64 KB) for each entry card, then save the quiz.</s-paragraph>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(min(100%, 420px), 1fr))",gap:16}}>
                 {(["scan", "quick", "deep"] as const).map(path => <div key={path} style={{display:"grid",gap:12,padding:16,border:"1px solid #E3E8E4",borderRadius:12}}>
                   <s-heading>{path === "scan" ? "AI Skin Scan" : path === "quick" ? "Quick Quiz" : "Deep Dosha"}</s-heading>
                   {quiz.cardIcons?.[path] ? <s-box inlineSize="48px" paddingBlock="small"><s-image src={quiz.cardIcons[path]} alt={`${path} card icon preview`} aspectRatio="1 / 1" objectFit="contain" /></s-box> : null}
@@ -430,18 +420,21 @@ export default function QuizEditor({
                   <s-text-field label="Or HTTPS icon image URL" value={quiz.cardIcons?.[path]?.startsWith("https://") ? quiz.cardIcons[path] : ""} onInput={event => { const value = event.currentTarget.value; setQuiz(current => ({...current,cardIcons:{...current.cardIcons,[path]:value}})); }} />
                   <s-button icon="delete" variant="secondary" disabled={!quiz.cardIcons?.[path]} onClick={() => setQuiz(current => ({...current,cardIcons:{...current.cardIcons,[path]:""}}))}>Remove image / use default</s-button>
                 </div>)}
+                </div>
                 <s-stack direction="inline"><s-button variant="primary" loading={pending} onClick={save}>Save icons</s-button></s-stack>
               </s-stack>
             </s-section> : null}
             {tab === "settings" ? <s-section heading="Widget CSS">
-              <s-stack gap="base">
-                <s-paragraph color="subdued">Add custom CSS on top of the default quiz styles. Leave empty to use the defaults. Rules apply only inside this widget and override the defaults, for example: .entry-card {"{"} border-radius: 24px; {"}"}</s-paragraph>
-                <s-text-area label="Custom CSS" rows={12} placeholder=".entry-card { border-radius: 24px; }" value={quiz.widgetCss || ""} onInput={event => { const widgetCss = event.currentTarget.value; setQuiz(current => ({ ...current, widgetCss })); }} />
-                <s-stack direction="inline" gap="base">
-                  <s-button variant="primary" loading={pending} onClick={save}>Save CSS</s-button>
-                  <s-button disabled={!quiz.widgetCss} onClick={() => setQuiz(current => ({ ...current, widgetCss: "" }))}>Reset to default</s-button>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(min(100%, 420px), 1fr))",gap:24,alignItems:"start"}}>
+                <s-paragraph color="subdued">Add custom CSS for this widget. Leave empty to use the defaults. Rules apply only inside this widget.</s-paragraph>
+                <s-stack gap="base">
+                  <s-text-area label="Custom CSS" rows={12} placeholder=".entry-card { border-radius: 24px; }" value={quiz.widgetCss || ""} onInput={event => { const widgetCss = event.currentTarget.value; setQuiz(current => ({ ...current, widgetCss })); }} />
+                  <s-stack direction="inline" gap="base">
+                    <s-button variant="primary" loading={pending} onClick={save}>Save CSS</s-button>
+                    <s-button disabled={!quiz.widgetCss} onClick={() => setQuiz(current => ({ ...current, widgetCss: "" }))}>Reset to default</s-button>
+                  </s-stack>
                 </s-stack>
-              </s-stack>
+              </div>
             </s-section> : null}
             {tab === "settings" && enabledPaths.includes("scan") ? <s-section heading="AI Skin Scan provider">
               <s-paragraph>Provider configuration is shared across all quizzes in this store.</s-paragraph>

@@ -716,12 +716,6 @@ import { buildFaceMap } from "./face-map.js";
         "[data-deep-time]": "âœ¦ About " + minutes(deepCount, 15) + " min"
       };
       Object.keys(copy).forEach(function (selector) { var node = q(selector); if (node) node.textContent = copy[selector]; });
-      var blockSettings = {};
-      try { blockSettings = JSON.parse(root.getAttribute("data-block-settings") || "{}"); } catch (_) { /* Embedded views use widget settings. */ }
-      if (blockSettings.custom_design) {
-        data.design = Object.assign({}, data.design || {}, blockSettings);
-      }
-      if (blockSettings.block_css) data.widgetCss = (data.widgetCss || "") + "\n" + blockSettings.block_css;
       if (data.widgetCss) {
         var widgetStyle = document.createElement("style");
         // Nesting under :scope gives merchant rules like ".entry-card" the same weight as the defaults, and they load later, so they win.
@@ -781,7 +775,8 @@ import { buildFaceMap } from "./face-map.js";
         image.addEventListener("load", function() { icon.textContent = ""; icon.appendChild(image); });
         image.src = value;
       });
-      var scanner = data.scanner || { title: "AI Skin Scan", description: "Camera or photo upload for visible cosmetic skin observations.", camera: true, upload: true };
+      var scanner = data.scanner || { title: "Skin Insights", description: "Camera or photo upload for visible cosmetic skin observations.", camera: true, upload: true };
+      if (scanner.title === "AI Skin Scan") scanner.title = "Skin Insights";
       var scanCard = q('[data-goto="scanner"].entry-card');
       if (scanCard) {
         var title = scanCard.querySelector(".ec-name");
