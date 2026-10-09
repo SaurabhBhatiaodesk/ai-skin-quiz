@@ -1866,3 +1866,26 @@
 .prana-quiz.scan-chat-open .scan-step-title,
 .prana-quiz.scan-chat-open h2,
 .prana-quiz.scan-chat-open h3 { font-family: var(--font-heading-family, var(--scan-theme-heading-font, var(--scan-theme-font, inherit))) !important; }
+
+/* Tighter consent checkbox spacing inside the modal. */
+.prana-quiz.scan-chat-open [data-screen="scanner"] .consent-box { padding:14px 16px; }
+.prana-quiz.scan-chat-open [data-screen="scanner"] .consent-row { gap:10px; margin:0 0 10px; padding:0; }
+.prana-quiz.scan-chat-open [data-screen="scanner"] .consent-row:last-child { margin-bottom:0; }
+.prana-quiz.scan-chat-open [data-screen="scanner"] .consent-label { line-height:1.5; }
+
+/* Reduce modal scroll length and soften its scrollbar. */
+.prana-quiz.scan-chat-open { scrollbar-width:thin; scrollbar-color:#b8c3bc transparent; }
+.prana-quiz.scan-chat-open::-webkit-scrollbar { width:5px; }
+.prana-quiz.scan-chat-open::-webkit-scrollbar-track { background:transparent; margin-block:20px; }
+.prana-quiz.scan-chat-open::-webkit-scrollbar-thumb { background:#b8c3bc; border-radius:8px; }
+.prana-quiz.scan-chat-open [data-screen="scanner"] .hdr { padding:18px 44px 14px; }
+.prana-quiz.scan-chat-open [data-screen="scanner"] .scanner-wrap { padding:16px 24px 18px; }
+.prana-quiz.scan-chat-open [data-screen="scanner"] .scan-steps { padding-bottom:12px; margin-bottom:16px; }
+.prana-quiz.scan-chat-open .scan-edit-consent { padding-bottom:10px; }
+.prana-quiz.scan-chat-open [data-screen="scanner"] .scan-step-intro { margin-bottom:14px; }
+.prana-quiz.scan-chat-open .scanner-choice { margin-bottom:14px; }
+.prana-quiz.scan-chat-open .sc-btn { min-height:72px; padding:12px; }
+.prana-quiz.scan-chat-open .upload-zone { min-height:170px; padding:18px; margin-bottom:10px; }
+.prana-quiz.scan-chat-open .upload-icon { width:72px; height:58px; margin-bottom:8px; }
+.prana-quiz.scan-chat-open .scan-status { margin:8px 0; }
+@media(max-width:480px) { .prana-quiz.scan-chat-open [data-screen="scanner"] .scanner-wrap { padding:14px 18px 18px; } }
