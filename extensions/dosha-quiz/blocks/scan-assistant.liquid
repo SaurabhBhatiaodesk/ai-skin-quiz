@@ -1,0 +1,13 @@
+{% render 'quiz-widget', block: block, expected_layout: 'scan' %}
+<style>#prana-quiz-{{ block.id }}:not(.scan-chat-open) { display:none; }</style>
+{% schema %}
+{
+  "name": "Skin Scan floating button",
+  "target": "body",
+  "stylesheet": "dosha-quiz.css",
+  "javascript": "dosha-quiz.js",
+  "settings": [
+    { "type": "text", "id": "quiz_code", "label": "Skin Scan widget ID", "info": "Leave blank to use the first Only Skin Scan widget, or paste its numeric ID." }
+  ]
+}
+{% endschema %}

@@ -24,7 +24,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const library = await loadLibrary(shop);
   const matching = library.filter(quiz => !layout || (quiz.layout || "three") === layout);
   let selected = matching.find(quiz => quiz.handle === code || (code && quiz.legacyHandles?.includes(code)));
-  if (!selected && (!code || code === "dosha-quiz") && matching.length === 1) selected = matching[0];
+  if (!selected && (!code || code === "dosha-quiz") && (matching.length === 1 || layout === "scan")) selected = matching[0];
   if (!selected) {
     const type = layout === "scan" ? "AI Skin Scan" : layout === "single" ? "Single Quiz" : "Combined Quiz";
     return apiJson({ error: matching.length ? `Paste the widget code of your ${type} from All quizzes.` : `Create an ${type} in the app first. It will appear here after you connect it.` }, { status: 404 });
