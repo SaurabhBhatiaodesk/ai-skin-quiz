@@ -9,8 +9,8 @@ export default function Documentation() {
             <s-paragraph>Open Quizzes and press Create quiz. Enter a name, choose Single or Combined, select the quiz paths, then press Create quiz. The new quiz opens in the editor, ready for its questions.</s-paragraph>
             <s-unordered-list>
               <s-list-item>Combined Quiz: choose any two or all three paths.</s-list-item>
-              <s-list-item>Single Quiz: Quick Quiz, Deep Dosha Diagnostic, or AI Skin Scan.</s-list-item>
-              <s-list-item>AI Skin Scan: a camera or photo upload block.</s-list-item>
+              <s-list-item>Single Quiz: Quick Skin Quiz or Dosha Quiz.</s-list-item>
+              <s-list-item>Only Skin Scan: a dedicated camera or photo upload block. Create an Only Skin Scan widget, add this app block in the theme editor, and paste its numeric widget ID.</s-list-item>
             </s-unordered-list>
             <s-button href="/app/quizzes/new">Create quiz</s-button>
           </s-stack>

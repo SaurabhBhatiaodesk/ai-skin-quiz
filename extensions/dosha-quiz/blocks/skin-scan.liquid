@@ -1,7 +1,7 @@
 {% render 'quiz-widget', block: block, expected_layout: 'scan' %}
 {% schema %}
 {
-    "name":  "AI Skin Scan",
+    "name":  "Only Skin Scan",
     "target":  "section",
     "stylesheet":  "dosha-quiz.css",
     "javascript":  "dosha-quiz.js",
@@ -16,13 +16,13 @@
                          "type":  "text",
                          "id":  "hero_title",
                          "label":  "Heading",
-                         "default":  "Find Your"
+                         "default":  "AI Skin Scan"
                      },
                      {
                          "type":  "text",
                          "id":  "hero_accent",
                          "label":  "Heading accent",
-                         "default":  "Skin Ritual"
+                         "default":  "Skin observations"
                      },
                      {
                          "type":  "text",
@@ -33,9 +33,9 @@
                      {
                          "type":  "text",
                          "id":  "quiz_code",
-                         "label":  "Shopify widget code",
+                         "label":  "App block widget ID",
                          
-                         "info":  "Paste the Shopify widget code from the All quizzes page in the app, for example john-smith."
+                         "info":  "Paste the numeric widget ID of an Only Skin Scan quiz from the app. Leave blank to select it automatically when there is only one scan widget."
                      },
                      {
                          "type":  "text",
