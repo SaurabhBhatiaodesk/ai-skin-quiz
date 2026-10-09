@@ -21,7 +21,8 @@
 .prana-quiz .q-sub { text-align:center; margin-bottom:20px; }
 .prana-quiz .q-opt-hint { font-size:13px; line-height:1.5; margin-top:4px; color:var(--quiz-border); opacity:.8; }
 
-.prana-quiz :where([data-screen="quick"], [data-screen="deep"]) .quiz-wrap > .back-nav { padding: 4px 10px; margin: 0 0 16px; min-height: 36px; border: 1px solid #D4BDA8; border-radius: 6px; background: #F3E8DA; color: #651D30; }
+.prana-quiz :where([data-screen="quick"], [data-screen="deep"]) .quiz-wrap > .back-nav,
+.prana-quiz [data-screen="result"] .result-wrap > .back-nav { padding: 4px 10px; margin: 0 0 16px; min-height: 36px; border: 1px solid #D4BDA8; border-radius: 6px; background: #F3E8DA; color: #651D30; }
 
 /* Typography follows the host theme for every widget and embedded view. */
 .prana-quiz, .prana-quiz * { font-family: var(--font-body-family, var(--scan-theme-font, inherit)) !important; }

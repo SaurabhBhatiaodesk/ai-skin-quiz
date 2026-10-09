@@ -293,11 +293,7 @@
     </div>
     <div class="quiz-wrap">
         <button class="btn-back back-nav" type="button" data-deep-back style="display:none">← Back</button>
-      <div class="layer-pills">
-        <div class="layer-pill active" data-layer="1">Layer 1 · Prakriti</div>
-        <div class="layer-pill" data-layer="2">Layer 2 · Vikriti</div>
-        <div class="layer-pill" data-layer="3">Layer 3 · Environment</div>
-      </div>
+
       <div class="quiz-progress">
         <div class="qp-bar"><div class="qp-fill" data-deep-fill style="width:5%"></div></div>
         <div class="qp-label"><span data-deep-phase>Prakriti · Your baseline nature</span><span data-deep-count></span></div>
@@ -311,8 +307,8 @@
   </div>
 
   <div class="screen" data-screen="result">
-    <button class="back-nav" type="button" data-goto="entry"><span class="back-arrow">←</span> Start Over</button>
     <div class="result-wrap">
+      <button class="back-nav" type="button" data-goto="entry"><span class="back-arrow">←</span> Start Over</button>
       <div class="result-hero rh-vata" data-hero>
         <div class="rh-orb" style="top:-50px;right:-30px;width:160px;height:160px"></div>
         <div class="rh-orb" style="bottom:-30px;left:-20px;width:100px;height:100px"></div>
@@ -330,7 +326,7 @@
         </div>
       </div>
 
-      <div class="result-section">
+      <div class="result-section" data-skin-reading style="display:none">
         <div class="rs-label">Your Skin Reading</div>
         <div class="result-card">
           <div class="insight-text" data-insight></div>

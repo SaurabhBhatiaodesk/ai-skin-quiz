@@ -5,6 +5,7 @@ export type ThemeStatus = {
   // false when the theme could not be read (for example, before read_themes is granted).
   checked: boolean;
   themeName: string;
+  embedEnabled?: boolean;
   // Placed quiz blocks; an empty code means the merchant has not pasted a widget ID yet.
   blocks: Array<{ layout: string; code: string }>;
 };
@@ -44,8 +45,9 @@ export async function themeStatus(admin: AdminGraphql): Promise<ThemeStatus> {
         themes(first: 1, roles: [MAIN]) {
           nodes {
             name
-            files(filenames: ["templates/*.json", "sections/*.json"], first: 250) {
+            files(filenames: ["templates/*.json", "sections/*.json", "config/settings_data.json"], first: 250) {
               nodes {
+                filename
                 body {
                   ... on OnlineStoreThemeFileBodyText { content }
                 }
@@ -59,11 +61,17 @@ export async function themeStatus(admin: AdminGraphql): Promise<ThemeStatus> {
     const theme = json?.data?.themes?.nodes?.[0];
     if (json.errors?.length || !theme) return { checked: false, themeName: "", blocks: [] };
     const found: ThemeStatus["blocks"] = [];
+    let embedEnabled = false;
     for (const file of theme.files?.nodes || []) {
       const content = file?.body?.content;
+      if (file.filename === "config/settings_data.json" && typeof content === "string") {
+        const settings = parseThemeJson(content) as { current?: { blocks?: Record<string, { type?: string; disabled?: boolean }> } } | null;
+        embedEnabled = Object.values(settings?.current?.blocks || {}).some(block =>
+          typeof block.type === "string" && /\/blocks\/scan-assistant\//.test(block.type) && block.disabled !== true);
+      }
       if (typeof content === "string" && BLOCK_TYPE.test(content.replaceAll("\\/", "/"))) collectBlocks(parseThemeJson(content), found);
     }
-    return { checked: true, themeName: theme.name || "", blocks: found };
+    return { checked: true, themeName: theme.name || "", blocks: found, embedEnabled };
   } catch (error) {
     console.error("Theme status check failed", error);
     return { checked: false, themeName: "", blocks: [] };

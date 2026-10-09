@@ -19,6 +19,7 @@ export async function quizOverview(shop: string, admin: AdminGraphql) {
   const apiKey = process.env.SHOPIFY_API_KEY || "";
   return {
     appEmbedUrl: skinScanActivationUrl(shop),
+    appEmbedEnabled: theme.embedEnabled === true,
     themeChecked: theme.checked,
     themeActivated: theme.checked ? live.some(Boolean) : activatedBefore,
     themeEditorUrl: `https://admin.shopify.com/store/${store}/themes/current/editor`,

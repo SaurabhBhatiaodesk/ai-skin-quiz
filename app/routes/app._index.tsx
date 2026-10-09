@@ -1,8 +1,8 @@
 import prisma from "../db.server";
 import HomeIllustration from "../components/HomeIllustration";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { HeadersFunction, LoaderFunctionArgs } from "react-router";
-import { Link, useLoaderData } from "react-router";
+import { Link, useLoaderData, useRevalidator } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
 import { quizOverview } from "../overview.server";
@@ -15,7 +15,21 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export default function Home() {
-  const { quizzes, themeChecked, themeActivated, themeEditorUrl, appEmbedUrl, stats, installCount } = useLoaderData<typeof loader>();
+  const { quizzes, themeChecked, themeActivated, themeEditorUrl, appEmbedUrl, appEmbedEnabled, stats, installCount } = useLoaderData<typeof loader>();
+  const revalidator = useRevalidator();
+  useEffect(() => {
+    const check = () => {
+      if (document.visibilityState === "visible" && revalidator.state === "idle") revalidator.revalidate();
+    };
+    window.addEventListener("focus", check);
+    document.addEventListener("visibilitychange", check);
+    const timer = !appEmbedEnabled ? window.setInterval(check, 5000) : undefined;
+    return () => {
+      window.removeEventListener("focus", check);
+      document.removeEventListener("visibilitychange", check);
+      if (timer !== undefined) window.clearInterval(timer);
+    };
+  }, [appEmbedEnabled, revalidator]);
   const [calloutDismissed, setCalloutDismissed] = useState(false);
   const scanWidget = quizzes.find(quiz => quiz.layout === "scan");
   const liveCount = quizzes.filter((quiz) => quiz.live).length;
@@ -29,12 +43,12 @@ export default function Home() {
           <s-paragraph>Follow the three steps below to build your quiz, connect skin analysis and add it to your store.</s-paragraph>
         </s-banner>
 
-        <s-section heading="Enable app in your store">
+        {!appEmbedEnabled && <s-section heading="Enable app in your store">
           <s-stack direction="inline" justifyContent="space-between" alignItems="center" gap="base">
             <s-paragraph>Enable AI Skin Quiz in your store and save your theme once. The floating button appears automatically when Skin Scan is connected. Creating more widgets does not require enabling the app again.</s-paragraph>
-            <s-button variant="primary" icon="store" href={appEmbedUrl} target="_top">Enable app in store</s-button>
+            <s-button variant="primary" icon="store" href={appEmbedUrl} target="_blank">Enable app in store</s-button>
           </s-stack>
-        </s-section>
+        </s-section>}
         <s-grid gridTemplateColumns="repeat(auto-fit, minmax(min(100%, 240px), 1fr))" gap="base">
           {[
             {label:"Installed stores",value:String(installCount),detail:"Current installations",href:"",icon:"theme"},
