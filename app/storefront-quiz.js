@@ -798,6 +798,17 @@ import { buildFaceMap } from "./face-map.js";
         launcher.style.bottom = (appearance.offset == null ? 24 : appearance.offset) + "px";
         launcher.style[appearance.position === "left" ? "left" : "right"] = (appearance.offset == null ? 24 : appearance.offset) + "px";
         launcher.style[appearance.position === "left" ? "right" : "left"] = "auto";
+        // Use the host theme typography, including same-origin Custom Liquid embeds.
+        var themeDocument = document;
+        try { if (window.parent !== window && window.parent.document.body) themeDocument = window.parent.document; } catch (error) { /* Cross-origin embeds keep their own document typography. */ }
+        var themeWindow = themeDocument.defaultView || window;
+        var themeStyle = themeWindow.getComputedStyle ? themeWindow.getComputedStyle(themeDocument.body) : null;
+        if (themeStyle) {
+          var themeBodyFont = themeStyle.getPropertyValue("--font-body-family").trim() || themeStyle.fontFamily;
+          var themeHeadingFont = themeStyle.getPropertyValue("--font-heading-family").trim() || themeBodyFont;
+          if (themeBodyFont) root.style.setProperty("--scan-theme-font", themeBodyFont);
+          if (themeHeadingFont) root.style.setProperty("--scan-theme-heading-font", themeHeadingFont);
+        }
         root.style.setProperty("--scan-panel", appearance.panelColor || "#faf7f2");
         root.style.setProperty("--scan-text", appearance.textColor || "#1a1208");
         root.style.setProperty("--scan-accent", appearance.accentColor || "#8f6330");
