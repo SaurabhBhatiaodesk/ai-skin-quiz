@@ -349,6 +349,18 @@ export default function QuizEditor({
                 <s-stack direction="inline" justifyContent="end"><s-button variant="primary" loading={pending} onClick={save}>Save design</s-button></s-stack>
               </s-stack>
             </s-section> : null}
+            {tab === "design" ? <s-section heading={scanOnly ? "Scan design preview" : "Quiz design preview"}>
+              <s-stack gap="base">
+                <s-paragraph color="subdued">Colors and button shape update as you edit. Storefront heading and body fonts follow your theme.</s-paragraph>
+                <div style={{background:design.background,color:design.text,padding:"clamp(20px, 4vw, 40px)",border:"1px solid #DADDD9",borderRadius:12}}>
+                  <div style={{maxWidth:720,margin:"0 auto",display:"grid",gap:18}}>
+                    <div style={{fontSize:22,fontWeight:600,lineHeight:1.4,textAlign:"center"}}>{scanOnly ? scanner.title : (quiz.quick[0] || quiz.deep[0])?.text || "How does your skin feel most days?"}</div>
+                    {scanOnly ? <><div style={{textAlign:"center",fontSize:14,lineHeight:1.6}}>{scanner.description}</div><div style={{padding:28,border:`1px dashed ${design.accent}`,borderRadius:12,textAlign:"center"}}>Camera or photo upload</div></> : ((quiz.quick[0] || quiz.deep[0])?.options || [{label:"Dry or very dry"},{label:"Normal or balanced"},{label:"Oily or combination"}]).slice(0,4).map((option,i) => <div key={i} style={{display:"flex",alignItems:"center",gap:14,padding:"16px 20px",border:`1px solid ${design.accent}`,borderRadius:8,background:i===1 ? design.accent : "#FFFFFF80",color:i===1 ? design.buttonText : design.text}}><span style={{width:18,height:18,border:`2px solid ${i===1 ? design.buttonText : design.accent}`,borderRadius:"50%",display:"grid",placeItems:"center",flexShrink:0}}>{i===1 ? <span style={{width:8,height:8,borderRadius:"50%",background:design.buttonText}} /> : null}</span><span style={{flex:1,textAlign:"center",fontSize:15,lineHeight:1.5}}>{option.label}</span></div>)}
+                    <div style={{justifySelf:"center",padding:"13px 32px",background:design.accent,color:design.buttonText,borderRadius:design.radius === "pill" ? 999 : design.radius === "square" ? 0 : 8,fontSize:15,fontWeight:600}}>{scanOnly ? "Continue to photo" : "Continue"} &rarr;</div>
+                  </div>
+                </div>
+              </s-stack>
+            </s-section> : null}
             {showQuestions && kind === "scan" ? <s-section heading="AI Skin Scan settings">
               <s-stack gap="base">
                 {!scanConfigured ? <s-banner tone="warning" heading="Analysis setup required">Camera and photo upload are available. Select OpenAI and save its API key in Global Settings to enable skin observations.<s-button slot="primary-action" href="/app/settings">Connect AI</s-button></s-banner> : null}
