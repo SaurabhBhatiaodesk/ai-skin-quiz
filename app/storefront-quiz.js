@@ -318,7 +318,7 @@ import { buildFaceMap } from "./face-map.js";
       area.innerHTML = questionHtml(question, quickAnswers[quickStep], "data-quick-opt", root.id + "-quick-q");
       setNext(q("[data-quick-next]"), quickAnswers[quickStep] !== undefined, question.continueLabel || (quickStep === total - 1 ? "See my result" : "Continue"));
       var back = q("[data-quick-back]");
-      if (back) back.style.visibility = quickStep === 0 ? "hidden" : "visible";
+      if (back) back.style.display = quickStep === 0 ? "none" : "inline-flex";
     }
 
     function renderDeep() {
@@ -337,7 +337,7 @@ import { buildFaceMap } from "./face-map.js";
       area.innerHTML = questionHtml(question, deepAnswers[deepStep], "data-deep-opt", root.id + "-deep-q");
       setNext(q("[data-deep-next]"), deepAnswers[deepStep] !== undefined, question.continueLabel || (deepStep === quiz.deep.length - 1 ? "See my result" : "Continue"));
       var back = q("[data-deep-back]");
-      if (back) back.style.visibility = deepStep === 0 ? "hidden" : "visible";
+      if (back) back.style.display = deepStep === 0 ? "none" : "inline-flex";
     }
 
     function resetDeep() {
@@ -505,7 +505,7 @@ import { buildFaceMap } from "./face-map.js";
         return;
       }
       if (origin.closest("[data-deep-back]")) {
-        if (deepStep === 0) { go("entry", true); return; }
+        if (deepStep === 0) return;
         deepStep--;
         renderDeep();
         return;
@@ -719,6 +719,24 @@ import { buildFaceMap } from "./face-map.js";
         widgetStyle.textContent = "@scope (#" + CSS.escape(root.id) + ") { :scope { " + data.widgetCss.replace(/\.prana-quiz\b/g, "&") + " } }";
         root.appendChild(widgetStyle);
       }
+      // Use the host theme typography, including same-origin Custom Liquid embeds.
+      var themeDocument = document;
+      try { if (window.parent !== window && window.parent.document.body) themeDocument = window.parent.document; } catch (error) { /* Cross-origin embeds keep their own document typography. */ }
+      var themeWindow = themeDocument.defaultView || window;
+      var themeStyle = themeWindow.getComputedStyle ? themeWindow.getComputedStyle(themeDocument.body) : null;
+      if (themeStyle) {
+        var themeBodyFont = themeStyle.getPropertyValue("--font-body-family").trim() || themeStyle.fontFamily;
+        var themeHeadingFont = themeStyle.getPropertyValue("--font-heading-family").trim() || themeBodyFont;
+        if (themeBodyFont) root.style.setProperty("--scan-theme-font", themeBodyFont);
+        if (themeHeadingFont) root.style.setProperty("--scan-theme-heading-font", themeHeadingFont);
+      }
+      if (themeDocument !== document && themeDocument.styleSheets && document.createElement) {
+        var fontFaces = [];
+        Array.prototype.forEach.call(themeDocument.styleSheets, function(sheet) {
+          try { Array.prototype.forEach.call(sheet.cssRules, function(rule) { if (rule.type === 5) fontFaces.push(rule.cssText); }); } catch (error) { /* Cross-origin sheets cannot be inspected. */ }
+        });
+        if (fontFaces.length) { var themeFonts = document.createElement("style"); themeFonts.textContent = fontFaces.join("\n"); root.appendChild(themeFonts); }
+      }
       if (data.design) {
         var design = data.design;
         root.style.setProperty("--canvas", design.background);
@@ -803,17 +821,6 @@ import { buildFaceMap } from "./face-map.js";
         launcher.style.bottom = (appearance.offset == null ? 24 : appearance.offset) + "px";
         launcher.style[appearance.position === "left" ? "left" : "right"] = (appearance.offset == null ? 24 : appearance.offset) + "px";
         launcher.style[appearance.position === "left" ? "right" : "left"] = "auto";
-        // Use the host theme typography, including same-origin Custom Liquid embeds.
-        var themeDocument = document;
-        try { if (window.parent !== window && window.parent.document.body) themeDocument = window.parent.document; } catch (error) { /* Cross-origin embeds keep their own document typography. */ }
-        var themeWindow = themeDocument.defaultView || window;
-        var themeStyle = themeWindow.getComputedStyle ? themeWindow.getComputedStyle(themeDocument.body) : null;
-        if (themeStyle) {
-          var themeBodyFont = themeStyle.getPropertyValue("--font-body-family").trim() || themeStyle.fontFamily;
-          var themeHeadingFont = themeStyle.getPropertyValue("--font-heading-family").trim() || themeBodyFont;
-          if (themeBodyFont) root.style.setProperty("--scan-theme-font", themeBodyFont);
-          if (themeHeadingFont) root.style.setProperty("--scan-theme-heading-font", themeHeadingFont);
-        }
         root.style.setProperty("--scan-panel", appearance.panelColor || "#faf7f2");
         root.style.setProperty("--scan-text", appearance.textColor || "#1a1208");
         root.style.setProperty("--scan-accent", appearance.accentColor || "#8f6330");

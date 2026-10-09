@@ -1915,3 +1915,23 @@
 .prana-quiz :where([data-screen="quick"], [data-screen="deep"]) .q-opt-hint { font-size:13px; line-height:1.5; margin-top:4px; color:var(--quiz-border); opacity:.8; }
 
 .prana-quiz :where([data-screen="quick"], [data-screen="deep"]) .quiz-wrap > .back-nav { padding: 4px 10px; margin: 0 0 16px; min-height: 36px; border: 1px solid #D4BDA8; border-radius: 6px; background: #F3E8DA; color: #651D30; }
+
+/* Typography follows the host theme for every widget and embedded view. */
+.prana-quiz, .prana-quiz * { font-family: var(--font-body-family, var(--scan-theme-font, inherit)) !important; }
+.prana-quiz h1, .prana-quiz h2, .prana-quiz h3, .prana-quiz .hdr-title, .prana-quiz .q-text, .prana-quiz .rh-dosha { font-family: var(--font-heading-family, var(--scan-theme-heading-font, var(--scan-theme-font, inherit))) !important; }
+.prana-quiz .q-opt.selected .q-opt-dot { background: #FFF9EE; border: 2px solid #FFF9EE; box-shadow: 0 0 0 1px #FFF9EE; }
+.prana-quiz .q-opt.selected .q-opt-dot::after { background: #571C29; width: 8px; height: 8px; }
+
+/* Result actions match the question Continue button. */
+.prana-quiz [data-screen="result"] .btn-eb,
+.prana-quiz [data-screen="result"] .btn-retake,
+.prana-quiz [data-screen="result"] .btn-upgrade { background: #4c1428; color: var(--button-text, #fff); border: 1px solid #4c1428; border-radius: var(--button-radius, 8px); min-height: 48px; padding: 12px 22px; font-weight: 600; letter-spacing: normal; box-shadow: 0 2px 4px #0002; }
+.prana-quiz [data-screen="result"] .btn-eb:hover,
+.prana-quiz [data-screen="result"] .btn-retake:hover,
+.prana-quiz [data-screen="result"] .btn-upgrade:hover { filter: brightness(1.12); }
+
+/* Quiz and result panels share one responsive width. */
+.prana-quiz { --widget-panel-width: 960px; }
+.prana-quiz :where([data-screen="quick"], [data-screen="deep"]) .quiz-wrap { max-width: var(--widget-panel-width); width: 100%; }
+.prana-quiz [data-screen="result"] { padding: clamp(20px, 4vw, 52px) 16px; }
+.prana-quiz [data-screen="result"] .result-wrap { max-width: var(--widget-panel-width); width: 100%; margin: 0 auto; padding: 0; }
