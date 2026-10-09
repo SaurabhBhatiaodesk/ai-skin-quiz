@@ -2,6 +2,7 @@
   class="prana-quiz"
   id="prana-quiz-{{ block.id }}"
   data-block-layout="{{ expected_layout | default: 'three' }}"
+  data-block-settings="{{ block.settings | json | escape }}"
   data-configured="false"
   data-design-mode="{{ request.design_mode }}"
   data-prana-quiz

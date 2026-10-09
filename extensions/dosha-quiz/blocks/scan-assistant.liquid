@@ -7,7 +7,138 @@
   "stylesheet": "dosha-quiz.css",
   "javascript": "dosha-quiz.js",
   "settings": [
-    { "type": "text", "id": "quiz_code", "label": "Skin Scan widget ID", "info": "Leave blank to use the first Only Skin Scan widget, or paste its numeric ID." }
+    {
+      "type": "text",
+      "id": "quiz_code",
+      "label": "Skin Scan widget ID",
+      "info": "Leave blank to use the first Only Skin Scan widget, or paste its numeric ID."
+    },
+    {
+      "type": "header",
+      "content": "Block appearance"
+    },
+    {
+      "type": "checkbox",
+      "id": "custom_design",
+      "label": "Override widget design for this block",
+      "default": false
+    },
+    {
+      "type": "color",
+      "id": "background",
+      "label": "Background",
+      "default": "#4c1428"
+    },
+    {
+      "type": "color",
+      "id": "text",
+      "label": "Text",
+      "default": "#4c1428"
+    },
+    {
+      "type": "color",
+      "id": "accent",
+      "label": "Accent",
+      "default": "#4c1428"
+    },
+    {
+      "type": "color",
+      "id": "buttonText",
+      "label": "Button text",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "headingColor",
+      "label": "Heading color",
+      "default": "#4c1428"
+    },
+    {
+      "type": "color",
+      "id": "cardColor",
+      "label": "Card color",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "answerColor",
+      "label": "Answer color",
+      "default": "#4c1428"
+    },
+    {
+      "type": "color",
+      "id": "answerText",
+      "label": "Answer text",
+      "default": "#4c1428"
+    },
+    {
+      "type": "color",
+      "id": "selectedColor",
+      "label": "Selected color",
+      "default": "#4c1428"
+    },
+    {
+      "type": "color",
+      "id": "selectedText",
+      "label": "Selected text",
+      "default": "#ffffff"
+    },
+    {
+      "type": "range",
+      "id": "headingSize",
+      "label": "Heading size",
+      "min": 10,
+      "max": 64,
+      "step": 1,
+      "unit": "px",
+      "default": 36
+    },
+    {
+      "type": "range",
+      "id": "questionSize",
+      "label": "Question size",
+      "min": 10,
+      "max": 64,
+      "step": 1,
+      "unit": "px",
+      "default": 26
+    },
+    {
+      "type": "range",
+      "id": "bodySize",
+      "label": "Body size",
+      "min": 10,
+      "max": 64,
+      "step": 1,
+      "unit": "px",
+      "default": 14
+    },
+    {
+      "type": "range",
+      "id": "answerSize",
+      "label": "Answer size",
+      "min": 10,
+      "max": 64,
+      "step": 1,
+      "unit": "px",
+      "default": 18
+    },
+    {
+      "type": "range",
+      "id": "buttonSize",
+      "label": "Button size",
+      "min": 10,
+      "max": 64,
+      "step": 1,
+      "unit": "px",
+      "default": 20
+    },
+    {
+      "type": "textarea",
+      "id": "block_css",
+      "label": "Custom CSS for this block",
+      "info": "Use .prana-quiz to target this block only."
+    }
   ]
 }
 {% endschema %}
