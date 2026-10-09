@@ -1,3 +1,4 @@
+import UnsavedChangesBar from "../components/UnsavedChangesBar";
 import { asProvider, PROVIDER_NAMES } from "../ai-shared";
 import { useEffect, useState } from "react";
 import { useFetcher, useLoaderData } from "react-router";
@@ -43,6 +44,7 @@ export default function GlobalSettings() {
   const testing = Boolean(fetcher.json && typeof fetcher.json === "object" && !Array.isArray(fetcher.json) && "intent" in fetcher.json && fetcher.json.intent === "test");
   useEffect(() => { if (fetcher.data?.ok) { setApiKey(""); setChanging(false); setVisible(false); setCopyStatus(""); } }, [fetcher.data]);
   return <s-page heading="Global Settings" inlineSize="large">
+    <UnsavedChangesBar id="provider-save-bar" dirty={provider !== data.provider || Boolean(apiKey.trim())} pending={fetcher.state !== "idle"} disabled={(!keySaved || changing) && !apiKey.trim()} onSave={() => fetcher.submit({ apiKey, provider }, { method: "POST", encType: "application/json" })} onDiscard={() => { setProvider(data.provider); setApiKey(""); setChanging(false); setVisible(false); setCopyStatus(""); }} />
     <s-button slot="primary-action" variant="primary" disabled={(!keySaved || changing) && !apiKey.trim()} loading={fetcher.state !== "idle"} onClick={() => fetcher.submit({ apiKey, provider }, { method: "POST", encType: "application/json" })}>{changing ? "Replace API key" : "Save provider"}</s-button>
     <s-button slot="secondary-actions" disabled={!keySaved} loading={fetcher.state !== "idle"} onClick={() => fetcher.submit({ intent: "test", provider }, { method: "POST", encType: "application/json" })}>Test connection</s-button>
     <s-link slot="breadcrumb-actions" href="/app/quizzes">Back</s-link>

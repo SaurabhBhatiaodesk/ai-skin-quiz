@@ -52,7 +52,7 @@ if (!response.ok) throw new Error(quiz.error || "Could not load quiz");
       </s-section> : <s-grid gridTemplateColumns="repeat(auto-fill, minmax(280px, 1fr))" gap="large">
         {quizzes.map(quiz => <s-box key={quiz.handle} border="base" borderRadius="large" overflow="hidden" background="base">
           <s-clickable href={`/app/editor?quiz=${encodeURIComponent(quiz.handle)}`} accessibilityLabel={`Open ${quiz.name}`}>
-            <s-image src={quiz.cover} alt={`${quiz.name} cover`} aspectRatio="3 / 2" objectFit="cover" />
+            <s-image src={quiz.cover} alt={`${quiz.name} cover`} loading="lazy" aspectRatio="3 / 2" objectFit="cover" />
           </s-clickable>
           <s-box padding="base">
             <s-stack gap="base">

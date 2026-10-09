@@ -33,7 +33,7 @@ export default function Home() {
           ].map(item => <s-section key={item.label}>
             <s-stack gap="small" alignItems="center">
               <s-box inlineSize="48px" minInlineSize="48px">
-                <s-image src={`/images/dashboard/${item.icon}.svg`} alt="" aspectRatio="1 / 1" objectFit="contain" />
+                <s-image src={`/images/dashboard/${item.icon}.svg`} alt="" accessibilityRole="presentation" aspectRatio="1 / 1" objectFit="contain" />
               </s-box>
               <s-stack gap="small-200" alignItems="center">
                 <div style={{fontSize:14,fontWeight:600,lineHeight:1.4,color:"#414b45",textAlign:"center"}}>{item.label}</div>

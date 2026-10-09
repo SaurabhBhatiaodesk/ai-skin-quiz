@@ -1,3 +1,4 @@
+import UnsavedChangesBar from "./UnsavedChangesBar";
 import referenceQuizCss from "../reference-quiz.css?raw";
 import { useEffect, useRef, useState } from "react";
 import { useAppBridge } from "@shopify/app-bridge-react";
@@ -73,6 +74,8 @@ export default function QuizEditor({
 }) {
   const fetcher = useFetcher<SaveResult>();
   const [quiz, setQuiz] = useState(initial);
+  const [savedQuiz, setSavedQuiz] = useState(initial);
+  const submittedQuiz = useRef(initial);
   const [embedCopyStatus, setEmbedCopyStatus] = useState("");
   const embedCode = `<iframe src="/apps/dosha-quiz/widget?code=${encodeURIComponent(code)}" title="Skin quiz" style="display:block;width:100%;height:700px;border:0;" loading="lazy" allow="camera"></iframe>
 <script>(function(){var frame=document.currentScript.previousElementSibling;window.addEventListener('message',function(event){if(event.source!==frame.contentWindow||event.origin!==window.location.origin||!event.data||event.data.type!=='prana-widget-height')return;var height=Number(event.data.height);if(Number.isFinite(height)&&height>0&&height<20000)frame.style.height=Math.ceil(height)+'px';});})();</script>`;
@@ -97,7 +100,7 @@ export default function QuizEditor({
   const shopify = useAppBridge();
   const saveResult = fetcher.data;
   useEffect(() => {
-    if (saveResult?.ok) shopify.toast.show("Quiz saved");
+    if (saveResult?.ok) { setSavedQuiz(submittedQuiz.current); shopify.toast.show("Quiz saved"); }
   }, [saveResult, shopify]);
   const enabledPaths = quiz.enabledPaths || (quiz.layout === "scan" ? ["scan"] : quiz.layout === "single" ? [quiz.singleFlow || "quick"] : ["quick", "deep", "scan"]);
   const questions = kind === "scan" ? [] : kind === "quick" ? quiz.quick : quiz.deep;
@@ -109,6 +112,7 @@ export default function QuizEditor({
   const visibleQuestions = questions.slice(pageStart, pageStart + 5);
 
   function save() {
+    submittedQuiz.current = quiz;
     // Save to the dedicated editor route.
     fetcher.submit(quiz, { method: "POST", encType: "application/json", action: `/app/editor?quiz=${encodeURIComponent(code)}` });
   }
@@ -269,10 +273,11 @@ export default function QuizEditor({
 
   return (
     <s-page heading={`${quiz.name || "Quiz"} · ${TABS.find(item => item.id === tab)?.label || "Quiz editor"}`} inlineSize="large">
+      <UnsavedChangesBar id="quiz-editor-save-bar" dirty={JSON.stringify(quiz) !== JSON.stringify(savedQuiz)} pending={pending} onSave={save} onDiscard={() => { setQuiz(savedQuiz); setTagDrafts({}); setMappingDraft(null); setPickedRows([]); setQuestionOpen(false); }} />
       <s-button slot="breadcrumb-actions" href="/app/quizzes" accessibilityLabel="Back to quizzes">Quizzes</s-button>
       <s-button slot="primary-action" variant="primary" loading={pending} onClick={save}>Save</s-button>
       <s-stack gap="base">
-        {quiz.profileImage ? <s-stack direction="inline" justifyContent="space-between" alignItems="center"><s-heading>{quiz.name || "Quiz"}</s-heading><s-box inlineSize="80px"><s-image src={quiz.profileImage} alt="Quiz profile" aspectRatio="1" objectFit="cover" borderRadius="large" /></s-box></s-stack> : null}
+        {quiz.profileImage ? <s-stack direction="inline" justifyContent="space-between" alignItems="center"><s-heading>{quiz.name || "Quiz"}</s-heading><s-box inlineSize="80px"><s-image src={quiz.profileImage} alt={`${quiz.name || "Quiz"} image`} aspectRatio="1 / 1" objectFit="cover" borderRadius="large" /></s-box></s-stack> : null}
         <s-stack direction="inline" gap="small">
           {TABS.map(item => <s-button key={item.id} variant={tab === item.id ? "primary" : "tertiary"} onClick={() => setTab(item.id)}>{item.label}</s-button>)}
         </s-stack>
@@ -382,7 +387,7 @@ export default function QuizEditor({
                 <s-paragraph>Upload an SVG, PNG, JPG or WebP icon (up to 64 KB) for each entry card, then save the quiz.</s-paragraph>
                 {(["scan", "quick", "deep"] as const).map(path => <div key={path}>
                   <s-heading>{path === "scan" ? "AI Skin Scan" : path === "quick" ? "Quick Quiz" : "Deep Dosha"}</s-heading>
-                  {quiz.cardIcons?.[path] ? <img src={quiz.cardIcons[path]} alt={`${path} card icon preview`} style={{width:48,height:48,objectFit:"contain",display:"block",margin:"8px 0"}} /> : null}
+                  {quiz.cardIcons?.[path] ? <s-box inlineSize="48px" paddingBlock="small"><s-image src={quiz.cardIcons[path]} alt={`${path} card icon preview`} aspectRatio="1 / 1" objectFit="contain" /></s-box> : null}
                   <s-drop-zone label="Upload card icon" accept=".svg,.png,.jpg,.jpeg,.webp" accessibilityLabel={`Upload ${path} card icon`} onDropRejected={event => { event.currentTarget.error = "Choose an SVG, PNG, JPG or WebP image."; }} onChange={event => {
                     const input = event.currentTarget;
                     const file = input.files?.[0];
@@ -419,7 +424,7 @@ export default function QuizEditor({
                 <s-banner tone="info" heading="Questions follow a fixed order">Answer-based branching is not available yet. Customers continue through the questions in their selected quiz flow.</s-banner>
                 {quiz.layout === "scan" ? <s-paragraph>This block opens Skin Scan directly with camera or photo upload.</s-paragraph> : quiz.layout === "single" ? <s-paragraph>This single quiz contains {quiz.quick.length} questions in one flow.</s-paragraph> : <>
                   <s-paragraph>Quick Quiz has {quiz.quick.length} questions. Deep Quiz has {quiz.deep.length} questions grouped into the sections below.</s-paragraph>
-                  <s-table><s-table-header-row><s-table-header listSlot="primary">Deep question</s-table-header><s-table-header>Section</s-table-header></s-table-header-row><s-table-body>
+                  <s-table><s-table-header-row><s-table-header listSlot="primary">Deep question</s-table-header><s-table-header listSlot="labeled">Section</s-table-header></s-table-header-row><s-table-body>
                     {quiz.deep.map((item, itemIndex) => <s-table-row key={itemIndex}><s-table-cell>{itemIndex + 1}. {item.text}</s-table-cell><s-table-cell>
                       <s-select label={`Section for question ${itemIndex + 1}`} labelAccessibilityVisibility="exclusive" value={String(item.layer)} onChange={event => {
                         const layer = Number(event.currentTarget.value);
@@ -452,9 +457,9 @@ export default function QuizEditor({
               <s-section heading="Product mappings" padding="none">
                 {(quiz.mappings || []).length ? <s-table>
                   <s-table-header-row>
-                    <s-table-header>Order</s-table-header>
+                    <s-table-header listSlot="labeled">Order</s-table-header>
                     <s-table-header><s-checkbox label="Select all mappings" checked={pickedRows.length === quiz.mappings.length} indeterminate={pickedRows.length > 0 && pickedRows.length < quiz.mappings.length} onChange={event => setPickedRows(event.currentTarget.checked ? quiz.mappings.map(item => item.id) : [])} /></s-table-header>
-                    <s-table-header>Selected tags</s-table-header><s-table-header>Resource type</s-table-header><s-table-header listSlot="primary">Resource name</s-table-header><s-table-header>Actions</s-table-header>
+                    <s-table-header listSlot="labeled">Selected tags</s-table-header><s-table-header listSlot="inline">Resource type</s-table-header><s-table-header listSlot="primary">Resource name</s-table-header><s-table-header listSlot="labeled">Actions</s-table-header>
                   </s-table-header-row>
                   <s-table-body>
                     {quiz.mappings.map((mapping, mappingIndex) => {
