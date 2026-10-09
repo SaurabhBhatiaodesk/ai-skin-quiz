@@ -138,7 +138,7 @@ assert.deepEqual(result.products, []);
 // The storefront script imports helpers, so test the same bundle the theme extension ships.
 const storefrontBundle = (await build({ entryPoints: ["app/storefront-quiz.js"], bundle: true, write: false, format: "iife" })).outputFiles[0].text;
 
-async function storefront(layout, scanReady = false) {
+async function storefront(layout, scanReady = false, embedded = false) {
   const active = new Set(["entry"]);
   const screens = ["entry", "quick", "deep", "scanner"].map(name => ({
     classList: { remove() { active.delete(name); }, add() { active.add(name); } },
@@ -153,11 +153,11 @@ async function storefront(layout, scanReady = false) {
     },
   };
   vm.runInNewContext(storefrontBundle, {
-    document: { readyState: "complete", querySelectorAll() { return [root]; }, addEventListener() {} },
+    document: { getElementById() { return embedded ? { textContent: JSON.stringify({ layout, scanReady, quick: [] }) } : null; }, readyState: "complete", querySelectorAll() { return [root]; }, addEventListener() {} },
     window: { scrollTo() {} },
     URLSearchParams,
     navigator: {},
-    fetch: async () => ({ ok: true, json: async () => ({ layout, scanReady, quick: [] }) }),
+    fetch: async () => { assert.equal(embedded, false, "Inline embeds must not refetch configuration"); return { ok: true, json: async () => ({ layout, scanReady, quick: [] }) }; },
   });
   await new Promise(resolve => setImmediate(resolve));
   // A scan-only block stays on its hidden start screen until analysis is connected.
@@ -246,3 +246,6 @@ assert.throws(()=>api.normalizeQuiz({...iconReload,cardIcons:{scan:"data:image/p
 await api.saveQuiz("icons-test",{...iconReload,cardIcons:{scan:""}},iconQuiz.handle);
 assert.equal((await api.loadQuiz("icons-test",iconQuiz.handle)).cardIcons.scan,undefined);
 console.log("PASS: SVG icon upload, save/reload, public API, unsafe URL/oversize rejection, and reset.");
+
+await storefront("single", false, true);
+console.log("Passed: standalone inline embed startup without configuration fetch.");

@@ -66,6 +66,11 @@ import { buildFaceMap } from "./face-map.js";
     function loadQuiz() {
 
       if (quiz) return Promise.resolve(quiz);
+      var embeddedConfig = document.getElementById && document.getElementById("prana-embed-config");
+      if (embeddedConfig) {
+        try { quiz = JSON.parse(embeddedConfig.textContent); if (quiz.handle) quizCode = quiz.handle; return Promise.resolve(quiz); }
+        catch (error) { return Promise.reject(new Error("Could not read embedded widget configuration.")); }
+      }
       return fetch(PROXY + "/quiz?code=" + encodeURIComponent(quizCode) + "&layout=" + encodeURIComponent(root.getAttribute("data-block-layout") || ""), { headers: { Accept: "application/json" } })
         .then(function (res) { return res.json().catch(function () { return {}; }).then(function (body) { if (!res.ok || !body) throw new Error((body && body.error) || "Could not load quiz."); return body; }); })
         .then(function (data) { quiz = data; if (data.handle) quizCode = data.handle; return quiz; });

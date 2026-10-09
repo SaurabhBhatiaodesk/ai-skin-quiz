@@ -26,6 +26,7 @@ export default function Quizzes() {
   const pending = useNavigation().state !== "idle";
   const [developerQuiz, setDeveloperQuiz] = useState<{ handle: string; name: string; layout: string } | null>(null);
   const [copyStatus, setCopyStatus] = useState("");
+  const [copyTarget, setCopyTarget] = useState("");
   const apiPath = developerQuiz ? `/apps/dosha-quiz/quiz?code=${encodeURIComponent(developerQuiz.handle)}` : "";
   const embedCode = developerQuiz ? widgetEmbedCode(developerQuiz.handle) : "";
   const fetchExample = `const response = await fetch(${JSON.stringify(apiPath)}, {
@@ -36,6 +37,8 @@ if (!response.ok) throw new Error(quiz.error || "Could not load quiz");
 // Build your own UI using quiz.layout, quiz.enabledPaths,
 // quiz.quick, quiz.deep, quiz.design and quiz.cardIcons.`;
   async function copyDeveloperValue(value: string, label: string) {
+    setCopyTarget(label);
+    setCopyStatus("");
     try { await navigator.clipboard.writeText(value); setCopyStatus(`${label} copied.`); }
     catch { setCopyStatus("Copy is blocked by this browser. Select the text below and copy it manually."); }
   }
@@ -75,8 +78,7 @@ if (!response.ok) throw new Error(quiz.error || "Could not load quiz");
               <s-text color="subdued">{quiz.layout === "scan" ? "Camera or photo upload" : `${quiz.questions} ${quiz.questions === 1 ? "question" : "questions"}`}</s-text>
               <s-stack direction="inline" gap="small">
                 <s-button href={`/app/editor?quiz=${encodeURIComponent(quiz.handle)}`}>{quiz.layout === "scan" ? "Edit Skin Scan" : "Edit quiz"}</s-button>
-                <s-button commandFor="quiz-developer-modal" command="--show" onClick={() => { setDeveloperQuiz({handle:quiz.handle,name:quiz.name,layout:quiz.layout}); setCopyStatus(""); }}>{quiz.layout === "scan" ? "Skin Scan actions" : "Quiz actions"}</s-button>
-                {!themeActivated ? <s-button icon="store" variant="secondary" href={quiz.addUrl} target="_top">Activate in theme</s-button> : null}
+                <s-button commandFor="quiz-developer-modal" command="--show" onClick={() => { setDeveloperQuiz({handle:quiz.handle,name:quiz.name,layout:quiz.layout}); setCopyStatus(""); setCopyTarget(""); }}>{quiz.layout === "scan" ? "Skin Scan actions" : "Quiz actions"}</s-button>
               </s-stack>
             </s-stack>
           </s-box>
@@ -88,24 +90,24 @@ if (!response.ok) throw new Error(quiz.error || "Could not load quiz");
             <s-heading>Embed code</s-heading>
             <s-paragraph>Paste this code into a Custom Liquid section in your Shopify theme, then save. It loads this widget and adjusts its height automatically.</s-paragraph>
             <s-text-area label="Shopify Custom Liquid embed code" readOnly rows={5} value={embedCode} />
-            <s-stack direction="inline"><s-button icon="clipboard" onClick={() => copyDeveloperValue(embedCode, "Embed code")}>Copy code</s-button></s-stack>
+            <s-stack direction="inline" gap="small" alignItems="center"><s-button icon={copyStatus === "Embed code copied." ? "check" : "clipboard"} onClick={() => copyDeveloperValue(embedCode, "Embed code")}>{copyStatus === "Embed code copied." ? "Copied" : "Copy code"}</s-button>{copyTarget === "Embed code" && copyStatus ? <span role="status" style={{fontSize:12,color:copyStatus.endsWith("copied.") ? "#27633D" : "#A12D2D"}}>{copyStatus}</span> : null}</s-stack>
           </s-stack>
           <s-heading>API access</s-heading>
           <s-paragraph>Use this saved quiz API to build your own storefront design. Available for Combined Quiz, Single Quiz and AI Skin Scan blocks.</s-paragraph>
           <s-stack direction="inline" justifyContent="space-between" alignItems="center">
             <s-text type="strong">Quiz data API</s-text>
-            <s-button variant="secondary" onClick={() => copyDeveloperValue(apiPath,"API URL")}>Copy API URL</s-button>
+            <s-button variant="secondary" onClick={() => copyDeveloperValue(apiPath,"API URL")}>{copyStatus === "API URL copied." ? "Copied" : "Copy API URL"}</s-button>
           </s-stack>
           <s-text-field label="Quiz data API" readOnly value={apiPath} />
           <s-stack direction="inline" justifyContent="space-between" alignItems="center">
             <s-text type="strong">JavaScript example</s-text>
-            <s-button variant="secondary" onClick={() => copyDeveloperValue(fetchExample, "Example")}>Copy example</s-button>
+            <s-button variant="secondary" onClick={() => copyDeveloperValue(fetchExample, "Example")}>{copyStatus === "Example copied." ? "Copied" : "Copy example"}</s-button>
           </s-stack>
           <s-text-area label="Fetch quiz data" readOnly rows={8} value={fetchExample} />
           <s-paragraph>Render the returned data with your own HTML, CSS or frontend framework. This API returns JSON; it does not insert the app widget.</s-paragraph>
           <s-paragraph>Submit answers or a consented scan photo to POST /apps/dosha-quiz/result for observations and matching products. Call from the same Shopify storefront domain. No API key is needed in frontend code.</s-paragraph>
           <s-link href="/app/documentation">API request and response guide</s-link>
-          <div role="status" aria-live="polite">{copyStatus}</div>
+          <div role="status" aria-live="polite">{copyTarget !== "Embed code" ? copyStatus : ""}</div>
         </s-stack>
         <s-button slot="secondary-actions" commandFor="quiz-developer-modal" command="--hide">Close</s-button>
       </s-modal>
