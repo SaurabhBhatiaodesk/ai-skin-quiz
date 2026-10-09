@@ -1,3 +1,4 @@
+import HomeIllustration from "../components/HomeIllustration";
 import { useState } from "react";
 import type { HeadersFunction, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
@@ -35,7 +36,7 @@ export default function Home() {
           ].map(item => <s-section key={item.label}>
             <div style={{display:"grid",gridTemplateColumns:"72px minmax(0, 1fr)",alignItems:"center",gap:16,minHeight:112}}>
               <s-box inlineSize="72px">
-                <s-image src={`/images/onboarding/${item.icon}.svg`} alt="" accessibilityRole="presentation" aspectRatio="5 / 4" objectFit="contain" />
+                <HomeIllustration name={item.icon} />
               </s-box>
               <div style={{display:"grid",gap:4,minWidth:0}}>
                 <div style={{fontSize:12,fontWeight:500,lineHeight:"18px",color:"#000000"}}>{item.label}</div>
@@ -54,7 +55,7 @@ export default function Home() {
             ].map(item => <s-box key={item.title} padding="base" border="base" borderRadius="large">
               <s-grid gridTemplateColumns="72px minmax(0, 1fr) auto" gap="base" alignItems="start">
                 <s-box inlineSize="72px">
-                  <s-image src={`/images/onboarding/${item.illustration}.svg`} alt="" accessibilityRole="presentation" aspectRatio="5 / 4" objectFit="contain" />
+                  <HomeIllustration name={item.illustration} />
                 </s-box>
                 <s-stack gap="small-200">
                   <s-heading>{item.title}</s-heading>
@@ -78,7 +79,7 @@ export default function Home() {
                 </s-stack>
               </s-stack>
               <s-box inlineSize="140px">
-                <s-image src={`/images/onboarding/${quizzes.length ? "scan" : "quiz"}.svg`} alt="" accessibilityRole="presentation" aspectRatio="5 / 4" objectFit="contain" />
+                <HomeIllustration name={quizzes.length ? "scan" : "quiz"} />
               </s-box>
             </s-grid>
             <s-button icon="x" variant="tertiary" accessibilityLabel="Dismiss setup suggestion" onClick={() => setCalloutDismissed(true)} />
