@@ -334,7 +334,7 @@ export default function QuizEditor({
                 <s-paragraph color="subdued">Customize the appearance of this quiz on your storefront.</s-paragraph>
                 <s-grid gridTemplateColumns="repeat(auto-fit, minmax(240px, 1fr))" gap="base">
                   <s-button onClick={() => setQuiz(current => ({ ...current, widgetCss: referenceQuizCss, design: { ...design, background: "#f3ecd9", text: "#180d0c", accent: "#4c1428", buttonText: "#ffffff", font: "classic", radius: "rounded" } }))}>Apply cream and burgundy design</s-button>
-                  <s-paragraph color="subdued">Matches the reference question layout. Edit its CSS in Settings ? Widget CSS, then Save.</s-paragraph>
+                  <s-paragraph color="subdued">Cream and burgundy question cards with visible radio selections. This applies only to this widget. Edit its CSS in Settings / Widget CSS, then Save.</s-paragraph>
                   {([{ key: "background", label: "Background color" }, { key: "text", label: "Text color" }, { key: "accent", label: "Button and accent color" }, { key: "buttonText", label: "Button text color" }] as const).map(field => <s-color-field key={field.key} label={field.label} required details={field.key === "background" ? "Background of this quiz." : field.key === "text" ? "Questions and body text." : field.key === "accent" ? "Quiz buttons and highlights." : "Text on quiz buttons."} value={design[field.key]} onInput={event => { const value = event.currentTarget.value; setQuiz(current => ({ ...current, design: { ...design, [field.key]: value } })); }} />)}
                   <s-select label="Font style" value={design.font} onChange={event => { const font = event.currentTarget.value === "sans" ? "sans" : "classic"; setQuiz(current => ({ ...current, design: { ...design, font } })); }}><s-option value="classic">Classic serif headings</s-option><s-option value="sans">Sans serif</s-option></s-select>
                   <s-select label="Button shape" value={design.radius} onChange={event => { const radius = event.currentTarget.value === "square" ? "square" : event.currentTarget.value === "pill" ? "pill" : "rounded"; setQuiz(current => ({ ...current, design: { ...design, radius } })); }}><s-option value="square">Square</s-option><s-option value="rounded">Rounded</s-option><s-option value="pill">Pill</s-option></s-select>
@@ -370,13 +370,13 @@ export default function QuizEditor({
             </s-section> : null}
             {tab === "settings" ? <s-section heading="Quiz settings">
           <s-stack gap="base">
-                <s-badge>{quiz.layout === "scan" ? "AI Skin Scan" : quiz.layout === "single" ? "Single Quiz" : "Combined Quiz"}</s-badge>
+                <div style={{display:"inline-flex",alignItems:"center",gap:7,padding:"6px 10px",borderRadius:8,background:"#EEF3EF",color:"#344E3E",width:"fit-content",fontSize:12,fontWeight:600,lineHeight:"18px"}}><s-icon type="clipboard" size="small" /><span>{quiz.layout === "scan" ? "AI Skin Scan" : quiz.layout === "single" ? "Single Quiz" : "Combined Quiz"}</span></div>
                 <s-text-field label="Quiz name" value={quiz.name || ""} onInput={event => { const name = event.currentTarget.value; setQuiz(current => ({ ...current, name })); }} />
                 <s-text-field label="Quiz cover image URL" id="quiz-cover-image" value={quiz.coverImage || ""} details="Use an HTTPS image URL from Shopify Files." onInput={event => { const coverImage = event.currentTarget.value; setQuiz(current => ({ ...current, coverImage })); }} />
                 {quiz.coverImage ? <s-stack direction="inline" gap="small"><s-button icon="edit" onClick={() => document.getElementById("quiz-cover-image")?.focus()}>Change cover image</s-button><s-button icon="delete" tone="critical" onClick={() => setQuiz(current => ({...current,coverImage:""}))}>Remove cover image</s-button></s-stack> : null}
                 <s-text-field label="Profile image URL" id="quiz-profile-image" value={quiz.profileImage || ""} details="Shown on the right of this quiz header." onInput={event => { const profileImage = event.currentTarget.value; setQuiz(current => ({ ...current, profileImage })); }} />
                 {quiz.profileImage ? <s-stack direction="inline" gap="small"><s-button icon="edit" onClick={() => document.getElementById("quiz-profile-image")?.focus()}>Change profile image</s-button><s-button icon="delete" tone="critical" onClick={() => setQuiz(current => ({...current,profileImage:""}))}>Remove profile image</s-button></s-stack> : null}
-                <s-text-field label="App block widget ID" readOnly value={code} />
+                <s-text-field label="App block widget ID" details="Generated automatically. Use this ID when adding this quiz to your theme." readOnly value={code} />
                 <s-text-area label="Shopify Custom Liquid embed code" rows={5} readOnly value={embedCode} />
                 <s-stack direction="inline" gap="base"><s-button icon="clipboard" onClick={async () => { try { await navigator.clipboard.writeText(embedCode); setEmbedCopyStatus("Embed code copied."); } catch { setEmbedCopyStatus("Select and copy the code above."); } }}>Copy code</s-button><s-text>{embedCopyStatus}</s-text></s-stack>
                 <s-paragraph>In your Shopify theme editor, add a Custom Liquid section, paste this complete code, and save. It loads this saved quiz, including its Widget CSS. The embed adjusts its height automatically.</s-paragraph>
@@ -387,7 +387,7 @@ export default function QuizEditor({
             {tab === "settings" ? <s-section heading="Quiz card icons">
               <s-stack gap="base">
                 <s-paragraph>Upload an SVG, PNG, JPG or WebP icon (up to 64 KB) for each entry card, then save the quiz.</s-paragraph>
-                {(["scan", "quick", "deep"] as const).map(path => <div key={path}>
+                {(["scan", "quick", "deep"] as const).map(path => <div key={path} style={{display:"grid",gap:12,padding:16,border:"1px solid #E3E8E4",borderRadius:12}}>
                   <s-heading>{path === "scan" ? "AI Skin Scan" : path === "quick" ? "Quick Quiz" : "Deep Dosha"}</s-heading>
                   {quiz.cardIcons?.[path] ? <s-box inlineSize="48px" paddingBlock="small"><s-image src={quiz.cardIcons[path]} alt={`${path} card icon preview`} aspectRatio="1 / 1" objectFit="contain" /></s-box> : null}
                   <s-drop-zone id={`card-icon-upload-${path}`} label={quiz.cardIcons?.[path] ? "Change card icon" : "Upload card icon"} accept=".svg,.png,.jpg,.jpeg,.webp" accessibilityLabel={`Upload ${path} card icon`} onDropRejected={event => { event.currentTarget.error = "Choose an SVG, PNG, JPG or WebP image."; }} onChange={event => {

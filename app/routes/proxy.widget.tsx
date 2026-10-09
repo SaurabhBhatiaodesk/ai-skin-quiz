@@ -15,7 +15,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   // The theme editor can append its preview session with a second question
   // mark to iframe URLs. Strip only that known suffix, not arbitrary input.
   const code = params.get("code")?.trim().replace(/\?oseid=[^?&]*(?:&.*)?$/, "");
-  const quiz = (await loadLibrary(shop)).find(item => item.handle === code);
+  const quiz = (await loadLibrary(shop)).find(item => item.handle === code || (code && item.legacyHandles?.includes(code)));
   if (!quiz) return new Response(`<!doctype html><html><head><style>html,body{margin:0;padding:0;background:transparent;overflow:hidden}</style></head><body><script>(function(){parent.postMessage({type:'prana-widget-height',height:1},location.origin);parent.postMessage({type:'prana-widget-height',height:0},location.origin);try{if(window.frameElement){window.frameElement.style.display='none';window.frameElement.style.height='0px';}}catch(e){}})();</script></body></html>`, { status: 404, headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" } });
   const values: Record<string, string> = {
     "block.id": `embed-${quiz.handle}`,

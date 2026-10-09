@@ -2,13 +2,14 @@ import type { ActionFunctionArgs, HeadersFunction, LoaderFunctionArgs } from "re
 import { useLoaderData } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
-import { loadQuiz, loadStoreProducts, saveQuiz } from "../quiz.server";
+import { ensureNumericWidgetId, loadQuiz, loadStoreProducts, saveQuiz } from "../quiz.server";
 import QuizEditor from "../components/QuizEditor";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session, admin, redirect } = await authenticate.admin(request);
   const code = new URL(request.url).searchParams.get("quiz");
   if (!code?.trim()) return redirect("/app/quizzes");
+  await ensureNumericWidgetId(session.shop, code);
   const quiz = await loadQuiz(session.shop, code);
   let products: Awaited<ReturnType<typeof loadStoreProducts>> = [];
   let productsError = false;

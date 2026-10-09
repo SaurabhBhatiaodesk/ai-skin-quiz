@@ -422,7 +422,7 @@ async function ensureQuizTable() {
   `);
 }
 
-export type QuizEntry = StoredQuiz & { handle: string; name: string };
+export type QuizEntry = StoredQuiz & { handle: string; name: string; legacyHandles?: string[] };
 
 export function quizCode(value: unknown) {
   const raw = clip(value, 80);
@@ -438,8 +438,8 @@ function namedQuiz(quiz: StoredQuiz, handle: string, name: string): QuizEntry {
 function normalizeEntry(input: unknown, fallbackHandle: string): QuizEntry | null {
   if (!input || typeof input !== "object") return null;
   try {
-    const source = input as { handle?: string; name?: string };
-    return namedQuiz(normalizeQuiz(input, { draft: true }), source.handle || fallbackHandle, source.name || "Skin quiz");
+    const source = input as { handle?: string; name?: string; legacyHandles?: string[] };
+    return { ...namedQuiz(normalizeQuiz(input, { draft: true }), source.handle || fallbackHandle, source.name || "Skin quiz"), ...(Array.isArray(source.legacyHandles) ? {legacyHandles: source.legacyHandles.map(quizCode)} : {}) };
   } catch {
     return null;
   }
@@ -496,7 +496,7 @@ export async function loadLibrary(shop: string): Promise<QuizEntry[]> {
 export async function loadQuiz(shop: string, code?: unknown): Promise<QuizEntry> {
   const library = await loadLibrary(shop);
   const handle = quizCode(code || "dosha-quiz");
-  const selected = library.find((item) => item.handle === handle) || (!code ? library[0] : undefined);
+  const selected = library.find((item) => (item.handle === handle || item.legacyHandles?.includes(handle))) || (!code ? library[0] : undefined);
   if (!selected) throw new Error("Quiz not found. Create a quiz first.");
   return selected;
 }
@@ -504,8 +504,9 @@ export async function loadQuiz(shop: string, code?: unknown): Promise<QuizEntry>
 export async function saveQuiz(shop: string, input: unknown, code?: unknown) {
   const snapshot = await readPayload(shop);
   const library = snapshot ? normalizeLibrary(snapshot.value) : [];
-  const handle = quizCode(code || (input && typeof input === "object" ? (input as { handle?: string }).handle : "") || "dosha-quiz");
-  const current = library.find((item) => item.handle === handle);
+  let handle = quizCode(code || (input && typeof input === "object" ? (input as { handle?: string }).handle : "") || "dosha-quiz");
+  const current = library.find(item => item.handle === handle || item.legacyHandles?.includes(handle));
+  if (current) handle = current.handle;
   const merged = {
     ...(current || {}),
     ...(input && typeof input === "object" ? input : {}),
@@ -513,6 +514,7 @@ export async function saveQuiz(shop: string, input: unknown, code?: unknown) {
     name: (input && typeof input === "object" && clip((input as { name?: string }).name, 80)) || current?.name || "Skin quiz",
   };
   const entry = namedQuiz(normalizeQuiz(merged), handle, clip(merged.name, 80) || "Skin quiz");
+  if (current?.legacyHandles) entry.legacyHandles = current.legacyHandles;
   const quizzes = library.some((item) => item.handle === handle)
     ? library.map((item) => (item.handle === handle ? entry : item))
     : [...library, entry];
@@ -520,13 +522,25 @@ export async function saveQuiz(shop: string, input: unknown, code?: unknown) {
   return entry;
 }
 
+export async function ensureNumericWidgetId(shop: string, code: string) {
+  const snapshot = await readPayload(shop);
+  const library = snapshot ? normalizeLibrary(snapshot.value) : [];
+  const current = library.find(item => item.handle === code || item.legacyHandles?.includes(code));
+  if (!current || /^\d+$/.test(current.handle)) return;
+  let number = Date.now();
+  while (library.some(item => item.handle === String(number))) number++;
+  const replacement = {...current, handle:String(number), legacyHandles:[...new Set([...(current.legacyHandles || []),current.handle])]};
+  await writePayload(shop, library.map(item => item.handle === current.handle ? replacement : item), snapshot!.raw);
+}
+
 export async function createQuiz(shop: string, name: string, layout: "three" | "single" | "scan" = "three", paths?: Array<"quick" | "deep" | "scan">) {
   const snapshot = await readPayload(shop);
   const library = snapshot ? normalizeLibrary(snapshot.value) : [];
   if (library.length >= 20) throw new Error("This store supports up to 20 quizzes. Delete an unused quiz before creating another.");
-  const base = quizCode(name || `quiz-${library.length + 1}`);
-  let handle = base;
-  for (let suffix = 2; library.some((item) => item.handle === handle); suffix++) handle = quizCode(`${base.slice(0, 34)}-${suffix}`);
+  // Widget IDs are generated independently of the merchant's quiz name.
+  let widgetNumber = Date.now();
+  while (library.some(item => item.handle === String(widgetNumber))) widgetNumber++;
+  const handle = String(widgetNumber);
   // New quizzes start without questions; the merchant adds their own in the editor.
   const starter = defaultQuiz();
   starter.layout = layout;

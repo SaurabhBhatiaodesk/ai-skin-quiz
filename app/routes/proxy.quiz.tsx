@@ -17,7 +17,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const provider = await selectedProvider(shop);
   const library = await loadLibrary(shop);
   const matching = library.filter(quiz => !layout || (quiz.layout || "three") === layout);
-  let selected = matching.find(quiz => quiz.handle === code);
+  let selected = matching.find(quiz => quiz.handle === code || (code && quiz.legacyHandles?.includes(code)));
   if (!selected && (!code || code === "dosha-quiz") && matching.length === 1) selected = matching[0];
   if (!selected) {
     const type = layout === "scan" ? "AI Skin Scan" : layout === "single" ? "Single Quiz" : "Combined Quiz";

@@ -55,7 +55,7 @@ export default function NewQuiz() {
         <s-stack gap="base">
           {actionData?.error ? <s-banner tone="critical" heading="Could not create quiz">{actionData.error}</s-banner> : null}
           <s-section heading="Quiz name">
-            <s-text-field label="Quiz name" labelAccessibilityVisibility="exclusive" name="name" required placeholder="For example, Find your skin ritual" details="Only you see this name. It also becomes the widget ID." value={name} onInput={event => setName(event.currentTarget.value)} />
+            <s-text-field label="Quiz name" labelAccessibilityVisibility="exclusive" name="name" required placeholder="For example, Find your skin ritual" details="Give your quiz a name. Its numeric widget ID is generated automatically." value={name} onInput={event => setName(event.currentTarget.value)} />
           </s-section>
           <s-section heading="Quiz type">
             <s-grid gridTemplateColumns="repeat(auto-fit, minmax(220px, 1fr))" gap="base">

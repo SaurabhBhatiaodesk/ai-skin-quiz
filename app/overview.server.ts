@@ -9,7 +9,7 @@ type AdminGraphql = { graphql: (query: string, options?: { variables?: Record<st
 export async function quizOverview(shop: string, admin: AdminGraphql) {
   const [quizzes, theme, activatedBefore] = await Promise.all([loadLibrary(shop), themeStatus(admin), isThemeActivated(shop)]);
   const scanReady = await selectedProvider(shop) === "openai" && await hasOpenAIKey(shop);
-  const live = quizzes.map((quiz) => isQuizLive(theme, { handle: quiz.handle, layout: quiz.layout || "three" }, quizzes.filter((item) => (item.layout || "three") === (quiz.layout || "three")).length === 1));
+  const live = quizzes.map((quiz) => isQuizLive(theme, { handle: quiz.handle, legacyHandles: quiz.legacyHandles, layout: quiz.layout || "three" }, quizzes.filter((item) => (item.layout || "three") === (quiz.layout || "three")).length === 1));
   // Activation is a one-time store setup step, independent of individual widget IDs.
   const activatedNow = theme.blocks.length > 0;
   if (!activatedBefore && activatedNow) await markThemeActivated(shop);

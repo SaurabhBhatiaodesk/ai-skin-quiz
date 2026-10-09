@@ -72,6 +72,6 @@ export async function themeStatus(admin: AdminGraphql): Promise<ThemeStatus> {
 
 // A block shows a quiz when its widget ID matches, or when the ID is empty (or the default "dosha-quiz") and this is the only quiz of the block's layout
 // (the storefront picks that quiz automatically).
-export function isQuizLive(status: ThemeStatus, quiz: { handle: string; layout: string }, onlyOfLayout: boolean) {
-  return status.blocks.some((block) => block.layout === quiz.layout && (block.code === quiz.handle || ((!block.code || block.code === "dosha-quiz") && onlyOfLayout)));
+export function isQuizLive(status: ThemeStatus, quiz: { handle: string; layout: string; legacyHandles?: string[] }, onlyOfLayout: boolean) {
+  return status.blocks.some((block) => block.layout === quiz.layout && (block.code === quiz.handle || quiz.legacyHandles?.includes(block.code) || ((!block.code || block.code === "dosha-quiz") && onlyOfLayout)));
 }
