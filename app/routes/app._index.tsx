@@ -60,8 +60,8 @@ export default function Home() {
                 <HomeIllustration name={item.icon} />
               </s-box>
               <div style={{display:"grid",gap:4,minWidth:0}}>
-                <div style={{fontSize:12,fontWeight:500,lineHeight:"18px",color:"#000000"}}>{item.label}</div>
-                <div style={{minHeight:38,display:"flex",alignItems:"center",fontSize:28,fontWeight:600,lineHeight:"38px",letterSpacing:"-0.6px",fontVariantNumeric:"tabular-nums",color:"#000000"}}>{item.value}</div>
+                <div style={{minHeight:38,display:"flex",alignItems:"center",fontSize:24,fontWeight:600,lineHeight:"32px",letterSpacing:"-0.6px",fontVariantNumeric:"tabular-nums",color:"#000000"}}>{item.value}</div>
+                <div style={{fontSize:15,fontWeight:600,lineHeight:"22px",color:"#000000"}}>{item.label}</div>
                 <div style={{fontSize:11,lineHeight:"17px",color:"#000000"}}>{item.label === "Results" || item.label === "Emails" ? "Last 7 days" : item.label === "Installed stores" ? "Current installations" : "Total quizzes"}</div>
               </div>
             </div>

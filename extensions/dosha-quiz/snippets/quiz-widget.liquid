@@ -140,36 +140,36 @@
     <button class="back-nav" type="button" data-goto="entry"><span class="back-arrow">←</span> Back</button>
     <div class="hdr" style="padding-top:1rem">
       <div class="hdr-logo">{{ block.settings.brand_name | escape }}</div>
-      <h2 class="hdr-title">AI <em>Skin Scan</em></h2>
-      <div class="hdr-sub">Photo-based cosmetic observations, not a medical diagnosis</div>
+      <h2 class="hdr-title">Skin <em>Insights</em></h2>
+      <div class="hdr-sub">Discover your skin insights. Not a medical diagnosis.</div>
     </div>
     <div class="scanner-wrap">
       <ol class="scan-steps" aria-label="Skin scan progress"><li data-scan-step-label="1" aria-current="step"><span>1</span> Consent</li><li data-scan-step-label="2"><span>2</span> Photo</li><li data-scan-step-label="3"><span>3</span> Results</li></ol>
       <section data-scan-step="1">
-        <h3 class="scan-step-title">Before we begin</h3>
-        <p class="scan-step-intro">Review how your photo is used, then continue to your camera or upload.</p>
+        <h3 class="scan-step-title">Ready to scan?</h3>
+        <p class="scan-step-intro">Confirm below, then take or upload a photo.</p>
 <div class="consent-notice">
         <div class="cn-icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6v6c0 4.5 5 8 8 9 3-1 8-4.5 8-9V6l-8-3Z"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg></div>
-        <div class="cn-text"><strong>Your photo is used only for this reading.</strong> It is sent to OpenAI for cosmetic observations. Our app does not save your photo; OpenAI data handling policies apply.</div>
+        <div class="cn-text">Your photo is sent to OpenAI for this reading. Our app does not store it; OpenAI data policies apply.</div>
       </div>
 
       <div class="consent-box">
         <div class="consent-row">
           <input class="consent-check" type="checkbox" id="consent-bio-{{ block.id }}" data-consent="biometric">
           <label class="consent-label" for="consent-bio-{{ block.id }}">
-            <strong>I provide written consent for real-time analysis of my facial image.</strong> I consent to sending my photo to OpenAI for cosmetic skin observations. Our app does not save the photo; OpenAI data handling policies apply. <a href="{{ block.settings.privacy_url | escape }}" target="_blank" rel="noopener">Privacy Policy ↗</a>
+            I consent to OpenAI analysing my facial photo for cosmetic skin observations. <a href="{{ block.settings.privacy_url | escape }}" target="_blank" rel="noopener">Privacy Policy ↗</a>
           </label>
         </div>
         <div class="consent-row">
           <input class="consent-check" type="checkbox" id="consent-age-{{ block.id }}" data-consent="age">
           <label class="consent-label" for="consent-age-{{ block.id }}">
-            <strong>I confirm I am 18 years of age or older.</strong>
+            <strong>I am 18 or older.</strong>
           </label>
         </div>
         <div class="consent-row">
           <input class="consent-check" type="checkbox" id="consent-mail-{{ block.id }}" data-consent="marketing">
           <label class="consent-label" for="consent-mail-{{ block.id }}">
-            <strong>Optional:</strong> I agree to receive personalised skincare recommendations by email. I can unsubscribe at any time.
+            <strong>Optional:</strong> Email me skincare recommendations. I can unsubscribe anytime.
           </label>
         </div>
       </div>

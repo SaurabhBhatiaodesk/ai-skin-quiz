@@ -1936,3 +1936,12 @@
 .prana-quiz :where([data-screen="quick"], [data-screen="deep"]) .quiz-wrap { max-width: var(--widget-panel-width); width: 100%; }
 .prana-quiz [data-screen="result"] { padding: clamp(20px, 4vw, 52px) 16px; }
 .prana-quiz [data-screen="result"] .result-wrap { max-width: var(--widget-panel-width); width: 100%; margin: 0 auto; padding: 0; }
+
+/* Keep the consent popup compact. */
+.prana-quiz.scan-chat-open { height: auto; bottom: auto; max-height: calc(100dvh - 32px); }
+.prana-quiz.scan-chat-open [data-screen="scanner"] .hdr-title { font-size: 26px; }
+.prana-quiz.scan-chat-open [data-screen="scanner"] .hdr-sub { font-size: 12px; letter-spacing: normal; }
+.prana-quiz.scan-chat-open .scan-step-title { font-size: 20px; margin-bottom: 8px; }
+.prana-quiz.scan-chat-open .scan-step-intro { margin-bottom: 12px; }
+.prana-quiz.scan-chat-open .consent-note { padding: 12px; margin-bottom: 12px; }
+.prana-quiz.scan-chat-open .consent-text { font-size: 13px; line-height: 1.5; }

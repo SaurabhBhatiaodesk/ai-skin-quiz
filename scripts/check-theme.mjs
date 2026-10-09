@@ -21,3 +21,11 @@ const disabledSection = JSON.stringify({sections:{main:{disabled:true,blocks:{qu
 const disabledStatus = await api.themeStatus({graphql:async()=>({json:async()=>({data:{themes:{nodes:[{name:"Test",files:{nodes:[{body:{content:disabledSection}}]}}]}}})})});
 assert.equal(disabledStatus.blocks.length,0);
 console.log("Passed: blocks inside disabled sections are not live.");
+
+for (const disabled of [false, true]) {
+  const content = JSON.stringify({current:{blocks:{embed:{type:"shopify://apps/ai-skin-quiz/blocks/scan-assistant/abc",disabled}}}});
+  const embedStatus = await api.themeStatus({graphql:async()=>({json:async()=>({data:{themes:{nodes:[{name:"Live",files:{nodes:[{filename:"config/settings_data.json",body:{content}}]}}]}}})})});
+  assert.equal(embedStatus.embedEnabled, !disabled);
+  assert.equal(embedStatus.blocks.length, 0);
+}
+console.log("Passed: saved app embed enabled/disabled detection independent of page blocks.");
