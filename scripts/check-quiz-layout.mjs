@@ -182,10 +182,11 @@ scanQuiz.scanner = { title: "My Skin Scan", description: "Upload a selfie for th
 await api.saveQuiz("test", scanQuiz, scanQuiz.handle);
 assert.deepEqual((await api.loadQuiz("test", scanQuiz.handle)).scanner, scanQuiz.scanner);
 assert.deepEqual((await api.publicQuiz("test", scanQuiz.handle)).scanner, scanQuiz.scanner);
-scanQuiz.design = { background: "#ffffff", text: "#111111", accent: "#123456", buttonText: "#ffffff", font: "sans", radius: "pill" };
+scanQuiz.design = { ...api.normalizeQuiz(scanQuiz).design, headingSize: 42, questionSize: 30, answerSize: 21, buttonSize: 18, selectedColor: "#112233", background: "#ffffff", text: "#111111", accent: "#123456", buttonText: "#ffffff", font: "sans", radius: "pill" };
 await api.saveQuiz("test", scanQuiz, scanQuiz.handle);
 assert.deepEqual((await api.publicQuiz("test", scanQuiz.handle)).design, scanQuiz.design);
 assert.throws(() => api.normalizeQuiz({ ...scanQuiz, design: { ...scanQuiz.design, accent: "bad" } }), /hex colors/);
+assert.throws(() => api.normalizeQuiz({ ...scanQuiz, design: { ...scanQuiz.design, questionSize: 100 } }), /Font sizes/);
 assert.throws(() => api.normalizeQuiz({ ...scanQuiz, scanner: { ...scanQuiz.scanner, upload: false } }), /Enable camera or photo upload/);
 const weighted = api.scoreDeep([0], [{ layer: 1, text: "Weighted", phase: "", sub: "", options: [{ label: "Blend", hint: "", tag: "vata", scores: { V: 6, P: 4 } }] }]);
 assert.deepEqual(weighted.percentages, { vata: 60, pitta: 40, kapha: 0 });
