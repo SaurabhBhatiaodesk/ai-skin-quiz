@@ -48,6 +48,8 @@ assert.equal(existingQuestionLibrary.filter(item => item.name === "Sample Skin Q
 await api.ensureDefaultScanWidget("existing-question-test");
 assert.equal((await api.loadLibrary("existing-question-test")).length, 3);
 console.log("Passed: default scan initialization, concurrent opens, existing scan reuse and deletion persistence.");
+assert.equal(api.quizCode(1791540340856), "1791540340856");
+assert.equal(api.quizCode("[dosha-quiz:1791540340856]"), "1791540340856");
 const legacy = api.normalizeQuiz({ quick: api.QUICK_QUESTIONS, deep: api.DEEP_QUESTIONS });
 assert.equal(legacy.layout, "three");
 assert.ok(legacy.deep.length);

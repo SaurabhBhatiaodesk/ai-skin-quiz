@@ -425,7 +425,7 @@ async function ensureQuizTable() {
 export type QuizEntry = StoredQuiz & { handle: string; name: string; legacyHandles?: string[] };
 
 export function quizCode(value: unknown) {
-  const raw = clip(value, 80);
+  const raw = clip(typeof value === "number" && Number.isSafeInteger(value) && value > 0 ? String(value) : value, 80);
   const wrapped = raw.match(/^\[dosha-quiz:([^\]]+)\]$/i);
   const handle = (wrapped ? wrapped[1] : raw).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40);
   return handle || "dosha-quiz";
