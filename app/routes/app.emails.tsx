@@ -19,6 +19,7 @@ export default function Emails() {
   const visibleEmails = filtered.slice(currentPage * pageSize, (currentPage + 1) * pageSize);
   return <s-page heading="Collected emails" inlineSize="large">
     <s-link slot="breadcrumb-actions" href="/app">Home</s-link>
+    <s-stack gap="base">
     <s-section heading="Quiz email captures">
       <s-stack gap="base">
         <s-paragraph>Emails submitted with quiz results. Records expire 7 days after the result was created. Email capture does not automatically subscribe a customer to marketing or send an email.</s-paragraph>
@@ -31,12 +32,15 @@ export default function Emails() {
           <s-text color="subdued">{filtered.length} of {emails.length} email addresses</s-text>
           {query || period !== "all" || sort !== "newest" ? <s-button variant="tertiary" onClick={() => { setQuery(""); setPeriod("all"); setSort("newest"); setPage(0); }}>Reset filters</s-button> : null}
         </s-stack>
-        {filtered.length ? <s-table paginate={filtered.length > pageSize} hasPreviousPage={currentPage > 0} hasNextPage={(currentPage + 1) * pageSize < filtered.length} onPreviousPage={() => setPage(Math.max(0, currentPage - 1))} onNextPage={() => setPage(currentPage + 1)}><s-table-header-row><s-table-header listSlot="primary">Email</s-table-header><s-table-header listSlot="labeled" format="numeric">Results</s-table-header><s-table-header listSlot="labeled">Latest result</s-table-header></s-table-header-row><s-table-body>{visibleEmails.map(row => <s-table-row key={row.email}><s-table-cell>{row.email}</s-table-cell><s-table-cell>{row.results}</s-table-cell><s-table-cell>{new Date(row.latestResultAt).toLocaleDateString("en-GB", { timeZone: "UTC" })}</s-table-cell></s-table-row>)}</s-table-body></s-table> : <s-empty-state heading={emails.length ? "No emails match these filters" : "No emails collected yet"}>
+      </s-stack>
+    </s-section>
+    <s-section padding="none">
+        {filtered.length ? <s-table paginate={filtered.length > pageSize} hasPreviousPage={currentPage > 0} hasNextPage={(currentPage + 1) * pageSize < filtered.length} onPreviousPage={() => setPage(Math.max(0, currentPage - 1))} onNextPage={() => setPage(currentPage + 1)}><s-table-header-row><s-table-header listSlot="primary">Email</s-table-header><s-table-header listSlot="labeled"><div style={{ width: "clamp(120px, 20vw, 320px)" }}>Quiz results</div></s-table-header><s-table-header listSlot="labeled"><div style={{ width: "clamp(150px, 20vw, 320px)" }}>Latest result</div></s-table-header></s-table-header-row><s-table-body>{visibleEmails.map(row => <s-table-row key={row.email}><s-table-cell><s-text type="strong">{row.email}</s-text></s-table-cell><s-table-cell><s-text>{row.results}</s-text></s-table-cell><s-table-cell>{new Date(row.latestResultAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" })}</s-table-cell></s-table-row>)}</s-table-body></s-table> : <s-empty-state heading={emails.length ? "No emails match these filters" : "No emails collected yet"}>
           <s-icon slot="graphic" type={emails.length ? "search" : "email"} />
           <s-text slot="subheading">{emails.length ? "Try another email address or reset the filters." : "Enable email capture in your quiz. Addresses will appear here after customers submit their results."}</s-text>
           {emails.length ? <s-button slot="primary-action" variant="primary" onClick={() => { setQuery(""); setPeriod("all"); setSort("newest"); setPage(0); }}>Reset filters</s-button> : <s-button slot="primary-action" variant="primary" href="/app/quizzes">View quizzes</s-button>}
         </s-empty-state>}
-      </s-stack>
     </s-section>
+    </s-stack>
   </s-page>;
 }
