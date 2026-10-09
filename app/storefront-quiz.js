@@ -32,6 +32,7 @@ import { buildFaceMap } from "./face-map.js";
     var submitting = false;
     var lastFocus = null;
     var scanChatOpen = false;
+    var closeScanChat = null;
 
     function q(sel) { return root.querySelector(sel); }
 
@@ -800,13 +801,18 @@ import { buildFaceMap } from "./face-map.js";
         root.style.setProperty("--scan-panel", appearance.panelColor || "#faf7f2");
         root.style.setProperty("--scan-text", appearance.textColor || "#1a1208");
         root.style.setProperty("--scan-accent", appearance.accentColor || "#8f6330");
+        root.style.setProperty("--scan-heading", appearance.headingColor || "#000000");
+        root.style.setProperty("--scan-button-text", appearance.modalButtonTextColor || "#ffffff");
+        root.style.setProperty("--scan-font-size", (appearance.modalFontSize || 13) + "px");
+        root.style.setProperty("--scan-width", (appearance.modalWidth || 520) + "px");
+        root.style.setProperty("--scan-radius", (appearance.modalRadius == null ? 24 : appearance.modalRadius) + "px");
         root.setAttribute("data-scan-position", appearance.position === "left" ? "left" : "right");
         document.body.appendChild(launcher);
         var close = document.createElement("button");
-        close.type = "button"; close.className = "scan-chat-close"; close.textContent = "Close";
-        close.setAttribute("aria-label", "Close skin scan assistant"); root.appendChild(close);
+        close.type = "button"; close.className = "scan-chat-close"; close.textContent = "\u00d7";
+        close.setAttribute("aria-label", "Close skin scan assistant"); root.prepend(close);
         var previousOverflow = "";
-        var closeScanChat = function () {
+        closeScanChat = function () {
           if (!root.classList.contains("scan-chat-open")) return;
           scanChatOpen = false;
           root.classList.remove("scan-chat-open"); root.removeAttribute("role"); root.removeAttribute("aria-modal"); root.removeAttribute("aria-label");
@@ -841,6 +847,7 @@ import { buildFaceMap } from "./face-map.js";
       }
     }).catch(function (error) {
       root.setAttribute("data-configured", "false");
+      if (root.getAttribute("data-design-mode") !== "true" && root.style) root.style.display = "none";
       var note = q("[data-widget-setup]");
       if (note) note.textContent = error.message || "Could not load the quiz. Refresh this page.";
     });
