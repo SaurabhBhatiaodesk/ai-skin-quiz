@@ -49,7 +49,7 @@ export default function Documentation() {
         </s-section>
         <s-section heading="AI Skin Scan setup">
           <s-stack gap="small">
-            <s-banner heading="OpenAI photo analysis">Add your OpenAI API key in Global Settings. The scan describes visible cosmetic concerns and recommends matching store products. It does not measure dosha or internal skin health.</s-banner>
+            <s-banner tone="info" heading="OpenAI photo analysis">Add your OpenAI API key in Global Settings. The scan describes visible cosmetic concerns and recommends matching store products. It does not measure dosha or internal skin health.</s-banner>
             <s-paragraph>For a quiz containing the scan path, select AI Skin Scan to change its title, description and capture methods. Keep camera or photo upload enabled. Start scan opens the installed widget on your storefront.</s-paragraph>
             <s-paragraph>Photo uploads accept JPG, PNG or WebP files under 5 MB. Camera access requires browser permission and a secure storefront connection.</s-paragraph>
           </s-stack>

@@ -294,7 +294,7 @@ export default function QuizEditor({
                     {enabledPaths.includes("scan") ? <s-option value="scan">AI Skin Scan</s-option> : null}
                   </s-select> : null}
                   <s-text color="subdued">{kind === "scan" ? "Configure camera and photo upload for the scan block." : "Select a question to edit"}</s-text>
-                  {kind !== "scan" && !questions.length ? <s-banner heading="No questions yet">Click Add question to create the first question for this quiz, then Save.</s-banner> : null}
+                  {kind !== "scan" && !questions.length ? <s-banner tone="warning" heading="No questions yet">Click Add question to create the first question for this quiz, then Save.</s-banner> : null}
                   <s-grid gridTemplateColumns={tab === "tags" ? "minmax(0, 1fr)" : "repeat(auto-fit, minmax(220px, 1fr))"} gap="base">
                   {visibleQuestions.map((item, pageIndex) => { const itemIndex = pageStart + pageIndex; return <s-clickable key={`${kind}-${itemIndex}`} accessibilityLabel={`Edit question ${itemIndex + 1}: ${item.text}`} background={safeIndex === itemIndex ? "subdued" : "base"} border={safeIndex === itemIndex ? "base strong" : "base"} borderRadius="base" padding="base" onClick={() => { setIndex(itemIndex); if (tab === "edit") setQuestionOpen(true); }}>
                     {tab === "tags" ? <s-stack gap="small">
@@ -330,7 +330,7 @@ export default function QuizEditor({
                 <s-grid gridTemplateColumns="repeat(auto-fit, minmax(240px, 1fr))" gap="base">
                   <s-button onClick={() => setQuiz(current => ({ ...current, widgetCss: referenceQuizCss, design: { ...design, background: "#f3ecd9", text: "#180d0c", accent: "#4c1428", buttonText: "#ffffff", font: "classic", radius: "rounded" } }))}>Apply cream and burgundy design</s-button>
                   <s-paragraph color="subdued">Matches the reference question layout. Edit its CSS in Settings ? Widget CSS, then Save.</s-paragraph>
-                  {([{ key: "background", label: "Background color" }, { key: "text", label: "Text color" }, { key: "accent", label: "Button and accent color" }, { key: "buttonText", label: "Button text color" }] as const).map(field => <s-color-field key={field.key} label={field.label} value={design[field.key]} onInput={event => { const value = event.currentTarget.value; setQuiz(current => ({ ...current, design: { ...design, [field.key]: value } })); }} />)}
+                  {([{ key: "background", label: "Background color" }, { key: "text", label: "Text color" }, { key: "accent", label: "Button and accent color" }, { key: "buttonText", label: "Button text color" }] as const).map(field => <s-color-field key={field.key} label={field.label} required details={field.key === "background" ? "Background of this quiz." : field.key === "text" ? "Questions and body text." : field.key === "accent" ? "Quiz buttons and highlights." : "Text on quiz buttons."} value={design[field.key]} onInput={event => { const value = event.currentTarget.value; setQuiz(current => ({ ...current, design: { ...design, [field.key]: value } })); }} />)}
                   <s-select label="Font style" value={design.font} onChange={event => { const font = event.currentTarget.value === "sans" ? "sans" : "classic"; setQuiz(current => ({ ...current, design: { ...design, font } })); }}><s-option value="classic">Classic serif headings</s-option><s-option value="sans">Sans serif</s-option></s-select>
                   <s-select label="Button shape" value={design.radius} onChange={event => { const radius = event.currentTarget.value === "square" ? "square" : event.currentTarget.value === "pill" ? "pill" : "rounded"; setQuiz(current => ({ ...current, design: { ...design, radius } })); }}><s-option value="square">Square</s-option><s-option value="rounded">Rounded</s-option><s-option value="pill">Pill</s-option></s-select>
                 </s-grid>
@@ -339,7 +339,7 @@ export default function QuizEditor({
             </s-section> : null}
             {showQuestions && kind === "scan" ? <s-section heading="AI Skin Scan settings">
               <s-stack gap="base">
-                <s-banner heading="Analysis setup required">Camera and photo upload are available. Real skin analysis is not configured yet.</s-banner>
+                <s-banner tone="warning" heading="Analysis setup required">Camera and photo upload are available. Connect an analysis provider to enable skin observations.<s-button slot="primary-action" href="/app/settings">Connect AI</s-button></s-banner>
                 <s-stack direction="inline"><s-button href={`https://${shop}/?dosha_scan=${encodeURIComponent(code)}`} target="_blank">Start scan</s-button></s-stack>
                 <s-text-field label="Scan title" value={scanner.title} onInput={event => { const title = event.currentTarget.value; setQuiz(current => ({ ...current, scanner: { ...scanner, title } })); }} />
                 <s-text-area label="Scan description" value={scanner.description} onInput={event => { const description = event.currentTarget.value; setQuiz(current => ({ ...current, scanner: { ...scanner, description } })); }} />
@@ -351,7 +351,7 @@ export default function QuizEditor({
             {tab !== "settings" && tab !== "branching" && tab !== "tags" && tab !== "design" ? <s-section>
               <s-stack direction="inline" gap="small" justifyContent="end">
                 {showQuestions && kind !== "scan" ? <>
-                  <s-button tone="critical" variant="tertiary" onClick={removeQuestion} disabled={questions.length <= 1}>Delete question</s-button>
+                  <s-button tone="critical" variant="tertiary" commandFor="delete-question-modal" command="--show" disabled={questions.length <= 1}>Delete question</s-button>
                   <s-button onClick={addQuestion} disabled={questions.length >= (kind === "deep" || quiz.layout === "single" ? 40 : 12)}>Add question</s-button>
                 </> : null}
                 {tab === "products" ? <>
@@ -383,7 +383,7 @@ export default function QuizEditor({
                 {(["scan", "quick", "deep"] as const).map(path => <div key={path}>
                   <s-heading>{path === "scan" ? "AI Skin Scan" : path === "quick" ? "Quick Quiz" : "Deep Dosha"}</s-heading>
                   {quiz.cardIcons?.[path] ? <img src={quiz.cardIcons[path]} alt={`${path} card icon preview`} style={{width:48,height:48,objectFit:"contain",display:"block",margin:"8px 0"}} /> : null}
-                  <s-drop-zone label="Upload card icon" accept=".svg,.png,.jpg,.jpeg,.webp" accessibilityLabel={`Upload ${path} card icon`} onChange={event => {
+                  <s-drop-zone label="Upload card icon" accept=".svg,.png,.jpg,.jpeg,.webp" accessibilityLabel={`Upload ${path} card icon`} onDropRejected={event => { event.currentTarget.error = "Choose an SVG, PNG, JPG or WebP image."; }} onChange={event => {
                     const input = event.currentTarget;
                     const file = input.files?.[0];
                     if (!file) return;
@@ -416,7 +416,7 @@ export default function QuizEditor({
             </s-section> : null}
             {tab === "branching" ? <s-section heading="Quiz flow">
               <s-stack gap="base">
-                <s-banner heading="Questions follow a fixed order">Answer-based branching is not available yet. Customers continue through the questions in their selected quiz flow.</s-banner>
+                <s-banner tone="info" heading="Questions follow a fixed order">Answer-based branching is not available yet. Customers continue through the questions in their selected quiz flow.</s-banner>
                 {quiz.layout === "scan" ? <s-paragraph>This block opens Skin Scan directly with camera or photo upload.</s-paragraph> : quiz.layout === "single" ? <s-paragraph>This single quiz contains {quiz.quick.length} questions in one flow.</s-paragraph> : <>
                   <s-paragraph>Quick Quiz has {quiz.quick.length} questions. Deep Quiz has {quiz.deep.length} questions grouped into the sections below.</s-paragraph>
                   <s-table><s-table-header-row><s-table-header listSlot="primary">Deep question</s-table-header><s-table-header>Section</s-table-header></s-table-header-row><s-table-body>
@@ -531,12 +531,12 @@ export default function QuizEditor({
                         <s-table-cell><s-badge>{mapping.variantId ? "Variant" : "Product"}</s-badge></s-table-cell><s-table-cell>{title}</s-table-cell>
                         <s-table-cell><s-stack direction="inline" gap="small">
                           <s-button icon="edit" accessibilityLabel={`Edit ${title}`} onClick={() => setMappingDraft({ id: mapping.id, tags: mapping.tags, productHandle: mapping.productHandle, grouping: mapping.grouping || "or", variantId: mapping.variantId })} />
-                          <s-button icon="delete" tone="critical" accessibilityLabel={`Delete ${title}`} disabled={pending} onClick={() => deleteMappings([mapping.id])} />
+                          <s-button icon="delete" tone="critical" accessibilityLabel={`Delete ${title}`} disabled={pending} commandFor="delete-mappings-modal" command="--show" onClick={() => setPickedRows([mapping.id])} />
                         </s-stack></s-table-cell>
                       </s-table-row>;
                     })}
                   </s-table-body>
-                </s-table> : <s-box padding="base"><s-paragraph color="subdued">No mappings yet. Press New mapping, pick tags, then pick a product or variant.</s-paragraph></s-box>}
+                </s-table> : <s-empty-state heading="No product mappings yet"><s-icon slot="graphic" type="product" /><s-text slot="subheading">Use New mapping to link answer tags to a product or variant.</s-text></s-empty-state>}
               </s-section>
             </> : null}
             {tab === "content" && result ? <s-section heading={`What the customer reads for ${result.name}`}>
@@ -590,6 +590,11 @@ export default function QuizEditor({
         </s-section> : null}
 
       </s-stack>
+      <s-modal id="delete-question-modal" heading="Delete question?">
+        <s-paragraph>This question and its answers will be removed from this quiz. Save the quiz to apply the change.</s-paragraph>
+        <s-button slot="primary-action" variant="primary" tone="critical" commandFor="delete-question-modal" command="--hide" onClick={removeQuestion}>Delete question</s-button>
+        <s-button slot="secondary-actions" commandFor="delete-question-modal" command="--hide">Cancel</s-button>
+      </s-modal>
     </s-page>
   );
 }

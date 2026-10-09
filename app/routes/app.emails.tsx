@@ -27,7 +27,11 @@ export default function Emails() {
           <s-text color="subdued">{filtered.length} of {emails.length} email addresses</s-text>
           {query || period !== "all" || sort !== "newest" ? <s-button variant="tertiary" onClick={() => { setQuery(""); setPeriod("all"); setSort("newest"); }}>Reset filters</s-button> : null}
         </s-stack>
-        {filtered.length ? <s-table><s-table-header-row><s-table-header>Email</s-table-header><s-table-header>Results</s-table-header><s-table-header>Latest result</s-table-header></s-table-header-row><s-table-body>{filtered.map(row => <s-table-row key={row.email}><s-table-cell>{row.email}</s-table-cell><s-table-cell>{row.results}</s-table-cell><s-table-cell>{new Date(row.latestResultAt).toLocaleDateString("en-GB", { timeZone: "UTC" })}</s-table-cell></s-table-row>)}</s-table-body></s-table> : <s-paragraph>{emails.length ? "No emails match your search or filters." : "No emails collected yet. Enable the final email capture step in your quiz editor, then save the quiz."}</s-paragraph>}
+        {filtered.length ? <s-table><s-table-header-row><s-table-header>Email</s-table-header><s-table-header>Results</s-table-header><s-table-header>Latest result</s-table-header></s-table-header-row><s-table-body>{filtered.map(row => <s-table-row key={row.email}><s-table-cell>{row.email}</s-table-cell><s-table-cell>{row.results}</s-table-cell><s-table-cell>{new Date(row.latestResultAt).toLocaleDateString("en-GB", { timeZone: "UTC" })}</s-table-cell></s-table-row>)}</s-table-body></s-table> : <s-empty-state heading={emails.length ? "No emails match these filters" : "No emails collected yet"}>
+          <s-icon slot="graphic" type={emails.length ? "search" : "email"} />
+          <s-text slot="subheading">{emails.length ? "Try another email address or reset the filters." : "Enable email capture in your quiz. Addresses will appear here after customers submit their results."}</s-text>
+          {emails.length ? <s-button slot="primary-action" variant="primary" onClick={() => { setQuery(""); setPeriod("all"); setSort("newest"); }}>Reset filters</s-button> : <s-button slot="primary-action" variant="primary" href="/app/quizzes">View quizzes</s-button>}
+        </s-empty-state>}
       </s-stack>
     </s-section>
   </s-page>;

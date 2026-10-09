@@ -26,19 +26,19 @@ export default function Home() {
 
         <s-grid gridTemplateColumns="repeat(auto-fit, minmax(220px, 1fr))" gap="base">
           {[
-            {label:"Quizzes",value:String(quizzes.length),detail:"Quizzes created",href:"/app/quizzes",icon:"clipboard" as const},
-            {label:"Theme blocks",value:themeChecked ? themeActivated ? "Enabled" : "Not added" : "Unverified",detail:themeChecked ? `${liveCount} quiz blocks enabled in the theme` : "Open the theme editor to check",href:themeEditorUrl,icon:"store" as const},
-            {label:"Results",value:String(stats.results),detail:"Quiz and scan results - last 7 days",href:"",icon:"chart-vertical" as const},
-            {label:"Emails",value:String(stats.emails),detail:"Email-linked results - last 7 days",href:"/app/emails",icon:"email" as const},
+            {label:"Quizzes",value:String(quizzes.length),detail:"Quizzes created",href:"/app/quizzes",icon:"clipboard-list"},
+            {label:"Theme blocks",value:themeChecked ? themeActivated ? "Enabled" : "Not added" : "Unverified",detail:themeChecked ? `${liveCount} quiz blocks enabled in the theme` : "Open the theme editor to check",href:themeEditorUrl,icon:"store"},
+            {label:"Results",value:String(stats.results),detail:"Quiz and scan results - last 7 days",href:"",icon:"chart-column"},
+            {label:"Emails",value:String(stats.emails),detail:"Email-linked results - last 7 days",href:"/app/emails",icon:"mail"},
           ].map(item => <s-section key={item.label}>
-            <s-stack gap="base">
-              <s-stack direction="inline" gap="small" alignItems="center">
-                <s-icon type={item.icon} />
-                <s-text color="subdued">{item.label}</s-text>
-              </s-stack>
-              <s-stack direction="inline" justifyContent="space-between" alignItems="end" gap="base">
-                <div style={{fontSize:item.label === "Theme blocks" ? 24 : 34,fontWeight:650,lineHeight:1.1,letterSpacing:"-0.8px",color:item.label === "Theme blocks" && themeChecked && themeActivated ? "#227549" : "#172b3a"}}>{item.value}</div>
-                <s-text color="subdued">{item.label === "Results" || item.label === "Emails" ? "Last 7 days" : item.label === "Theme blocks" ? `${liveCount} ${liveCount === 1 ? "block" : "blocks"} in theme` : "Total quizzes"}</s-text>
+            <s-stack gap="small" alignItems="center">
+              <s-box inlineSize="48px" minInlineSize="48px">
+                <s-image src={`/images/dashboard/${item.icon}.svg`} alt="" aspectRatio="1 / 1" objectFit="contain" />
+              </s-box>
+              <s-stack gap="small-200" alignItems="center">
+                <div style={{fontSize:14,fontWeight:600,lineHeight:1.4,color:"#414b45",textAlign:"center"}}>{item.label}</div>
+                <div style={{textAlign:"center",fontSize:item.label === "Theme blocks" ? 24 : 30,fontWeight:600,lineHeight:1.25,letterSpacing:"-0.4px",color:item.label === "Theme blocks" && themeChecked && themeActivated ? "#227549" : "#172b3a"}}>{item.value}</div>
+                <div style={{fontSize:12,lineHeight:1.5,color:"#707771",textAlign:"center"}}>{item.label === "Results" || item.label === "Emails" ? "Last 7 days" : item.label === "Theme blocks" ? themeChecked ? `${liveCount} ${liveCount === 1 ? "block" : "blocks"} in theme` : "Check theme setup" : "Total quizzes"}</div>
               </s-stack>
             </s-stack>
           </s-section>)}
@@ -46,12 +46,15 @@ export default function Home() {
         <s-section heading="Set up your customer experience">
           <s-grid gridTemplateColumns="repeat(auto-fit, minmax(240px, 1fr))" gap="base">
             {[
-              {title:"1. Build your quiz",text:"Add questions, choose entry icons and link suitable store products.",action:"Edit quizzes and products",href:"/app/quizzes"},
-              {title:"2. Connect skin analysis",text:"For Skin Scan, save your OpenAI key and test the connection. Question-only quizzes can skip this step.",action:"Connect AI",href:"/app/settings"},
-              {title:"3. Add to your store",text:"Add the matching quiz block, enter its widget code and complete a storefront test.",action:"Open theme editor",href:themeEditorUrl},
+              {title:"1. Build your quiz",icon:"clipboard" as const,text:"Add questions, choose entry icons and link suitable store products.",action:"Edit quizzes and products",href:"/app/quizzes"},
+              {title:"2. Connect skin analysis",icon:"connect" as const,text:"For Skin Scan, save your OpenAI key and test the connection. Question-only quizzes can skip this step.",action:"Connect AI",href:"/app/settings"},
+              {title:"3. Add to your store",icon:"store" as const,text:"Add the matching quiz block, enter its widget code and complete a storefront test.",action:"Open theme editor",href:themeEditorUrl},
             ].map(item => <s-box key={item.title} padding="base" border="base" borderRadius="large" background="subdued">
               <s-stack gap="base">
-                <s-heading>{item.title}</s-heading>
+                <s-stack direction="inline" gap="small" alignItems="center">
+                  <s-icon type={item.icon} size="base" />
+                  <s-heading>{item.title}</s-heading>
+                </s-stack>
                 <s-paragraph>{item.text}</s-paragraph>
                 <s-stack direction="inline"><s-button href={item.href} target={item.href === themeEditorUrl ? "_top" : undefined}>{item.action}</s-button></s-stack>
               </s-stack>

@@ -43,11 +43,12 @@ if (!response.ok) throw new Error(quiz.error || "Could not load quiz");
     <s-page heading="Quizzes" inlineSize="large">
       <s-button slot="primary-action" variant="primary" href="/app/quizzes/new">Create quiz</s-button>
       {themeActivated ? <s-button slot="secondary-actions" href={themeEditorUrl} target="_top">Open theme editor</s-button> : null}
-      {!quizzes.length ? <s-section heading="Create your first quiz">
-        <s-stack gap="base">
-          <s-paragraph>Build a Combined Quiz, Single Quiz or AI Skin Scan, then add it to your theme.</s-paragraph>
-          <s-stack direction="inline"><s-button variant="primary" href="/app/quizzes/new">Create quiz</s-button></s-stack>
-        </s-stack>
+      {!quizzes.length ? <s-section>
+        <s-empty-state heading="Create your first quiz">
+          <s-icon slot="graphic" type="clipboard" />
+          <s-text slot="subheading">Choose a question quiz or Skin Scan, then connect it to your store.</s-text>
+          <s-button slot="primary-action" variant="primary" href="/app/quizzes/new">Create quiz</s-button>
+        </s-empty-state>
       </s-section> : <s-grid gridTemplateColumns="repeat(auto-fill, minmax(280px, 1fr))" gap="large">
         {quizzes.map(quiz => <s-box key={quiz.handle} border="base" borderRadius="large" overflow="hidden" background="base">
           <s-clickable href={`/app/editor?quiz=${encodeURIComponent(quiz.handle)}`} accessibilityLabel={`Open ${quiz.name}`}>
@@ -65,9 +66,9 @@ if (!response.ok) throw new Error(quiz.error || "Could not load quiz");
               </s-stack>
               <s-stack direction="inline" gap="small">
                 <s-badge>{LAYOUT_NAMES[quiz.layout]}</s-badge>
-                {quiz.layout !== "scan" && !quiz.questions ? <s-badge tone="warning">No questions</s-badge> : null}
-                {quiz.live ? <s-badge tone="success">Live in theme</s-badge> : null}
-                {quiz.scanPending ? <s-badge tone="warning">Skin Scan not connected</s-badge> : null}
+                {quiz.layout !== "scan" && !quiz.questions ? <s-badge tone="warning" icon="alert-triangle">No questions</s-badge> : null}
+                {quiz.live ? <s-badge tone="success" icon="view">Live in theme</s-badge> : null}
+                {quiz.scanPending ? <s-badge tone="warning" icon="alert-triangle">Skin Scan not connected</s-badge> : null}
               </s-stack>
               <s-text color="subdued">{quiz.layout === "scan" ? "Camera or photo upload" : `${quiz.questions} ${quiz.questions === 1 ? "question" : "questions"}`}</s-text>
               <s-stack direction="inline" gap="small">

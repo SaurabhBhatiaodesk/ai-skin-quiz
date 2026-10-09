@@ -40,17 +40,23 @@ export default function GlobalSettings() {
   const [copyStatus, setCopyStatus] = useState("");
   const fetcher = useFetcher<typeof action>();
   const keySaved = data.keys[provider];
+  const testing = Boolean(fetcher.json && typeof fetcher.json === "object" && !Array.isArray(fetcher.json) && "intent" in fetcher.json && fetcher.json.intent === "test");
   useEffect(() => { if (fetcher.data?.ok) { setApiKey(""); setChanging(false); setVisible(false); setCopyStatus(""); } }, [fetcher.data]);
-  return <s-page heading="Global Settings">
+  return <s-page heading="Global Settings" inlineSize="large">
+    <s-button slot="primary-action" variant="primary" disabled={(!keySaved || changing) && !apiKey.trim()} loading={fetcher.state !== "idle"} onClick={() => fetcher.submit({ apiKey, provider }, { method: "POST", encType: "application/json" })}>{changing ? "Replace API key" : "Save provider"}</s-button>
+    <s-button slot="secondary-actions" disabled={!keySaved} loading={fetcher.state !== "idle"} onClick={() => fetcher.submit({ intent: "test", provider }, { method: "POST", encType: "application/json" })}>Test connection</s-button>
     <s-link slot="breadcrumb-actions" href="/app/quizzes">Back</s-link>
     <s-button slot="secondary-actions" href="/app/scan-appearance">Skin Scan appearance</s-button>
     <s-section heading="AI provider">
+      <s-icon slot="graphic" type="connect" />
+      <s-badge slot="supplemental" tone={keySaved ? "success" : "warning"} icon={keySaved ? "check-circle" : "alert-triangle"}>{keySaved ? "API key saved" : "API key not added"}</s-badge>
       <s-stack gap="base">
         <s-select label="AI provider" value={provider} onChange={event => { setProvider(asProvider(event.currentTarget.value)); setApiKey(""); setChanging(false); setVisible(false); }}><s-option value="openai">OpenAI</s-option><s-option value="gemini">Gemini (Google)</s-option><s-option value="claude">Claude (Anthropic)</s-option></s-select>
         <s-paragraph>{keySaved ? "Your API key is saved securely. You do not need to enter it again." : `Paste your ${providerName} API key below and save.`}</s-paragraph>
-        {fetcher.data?.error ? <s-banner tone="critical">{fetcher.data.error}</s-banner> : null}
-        {fetcher.data && "connected" in fetcher.data && fetcher.data.connected ? <s-banner tone="success">OpenAI connection verified. Photo analysis can use this saved key.</s-banner> : null}
-        {fetcher.data?.ok ? <s-banner tone="success">API key saved securely.</s-banner> : null}
+        {fetcher.state !== "idle" ? <s-stack gap="small-200"><s-text>{testing ? "Testing connection" : "Saving provider"}</s-text><s-progress accessibilityLabel={testing ? "Testing AI provider connection" : "Saving AI provider settings"} /></s-stack> : null}
+        {fetcher.data?.error ? <s-banner tone="critical" heading="Action could not be completed">{fetcher.data.error}</s-banner> : null}
+        {fetcher.data && "connected" in fetcher.data && fetcher.data.connected ? <s-banner tone="success" heading="Connection verified">Photo analysis can use this saved key.</s-banner> : null}
+        {fetcher.data?.ok && !("connected" in fetcher.data) ? <s-banner tone="success" heading="Provider saved">Your API key is stored securely.</s-banner> : null}
         {keySaved && !changing ? <s-stack gap="base">
           <s-text-field label={`Saved ${providerName} API key`} value="????????????????" readOnly />
           <s-stack direction="inline"><s-button onClick={() => setChanging(true)}>Change API key</s-button></s-stack>
@@ -63,10 +69,10 @@ export default function GlobalSettings() {
         </s-stack>
           {keySaved ? <s-stack direction="inline"><s-button onClick={() => { setChanging(false); setApiKey(""); setVisible(false); }}>Cancel</s-button></s-stack> : null}
         </s-stack>}
-        <s-badge tone={keySaved ? "success" : "warning"}>{keySaved ? "API key saved" : "API key not added"}</s-badge>
+
         <s-stack direction="inline"><s-button disabled={!keySaved} loading={fetcher.state !== "idle"} onClick={() => fetcher.submit({ intent: "test", provider }, { method: "POST", encType: "application/json" })}>Test connection</s-button></s-stack>
         <s-paragraph color="subdued">Saved keys are encrypted and are not displayed again. Enter a new key here to replace it.</s-paragraph>
-        {provider !== "openai" ? <s-banner heading="Photo integration pending">You can save this provider key. Gemini and Claude scanning will be enabled after photo-processing approval and integration verification.</s-banner> : null}
+        {provider !== "openai" ? <s-banner tone="warning" heading="Photo integration pending">You can save this provider key. Gemini and Claude scanning will be enabled after photo-processing approval and integration verification.</s-banner> : null}
         <s-paragraph color="subdued">Skin Scan uses the selected AI provider to describe visible cosmetic skin concerns. Customers must consent before their photo is sent.</s-paragraph>
         <s-link href={provider === "openai" ? "https://platform.openai.com/api-keys" : provider === "gemini" ? "https://aistudio.google.com/api-keys" : "https://console.anthropic.com/settings/keys"} target="_blank">Get {providerName} API key</s-link>
         <s-stack direction="inline" justifyContent="end"><s-button variant="primary" disabled={(!keySaved || changing) && !apiKey.trim()} loading={fetcher.state !== "idle"} onClick={() => fetcher.submit({ apiKey, provider }, { method: "POST", encType: "application/json" })}>{changing ? "Replace API key" : "Save provider"}</s-button></s-stack>

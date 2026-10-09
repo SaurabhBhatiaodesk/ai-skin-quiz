@@ -17,12 +17,15 @@ export default function ScanAppearanceSettings() {
   const [value, setValue] = useState(defaults);
   const [iconError, setIconError] = useState("");
   const fetcher = useFetcher<typeof action>();
-  return <s-page heading="Skin Scan appearance">
+  return <s-page heading="Skin Scan appearance" inlineSize="large">
+    <s-button slot="primary-action" variant="primary" loading={fetcher.state !== "idle"} onClick={() => fetcher.submit(value, { method: "post", encType: "application/json" })}>Save appearance</s-button>
+    <s-button slot="secondary-actions" href="/app/settings">Global Settings</s-button>
     <s-link slot="breadcrumb-actions" href="/app/settings">Settings</s-link>
     <s-stack gap="base">
-      {fetcher.data?.ok ? <s-banner tone="success">Appearance saved. Refresh your storefront to see the changes.</s-banner> : null}
-      {fetcher.data?.error ? <s-banner tone="critical">{fetcher.data.error}</s-banner> : null}
-      <s-section heading="Floating button">
+      {fetcher.state !== "idle" ? <s-stack gap="small-200"><s-text>Saving appearance</s-text><s-progress accessibilityLabel="Saving Skin Scan appearance" /></s-stack> : null}
+      {fetcher.data?.ok ? <s-banner tone="success" heading="Appearance saved">Refresh your storefront to see the changes.</s-banner> : null}
+      {fetcher.data?.error ? <s-banner tone="critical" heading="Could not save appearance">{fetcher.data.error}</s-banner> : null}
+      <s-section heading="Floating button"><s-icon slot="graphic" type="settings" />
         <s-stack gap="base">
           <s-paragraph>Applies to the Skin Scan button and popup across this store.</s-paragraph>
           <s-checkbox label="Show floating Skin Scan button" checked={value.enabled} onChange={event => setValue({ ...value, enabled: event.currentTarget.checked })} />
@@ -80,7 +83,7 @@ export default function ScanAppearanceSettings() {
       </s-section>
       <s-section heading="Colors">
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 16 }}>
-          {([["buttonColor", "Button background"], ["buttonTextColor", "Button text"], ["panelColor", "Popup background"], ["textColor", "Popup text"], ["accentColor", "Popup accent"]] as const).map(([key, label]) => <s-color-field key={key} label={label} value={value[key]} onChange={event => { const color = event.currentTarget.value; setValue(current => ({...current,[key]:color})); }} />)}
+          {([["buttonColor", "Button background"], ["buttonTextColor", "Button text"], ["panelColor", "Popup background"], ["textColor", "Popup text"], ["accentColor", "Popup accent"]] as const).map(([key, label]) => <s-color-field key={key} label={label} required details={key === "buttonColor" ? "Background of the floating scan button." : key === "buttonTextColor" ? "Text and default icon on the scan button." : key === "panelColor" ? "Background of the scan popup." : key === "textColor" ? "Text inside the scan popup." : "Buttons and highlights inside the popup."} value={value[key]} onChange={event => { const color = event.currentTarget.value; setValue(current => ({...current,[key]:color})); }} />)}
         </div>
       </s-section>
       <s-section heading="Button preview">
