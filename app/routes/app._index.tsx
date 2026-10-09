@@ -38,9 +38,9 @@ export default function Home() {
                 <s-image src={`/images/onboarding/${item.icon}.svg`} alt="" accessibilityRole="presentation" aspectRatio="5 / 4" objectFit="contain" />
               </s-box>
               <div style={{display:"grid",gap:4,minWidth:0}}>
-                <div style={{fontSize:13,fontWeight:500,lineHeight:"20px",color:"#5C6861"}}>{item.label}</div>
-                <div style={{minHeight:38,display:"flex",alignItems:"center",fontSize:item.label === "Theme blocks" ? 25 : 32,fontWeight:600,lineHeight:"38px",letterSpacing:"-0.6px",fontVariantNumeric:"tabular-nums",color:item.label === "Theme blocks" && themeChecked && themeActivated ? "#227549" : "#24352D"}}>{item.value}</div>
-                <div style={{fontSize:12,lineHeight:"18px",color:"#748078"}}>{item.label === "Results" || item.label === "Emails" ? "Last 7 days" : item.label === "Theme blocks" ? themeChecked ? `${liveCount} ${liveCount === 1 ? "block" : "blocks"} in theme` : "Check theme setup" : "Total quizzes"}</div>
+                <div style={{fontSize:12,fontWeight:500,lineHeight:"18px",color:"#24352D"}}>{item.label}</div>
+                <div style={{minHeight:38,display:"flex",alignItems:"center",fontSize:item.label === "Theme blocks" ? 22 : 28,fontWeight:600,lineHeight:"38px",letterSpacing:"-0.6px",fontVariantNumeric:"tabular-nums",color:"#24352D"}}>{item.value}</div>
+                <div style={{fontSize:11,lineHeight:"17px",color:"#24352D"}}>{item.label === "Results" || item.label === "Emails" ? "Last 7 days" : item.label === "Theme blocks" ? themeChecked ? `${liveCount} ${liveCount === 1 ? "block" : "blocks"} in theme` : "Check theme setup" : "Total quizzes"}</div>
               </div>
             </div>
           </s-section>)}

@@ -372,8 +372,10 @@ export default function QuizEditor({
           <s-stack gap="base">
                 <s-badge>{quiz.layout === "scan" ? "AI Skin Scan" : quiz.layout === "single" ? "Single Quiz" : "Combined Quiz"}</s-badge>
                 <s-text-field label="Quiz name" value={quiz.name || ""} onInput={event => { const name = event.currentTarget.value; setQuiz(current => ({ ...current, name })); }} />
-                <s-text-field label="Quiz cover image URL" value={quiz.coverImage || ""} details="Use an HTTPS image URL from Shopify Files." onInput={event => { const coverImage = event.currentTarget.value; setQuiz(current => ({ ...current, coverImage })); }} />
-                <s-text-field label="Profile image URL" value={quiz.profileImage || ""} details="Shown on the right of this quiz header." onInput={event => { const profileImage = event.currentTarget.value; setQuiz(current => ({ ...current, profileImage })); }} />
+                <s-text-field label="Quiz cover image URL" id="quiz-cover-image" value={quiz.coverImage || ""} details="Use an HTTPS image URL from Shopify Files." onInput={event => { const coverImage = event.currentTarget.value; setQuiz(current => ({ ...current, coverImage })); }} />
+                {quiz.coverImage ? <s-stack direction="inline" gap="small"><s-button icon="edit" onClick={() => document.getElementById("quiz-cover-image")?.focus()}>Change cover image</s-button><s-button icon="delete" tone="critical" onClick={() => setQuiz(current => ({...current,coverImage:""}))}>Remove cover image</s-button></s-stack> : null}
+                <s-text-field label="Profile image URL" id="quiz-profile-image" value={quiz.profileImage || ""} details="Shown on the right of this quiz header." onInput={event => { const profileImage = event.currentTarget.value; setQuiz(current => ({ ...current, profileImage })); }} />
+                {quiz.profileImage ? <s-stack direction="inline" gap="small"><s-button icon="edit" onClick={() => document.getElementById("quiz-profile-image")?.focus()}>Change profile image</s-button><s-button icon="delete" tone="critical" onClick={() => setQuiz(current => ({...current,profileImage:""}))}>Remove profile image</s-button></s-stack> : null}
                 <s-text-field label="App block widget ID" readOnly value={code} />
                 <s-text-area label="Shopify Custom Liquid embed code" rows={5} readOnly value={embedCode} />
                 <s-stack direction="inline" gap="base"><s-button icon="clipboard" onClick={async () => { try { await navigator.clipboard.writeText(embedCode); setEmbedCopyStatus("Embed code copied."); } catch { setEmbedCopyStatus("Select and copy the code above."); } }}>Copy code</s-button><s-text>{embedCopyStatus}</s-text></s-stack>
@@ -388,7 +390,7 @@ export default function QuizEditor({
                 {(["scan", "quick", "deep"] as const).map(path => <div key={path}>
                   <s-heading>{path === "scan" ? "AI Skin Scan" : path === "quick" ? "Quick Quiz" : "Deep Dosha"}</s-heading>
                   {quiz.cardIcons?.[path] ? <s-box inlineSize="48px" paddingBlock="small"><s-image src={quiz.cardIcons[path]} alt={`${path} card icon preview`} aspectRatio="1 / 1" objectFit="contain" /></s-box> : null}
-                  <s-drop-zone label="Upload card icon" accept=".svg,.png,.jpg,.jpeg,.webp" accessibilityLabel={`Upload ${path} card icon`} onDropRejected={event => { event.currentTarget.error = "Choose an SVG, PNG, JPG or WebP image."; }} onChange={event => {
+                  <s-drop-zone id={`card-icon-upload-${path}`} label={quiz.cardIcons?.[path] ? "Change card icon" : "Upload card icon"} accept=".svg,.png,.jpg,.jpeg,.webp" accessibilityLabel={`Upload ${path} card icon`} onDropRejected={event => { event.currentTarget.error = "Choose an SVG, PNG, JPG or WebP image."; }} onChange={event => {
                     const input = event.currentTarget;
                     const file = input.files?.[0];
                     if (!file) return;
@@ -400,7 +402,7 @@ export default function QuizEditor({
                     reader.readAsDataURL(file);
                   }} />
                   <s-text-field label="Or HTTPS icon image URL" value={quiz.cardIcons?.[path]?.startsWith("https://") ? quiz.cardIcons[path] : ""} onInput={event => { const value = event.currentTarget.value; setQuiz(current => ({...current,cardIcons:{...current.cardIcons,[path]:value}})); }} />
-                  <s-button variant="tertiary" disabled={!quiz.cardIcons?.[path]} onClick={() => setQuiz(current => ({...current,cardIcons:{...current.cardIcons,[path]:""}}))}>Reset to default icon</s-button>
+                  <s-button icon="delete" variant="tertiary" disabled={!quiz.cardIcons?.[path]} onClick={() => setQuiz(current => ({...current,cardIcons:{...current.cardIcons,[path]:""}}))}>Remove image / use default</s-button>
                 </div>)}
                 <s-stack direction="inline"><s-button variant="primary" loading={pending} onClick={save}>Save icons</s-button></s-stack>
               </s-stack>

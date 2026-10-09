@@ -75,8 +75,8 @@ export default function NewQuiz() {
                   const selected = paths.includes(path.value);
                   return <s-clickable key={path.value} accessibilityLabel={`${path.title}, ${selected ? "selected" : "not selected"}. ${layout === "three" ? "Toggle selection" : "Select this experience"}`} border={selected ? "base strong" : "base"} background={selected ? "subdued" : "base"} borderRadius="large" padding="base" onClick={() => setPaths(current => layout === "single" ? [path.value] : current.includes(path.value) ? current.filter(value => value !== path.value) : [...current, path.value])}>
                     <s-stack gap="base">
-                      <s-box maxInlineSize="64px">
-                        <s-image src={`/images/quiz-options/${path.value}.svg`} alt="" accessibilityRole="presentation" aspectRatio="1 / 1" objectFit="contain" />
+                      <s-box maxInlineSize="80px">
+                        <s-image src={`/images/onboarding/${path.value === "quick" ? "quiz" : path.value === "deep" ? "dosha" : "scan"}.svg`} alt="" accessibilityRole="presentation" aspectRatio="5 / 4" objectFit="contain" />
                       </s-box>
                       <s-stack direction="inline" justifyContent="space-between" alignItems="center">
                         <s-text type="strong">{path.title}</s-text>
@@ -87,8 +87,8 @@ export default function NewQuiz() {
                   </s-clickable>;
                 })}
               </s-grid>
+              {paths.includes("scan") ? <s-banner tone="info" heading="AI Skin Scan setup">Add your OpenAI API key in Global Settings. Customers must consent to photo analysis before scanning.</s-banner> : null}
             </s-stack>
-            {paths.includes("scan") ? <s-banner tone="info" heading="AI Skin Scan setup">Add your OpenAI API key in Global Settings. Customers must consent to photo analysis before scanning.</s-banner> : null}
           </s-section> : null}
           <s-stack direction="inline" justifyContent="end" gap="small">
             <s-button href="/app/quizzes" disabled={pending}>Cancel</s-button>

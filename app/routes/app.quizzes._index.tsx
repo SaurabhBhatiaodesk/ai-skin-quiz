@@ -44,15 +44,15 @@ if (!response.ok) throw new Error(quiz.error || "Could not load quiz");
       <s-button slot="primary-action" variant="primary" href="/app/quizzes/new">Create quiz</s-button>
       {themeActivated ? <s-button slot="secondary-actions" href={themeEditorUrl} target="_top">Open theme editor</s-button> : null}
       {!quizzes.length ? <s-section>
+        <s-stack alignItems="center"><s-box inlineSize="120px"><s-image src="/images/onboarding/quiz.svg" alt="" accessibilityRole="presentation" aspectRatio="5 / 4" objectFit="contain" /></s-box></s-stack>
         <s-empty-state heading="Create your first quiz">
-          <s-icon slot="graphic" type="clipboard" />
           <s-text slot="subheading">Choose a question quiz or Skin Scan, then connect it to your store.</s-text>
           <s-button slot="primary-action" variant="primary" href="/app/quizzes/new">Create quiz</s-button>
         </s-empty-state>
       </s-section> : <s-grid gridTemplateColumns="repeat(auto-fill, minmax(280px, 1fr))" gap="large">
         {quizzes.map(quiz => <s-box key={quiz.handle} border="base" borderRadius="large" overflow="hidden" background="base">
           <s-clickable href={`/app/editor?quiz=${encodeURIComponent(quiz.handle)}`} accessibilityLabel={`Open ${quiz.name}`}>
-            <s-image src={quiz.cover} alt={`${quiz.name} cover`} loading="lazy" aspectRatio="3 / 2" objectFit="cover" />
+            <s-image src={quiz.cover} alt={`${quiz.name} cover`} loading="lazy" aspectRatio="12 / 7" objectFit="cover" />
           </s-clickable>
           <s-box padding="base">
             <s-stack gap="base">
@@ -60,8 +60,8 @@ if (!response.ok) throw new Error(quiz.error || "Could not load quiz");
                 <s-link href={`/app/editor?quiz=${encodeURIComponent(quiz.handle)}`}><s-text type="strong">{quiz.name}</s-text></s-link>
                 <s-button icon="menu-horizontal" variant="tertiary" accessibilityLabel={`Actions for ${quiz.name}`} commandFor={`quiz-actions-${quiz.handle}`} command="--toggle" />
                 <s-popover id={`quiz-actions-${quiz.handle}`}><s-box padding="small"><s-stack gap="small">
-                  <s-button variant="tertiary" href={quiz.addUrl} target="_top">Add to theme</s-button>
-                  <s-button variant="tertiary" tone="critical" disabled={pending} commandFor="delete-quiz-modal" command="--show" onClick={() => setDeleting({ handle: quiz.handle, name: quiz.name })}>Delete quiz</s-button>
+                  <s-button icon="store" variant="tertiary" href={quiz.addUrl} target="_top">Add to theme</s-button>
+                  <s-button icon="delete" variant="tertiary" tone="critical" disabled={pending} commandFor="delete-quiz-modal" command="--show" onClick={() => setDeleting({ handle: quiz.handle, name: quiz.name })}>Delete quiz</s-button>
                 </s-stack></s-box></s-popover>
               </s-stack>
               <s-stack direction="inline" gap="small">
@@ -74,7 +74,7 @@ if (!response.ok) throw new Error(quiz.error || "Could not load quiz");
               <s-stack direction="inline" gap="small">
                 <s-button href={`/app/editor?quiz=${encodeURIComponent(quiz.handle)}`}>Edit quiz</s-button>
                 <s-button commandFor="quiz-developer-modal" command="--show" onClick={() => { setDeveloperQuiz({handle:quiz.handle,name:quiz.name}); setCopyStatus(""); }}>Quiz API</s-button>
-                {!themeActivated ? <s-button variant="tertiary" href={quiz.addUrl} target="_top">Activate in theme</s-button> : null}
+                {!themeActivated ? <s-button icon="store" variant="tertiary" href={quiz.addUrl} target="_top">Activate in theme</s-button> : null}
               </s-stack>
             </s-stack>
           </s-box>

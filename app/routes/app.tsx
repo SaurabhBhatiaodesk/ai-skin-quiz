@@ -1,5 +1,5 @@
 import type { HeadersFunction, LoaderFunctionArgs } from "react-router";
-import { Outlet, useLoaderData, useRouteError, useNavigation } from "react-router";
+import { Outlet, useLoaderData, useRouteError } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { AppProvider } from "@shopify/shopify-app-react-router/react";
 
@@ -14,8 +14,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 export default function App() {
   const { apiKey } = useLoaderData<typeof loader>();
-  const navigation = useNavigation();
-  const loadingPage = navigation.state === "loading" && !navigation.formMethod;
 
   return (
     <AppProvider apiKey={apiKey}>
@@ -27,10 +25,6 @@ export default function App() {
         <s-link href="/app/scan-appearance">Skin Scan appearance</s-link>
         <s-link href="/app/documentation">Documentation</s-link>
       </s-app-nav>
-      {loadingPage ? <div role="status" aria-live="polite" style={{display:"flex",alignItems:"center",justifyContent:"center",gap:12,padding:16}}>
-        <s-spinner accessibilityLabel="Loading page" size="large-100" />
-        <s-text color="subdued">Loading page</s-text>
-      </div> : null}
       <Outlet />
     </AppProvider>
   );

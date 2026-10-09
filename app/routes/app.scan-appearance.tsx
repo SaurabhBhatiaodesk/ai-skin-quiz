@@ -1,3 +1,4 @@
+import { defaultScanIcon } from "../default-scan-icon.js";
 import UnsavedChangesBar from "../components/UnsavedChangesBar";
 import { useEffect, useRef, useState } from "react";
 import { useFetcher, useLoaderData } from "react-router";
@@ -45,7 +46,7 @@ export default function ScanAppearanceSettings() {
       <s-section heading="Button icon">
         <s-stack gap="base">
           <s-paragraph>Upload PNG, JPG or WebP up to 5 MB; images are automatically resized for the button. SVG files can be up to 512 KB. You can also use an HTTPS image URL.</s-paragraph>
-          <s-drop-zone label="Upload button icon" accept=".svg,.png,.jpg,.jpeg,.webp" accessibilityLabel="Upload floating Skin Scan icon" error={iconError} onDropRejected={() => setIconError("Choose an SVG, PNG, JPG or WebP image.")} onChange={event => {
+          <s-drop-zone id="scan-icon-upload" label={value.iconImage ? "Change button icon" : "Upload button icon"} accept=".svg,.png,.jpg,.jpeg,.webp" accessibilityLabel="Upload floating Skin Scan icon" error={iconError} onDropRejected={() => setIconError("Choose an SVG, PNG, JPG or WebP image.")} onChange={event => {
             const input = event.currentTarget; const file = input.files?.[0]; if (!file) return;
             setIconError("");
             const extension = file.name.split(".").pop()?.toLowerCase();
@@ -80,10 +81,11 @@ export default function ScanAppearanceSettings() {
           {value.iconImage ? <s-box padding="base" background="subdued" borderRadius="base">
             <s-stack direction="inline" gap="base" alignItems="center">
               <img src={value.iconImage} alt="Selected Skin Scan button icon" style={{width:64,height:64,borderRadius:"50%",objectFit:"cover",display:"block",background:value.buttonColor}} />
-              <s-stack gap="small"><s-text type="strong">Selected button icon</s-text><s-text color="subdued">Save appearance to apply this image to your store.</s-text></s-stack>
+              <s-stack gap="small"><s-text type="strong">Selected button icon</s-text><s-text color="subdued">Save appearance to apply changes to your store.</s-text><s-stack direction="inline" gap="small"><s-button icon="edit" onClick={() => { const upload = document.getElementById("scan-icon-upload"); upload?.scrollIntoView({block:"center",behavior:"smooth"}); upload?.focus(); }}>Change image</s-button><s-button icon="delete" tone="critical" onClick={() => { setValue(current => ({...current,iconImage:""})); setIconError(""); }}>Remove image</s-button></s-stack></s-stack>
             </s-stack>
           </s-box> : null}
           <s-text-field label="Or HTTPS icon image URL" value={value.iconImage.startsWith("https://") ? value.iconImage : ""} onInput={event => { const iconImage = event.currentTarget.value; setValue(current => ({...current,iconImage})); }} />
+          {!value.iconImage ? <s-stack direction="inline" gap="base" alignItems="center"><s-box inlineSize="72px"><s-image src={defaultScanIcon} alt="Default Skin Scan icon" aspectRatio="1 / 1" objectFit="contain" /></s-box><s-text color="subdued">Default Skin Scan illustration is active.</s-text></s-stack> : null}
           <s-stack direction="inline"><s-button disabled={!value.iconImage} onClick={() => setValue(current => ({...current,iconImage:""}))}>Reset to default icon</s-button></s-stack>
         </s-stack>
       </s-section>
@@ -94,7 +96,7 @@ export default function ScanAppearanceSettings() {
       </s-section>
       <s-section heading="Button preview">
         <div style={{ display: "flex", justifyContent: value.position === "left" ? "flex-start" : "flex-end", padding: 12, background: value.panelColor, borderRadius: 8 }}>
-          <div role="img" style={{ background: value.buttonColor, color: value.buttonTextColor, borderRadius: value.shape === "circle" ? "50%" : value.radius, width: value.shape === "circle" ? 64 : undefined, height: value.shape === "circle" ? 64 : undefined, display: "inline-flex", alignItems: "center", justifyContent: "center", border: 0, padding: value.shape === "circle" ? 0 : "18px 24px", font: "600 16px system-ui" }} aria-label={value.label || "Skin Scan"}>{value.iconImage ? <img src={value.iconImage} alt="" style={{width:value.shape === "circle" ? "100%" : 28,height:value.shape === "circle" ? "100%" : 28,objectFit:"cover",borderRadius:"50%",marginRight:value.shape === "circle" ? 0 : 8}} /> : null}{value.shape === "circle" ? value.iconImage ? null : <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M7 3H5a2 2 0 0 0-2 2v2m14-4h2a2 2 0 0 1 2 2v2M3 17v2a2 2 0 0 0 2 2h2m10 0h2a2 2 0 0 0 2-2v-2M12 6c-2.5 0-4 2-4 4v2c0 3 1.8 6 4 6s4-3 4-6v-2c0-2-1.5-4-4-4ZM6 12h12M10 10h.01M14 10h.01" /></svg> : value.label || "Skin Scan"}</div>
+          <div role="img" style={{ background: value.buttonColor, color: value.buttonTextColor, borderRadius: value.shape === "circle" ? "50%" : value.radius, width: value.shape === "circle" ? 64 : undefined, height: value.shape === "circle" ? 64 : undefined, display: "inline-flex", alignItems: "center", justifyContent: "center", border: 0, padding: value.shape === "circle" ? 0 : "18px 24px", font: "600 16px system-ui" }} aria-label={value.label || "Skin Scan"}>{value.iconImage ? <img src={value.iconImage} alt="" style={{width:value.shape === "circle" ? "100%" : 28,height:value.shape === "circle" ? "100%" : 28,objectFit:"cover",borderRadius:"50%",marginRight:value.shape === "circle" ? 0 : 8}} /> : null}{value.shape === "circle" ? value.iconImage ? null : <img src={defaultScanIcon} alt="" style={{width:52,height:52,objectFit:"contain",display:"block"}} /> : value.label || "Skin Scan"}</div>
         </div>
       </s-section>
       <s-stack direction="inline"><s-button variant="primary" loading={fetcher.state !== "idle"} onClick={save}>Save appearance</s-button></s-stack>

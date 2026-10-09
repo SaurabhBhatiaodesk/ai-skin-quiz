@@ -1,3 +1,4 @@
+import { defaultScanIcon } from "./default-scan-icon.js";
 import { createFaceScan } from "./face-scan.js";
 import { buildFaceMap } from "./face-map.js";
 (function () {
@@ -295,7 +296,7 @@ import { buildFaceMap } from "./face-map.js";
     function renderQuick() {
       var area = q("[data-quick-area]");
       if (!quiz || !area || !quiz.quick || !quiz.quick.length) {
-        if (area) area.textContent = "Loading your quiz…";
+        if (area) area.textContent = "";
         return;
       }
       var question = quiz.quick[quickStep];
@@ -312,7 +313,7 @@ import { buildFaceMap } from "./face-map.js";
     function renderDeep() {
       var area = q("[data-deep-area]");
       if (!quiz || !area) {
-        if (area) area.textContent = "Loading your reading…";
+        if (area) area.textContent = "";
         return;
       }
       var question = quiz.deep[deepStep];
@@ -410,7 +411,7 @@ import { buildFaceMap } from "./face-map.js";
         if (feed) {
           feed.srcObject = stream;
           feed.play().catch(function () { if (generation === cameraGeneration) q("[data-scan-status]").textContent = "Tap Live Camera to resume playback."; });
-          q("[data-scan-status]").textContent = "Loading face tracking...";
+          q("[data-scan-status]").textContent = "";
           createFaceScan(feed, q("[data-camera-zone]"), function (text) { q("[data-scan-status]").textContent = text; }).then(function (tracker) {
             if (generation !== cameraGeneration) { tracker.close(); return; }
             faceScan = tracker;
@@ -772,11 +773,10 @@ import { buildFaceMap } from "./face-map.js";
         if (appearance.shape === "circle") {
           launcher.textContent = "";
           launcher.setAttribute("aria-label", appearance.label || "Open skin scan assistant");
-          var scanIcon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-          scanIcon.setAttribute("viewBox", "0 0 24 24"); scanIcon.setAttribute("width", "28"); scanIcon.setAttribute("height", "28"); scanIcon.setAttribute("fill", "none"); scanIcon.setAttribute("stroke", "currentColor"); scanIcon.setAttribute("stroke-width", "1.7"); scanIcon.setAttribute("stroke-linecap", "round"); scanIcon.setAttribute("stroke-linejoin", "round"); scanIcon.setAttribute("aria-hidden", "true");
-          var scanPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
-          scanPath.setAttribute("d", "M7 3H5a2 2 0 0 0-2 2v2m14-4h2a2 2 0 0 1 2 2v2M3 17v2a2 2 0 0 0 2 2h2m10 0h2a2 2 0 0 0 2-2v-2M12 6c-2.5 0-4 2-4 4v2c0 3 1.8 6 4 6s4-3 4-6v-2c0-2-1.5-4-4-4ZM6 12h12M10 10h.01M14 10h.01");
-          scanIcon.appendChild(scanPath); launcher.appendChild(scanIcon);
+          var scanIcon = document.createElement("img");
+          scanIcon.src = defaultScanIcon; scanIcon.alt = "";
+          scanIcon.style.cssText = "width:52px;height:52px;object-fit:contain;display:block";
+          launcher.appendChild(scanIcon);
           Object.assign(launcher.style, { width: "64px", height: "64px", padding: "0", borderRadius: "50%", display: "inline-flex", alignItems: "center", justifyContent: "center" });
         }
         if (appearance.iconImage && (appearance.iconImage.indexOf("https://") === 0 || /^data:image\/(png|jpeg|webp|svg\+xml);base64,/.test(appearance.iconImage))) {
