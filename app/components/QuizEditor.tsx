@@ -1,3 +1,4 @@
+import { widgetEmbedCode } from "../widget-embed";
 import UnsavedChangesBar from "./UnsavedChangesBar";
 import referenceQuizCss from "../reference-quiz.css?raw";
 import { useEffect, useRef, useState } from "react";
@@ -79,8 +80,7 @@ export default function QuizEditor({
   const [savedQuiz, setSavedQuiz] = useState(initial);
   const submittedQuiz = useRef(initial);
   const [embedCopyStatus, setEmbedCopyStatus] = useState("");
-  const embedCode = `<iframe src="/apps/dosha-quiz/widget?code=${encodeURIComponent(code)}" title="Skin quiz" style="display:block;width:100%;height:700px;border:0;" loading="lazy" allow="camera"></iframe>
-<script>(function(){var frame=document.currentScript.previousElementSibling;window.addEventListener('message',function(event){if(event.source!==frame.contentWindow||event.origin!==window.location.origin||!event.data||event.data.type!=='prana-widget-height')return;var height=Number(event.data.height);if(Number.isFinite(height)&&height>=0&&height<20000){frame.style.height=Math.ceil(height)+'px';frame.style.display=height===0?'none':'block';}});})();</script>`;
+  const embedCode = widgetEmbedCode(code);
   const [kind, setKind] = useState<Kind>(initial.layout === "scan" ? "scan" : initial.singleFlow === "deep" || (initial.enabledPaths && !initial.enabledPaths.includes("quick")) ? "deep" : "quick");
   const [index, setIndex] = useState(0);
   const [questionOpen, setQuestionOpen] = useState(false);

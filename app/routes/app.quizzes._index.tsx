@@ -1,3 +1,4 @@
+import { widgetEmbedCode } from "../widget-embed";
 import { useState } from "react";
 import type { ActionFunctionArgs, HeadersFunction, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigation, useSubmit } from "react-router";
@@ -26,6 +27,7 @@ export default function Quizzes() {
   const [developerQuiz, setDeveloperQuiz] = useState<{ handle: string; name: string; layout: string } | null>(null);
   const [copyStatus, setCopyStatus] = useState("");
   const apiPath = developerQuiz ? `/apps/dosha-quiz/quiz?code=${encodeURIComponent(developerQuiz.handle)}` : "";
+  const embedCode = developerQuiz ? widgetEmbedCode(developerQuiz.handle) : "";
   const fetchExample = `const response = await fetch(${JSON.stringify(apiPath)}, {
   headers: { Accept: "application/json" }
 });
@@ -73,15 +75,22 @@ if (!response.ok) throw new Error(quiz.error || "Could not load quiz");
               <s-text color="subdued">{quiz.layout === "scan" ? "Camera or photo upload" : `${quiz.questions} ${quiz.questions === 1 ? "question" : "questions"}`}</s-text>
               <s-stack direction="inline" gap="small">
                 <s-button href={`/app/editor?quiz=${encodeURIComponent(quiz.handle)}`}>{quiz.layout === "scan" ? "Edit Skin Scan" : "Edit quiz"}</s-button>
-                <s-button commandFor="quiz-developer-modal" command="--show" onClick={() => { setDeveloperQuiz({handle:quiz.handle,name:quiz.name,layout:quiz.layout}); setCopyStatus(""); }}>{quiz.layout === "scan" ? "Skin Scan API" : "Quiz API"}</s-button>
+                <s-button commandFor="quiz-developer-modal" command="--show" onClick={() => { setDeveloperQuiz({handle:quiz.handle,name:quiz.name,layout:quiz.layout}); setCopyStatus(""); }}>{quiz.layout === "scan" ? "Skin Scan actions" : "Quiz actions"}</s-button>
                 {!themeActivated ? <s-button icon="store" variant="tertiary" href={quiz.addUrl} target="_top">Activate in theme</s-button> : null}
               </s-stack>
             </s-stack>
           </s-box>
         </s-box>)}
       </s-grid>}
-      <s-modal id="quiz-developer-modal" heading={developerQuiz ? `${developerQuiz.name}: ${developerQuiz.layout === "scan" ? "Skin Scan API" : "Quiz API"}` : "Quiz API"}>
+      <s-modal id="quiz-developer-modal" heading={developerQuiz ? `${developerQuiz.name}: ${developerQuiz.layout === "scan" ? "Skin Scan actions" : "Quiz actions"}` : "Quiz actions"}>
         <s-stack gap="base">
+          <s-stack gap="small">
+            <s-heading>Embed code</s-heading>
+            <s-paragraph>Paste this code into a Custom Liquid section in your Shopify theme, then save. It loads this widget and adjusts its height automatically.</s-paragraph>
+            <s-text-area label="Shopify Custom Liquid embed code" readOnly rows={5} value={embedCode} />
+            <s-stack direction="inline"><s-button icon="clipboard" onClick={() => copyDeveloperValue(embedCode, "Embed code")}>Copy code</s-button></s-stack>
+          </s-stack>
+          <s-heading>API access</s-heading>
           <s-paragraph>Use this saved quiz API to build your own storefront design. Available for Combined Quiz, Single Quiz and AI Skin Scan blocks.</s-paragraph>
           <s-stack direction="inline" justifyContent="space-between" alignItems="center">
             <s-text type="strong">Quiz data API</s-text>
