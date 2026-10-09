@@ -17,6 +17,7 @@ export async function quizOverview(shop: string, admin: AdminGraphql) {
   const store = shop.replace(".myshopify.com", "");
   const apiKey = process.env.SHOPIFY_API_KEY || "";
   return {
+    appEmbedUrl: `https://admin.shopify.com/store/${store}/themes/current/editor?context=apps&activateAppId=${apiKey}/scan-assistant`,
     themeChecked: theme.checked,
     themeActivated: theme.checked ? live.some(Boolean) : activatedBefore,
     themeEditorUrl: `https://admin.shopify.com/store/${store}/themes/current/editor`,

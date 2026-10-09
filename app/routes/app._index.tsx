@@ -15,7 +15,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export default function Home() {
-  const { quizzes, themeChecked, themeActivated, themeEditorUrl, stats, installCount } = useLoaderData<typeof loader>();
+  const { quizzes, themeChecked, themeActivated, themeEditorUrl, appEmbedUrl, stats, installCount } = useLoaderData<typeof loader>();
   const [calloutDismissed, setCalloutDismissed] = useState(false);
   const scanWidget = quizzes.find(quiz => quiz.layout === "scan");
   const liveCount = quizzes.filter((quiz) => quiz.live).length;
@@ -29,6 +29,12 @@ export default function Home() {
           <s-paragraph>Follow the three steps below to build your quiz, connect skin analysis and add it to your store.</s-paragraph>
         </s-banner>
 
+        <s-section heading="Enable app in your store">
+          <s-stack direction="inline" justifyContent="space-between" alignItems="center" gap="base">
+            <s-paragraph>Enable Skin Scan floating button in App embeds and save your theme once. New widgets do not require activating the app again.</s-paragraph>
+            <s-button variant="primary" icon="store" href={appEmbedUrl} target="_top">Enable app in store</s-button>
+          </s-stack>
+        </s-section>
         <s-grid gridTemplateColumns="repeat(auto-fit, minmax(min(100%, 240px), 1fr))" gap="base">
           {[
             {label:"Installed stores",value:String(installCount),detail:"Current installations",href:"",icon:"theme"},
