@@ -377,14 +377,14 @@ export default function QuizEditor({
                 <s-text-field label={scanOnly ? "Skin Scan name" : "Quiz name"} value={quiz.name || ""} onInput={event => { const name = event.currentTarget.value; setQuiz(current => ({ ...current, name })); }} />
                 <s-text-field label={scanOnly ? "Skin Scan cover image URL" : "Quiz cover image URL"} id="quiz-cover-image" value={quiz.coverImage || ""} details="Use an HTTPS image URL from Shopify Files." onInput={event => { const coverImage = event.currentTarget.value; setQuiz(current => ({ ...current, coverImage })); }} />
                 {quiz.coverImage ? <s-stack direction="inline" gap="small"><s-button icon="edit" onClick={() => document.getElementById("quiz-cover-image")?.focus()}>Change cover image</s-button><s-button icon="delete" tone="critical" onClick={() => setQuiz(current => ({...current,coverImage:""}))}>Remove cover image</s-button></s-stack> : null}
-                <s-text-field label="Profile image URL" id="quiz-profile-image" value={quiz.profileImage || ""} details="Shown on the right of this quiz header." onInput={event => { const profileImage = event.currentTarget.value; setQuiz(current => ({ ...current, profileImage })); }} />
+                <s-text-field label="Profile image URL" id="quiz-profile-image" value={quiz.profileImage || ""} details="Shown on the right of this widget header." onInput={event => { const profileImage = event.currentTarget.value; setQuiz(current => ({ ...current, profileImage })); }} />
                 {quiz.profileImage ? <s-stack direction="inline" gap="small"><s-button icon="edit" onClick={() => document.getElementById("quiz-profile-image")?.focus()}>Change profile image</s-button><s-button icon="delete" tone="critical" onClick={() => setQuiz(current => ({...current,profileImage:""}))}>Remove profile image</s-button></s-stack> : null}
-                <s-text-field label="App block widget ID" details="Generated automatically. Use this ID when adding this quiz to your theme." readOnly value={code} />
+                <s-text-field label="App block widget ID" details="Generated automatically. Use this ID when adding this widget to your theme." readOnly value={code} />
                 <s-text-area label="Shopify Custom Liquid embed code" rows={5} readOnly value={embedCode} />
                 <s-stack direction="inline" gap="base"><s-button icon="clipboard" onClick={async () => { try { await navigator.clipboard.writeText(embedCode); setEmbedCopyStatus("Embed code copied."); } catch { setEmbedCopyStatus("Select and copy the code above."); } }}>Copy code</s-button><s-text>{embedCopyStatus}</s-text></s-stack>
-                <s-paragraph>In your Shopify theme editor, add a Custom Liquid section, paste this complete code, and save. It loads this saved quiz, including its Widget CSS. The embed adjusts its height automatically.</s-paragraph>
-                <s-paragraph color="subdued">Or add this quiz from Quizzes: open the actions menu on the quiz card, choose Add to theme, paste the App block widget ID above into the block, and save the theme.</s-paragraph>
-                <s-stack direction="inline" gap="small"><s-button href="/app/quizzes">All quizzes</s-button></s-stack>
+                <s-paragraph>In your Shopify theme editor, add a Custom Liquid section, paste this complete code, and save. It loads this saved widget, including its Widget CSS. The embed adjusts its height automatically.</s-paragraph>
+                <s-paragraph color="subdued">Or open Quizzes &amp; Skin Scan, choose Add to theme from the widget actions menu, paste its widget ID into the matching block, and save the theme.</s-paragraph>
+                <s-stack direction="inline" gap="small"><s-button href="/app/quizzes">All widgets</s-button></s-stack>
               </s-stack>
             </s-section> : null}
             {tab === "settings" ? <s-section heading={scanOnly ? "Skin Scan icon" : "Quiz card icons"}>

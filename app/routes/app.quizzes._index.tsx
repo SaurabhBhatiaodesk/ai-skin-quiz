@@ -41,13 +41,13 @@ if (!response.ok) throw new Error(quiz.error || "Could not load quiz");
 
   return (
     <s-page heading="Quizzes &amp; Skin Scan" inlineSize="large">
-      <s-button slot="primary-action" variant="primary" href="/app/quizzes/new">Create quiz</s-button>
+      <s-button slot="primary-action" variant="primary" href="/app/quizzes/new">Create Quiz</s-button>
       {themeActivated ? <s-button slot="secondary-actions" href={themeEditorUrl} target="_top">Open theme editor</s-button> : null}
       {!quizzes.length ? <s-section>
         <s-stack alignItems="center"><s-box inlineSize="120px"><s-image src="/images/onboarding/quiz.svg" alt="" accessibilityRole="presentation" aspectRatio="5 / 4" objectFit="contain" /></s-box></s-stack>
         <s-empty-state heading="Create your first quiz">
           <s-text slot="subheading">Choose a question quiz or Skin Scan, then connect it to your store.</s-text>
-          <s-button slot="primary-action" variant="primary" href="/app/quizzes/new">Create quiz</s-button>
+          <s-button slot="primary-action" variant="primary" href="/app/quizzes/new">Create Quiz</s-button>
         </s-empty-state>
       </s-section> : <s-grid gridTemplateColumns="repeat(auto-fill, minmax(280px, 1fr))" gap="large">
         {quizzes.map(quiz => <s-box key={quiz.handle} border="base" borderRadius="large" overflow="hidden" background="base">

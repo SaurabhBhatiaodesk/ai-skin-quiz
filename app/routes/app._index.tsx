@@ -21,7 +21,7 @@ export default function Home() {
 
   return (
     <s-page heading="Home" inlineSize="large">
-      <s-button slot="primary-action" variant="primary" href="/app/quizzes/new">Create quiz</s-button>
+      <s-button slot="primary-action" variant="primary" href="/app/quizzes/new">Create Quiz</s-button>
       <s-button slot="secondary-actions" href="/app/documentation">Documentation</s-button>
       <s-stack gap="base">
         <s-banner heading="Welcome to AI Skin Quiz" tone="info">
@@ -94,7 +94,7 @@ export default function Home() {
                 <s-heading>{quizzes.length ? "Make Skin Scan match your store" : "Ready to create your first quiz?"}</s-heading>
                 <s-paragraph>{quizzes.length ? "Choose your floating button icon, colors and position, then preview it on your storefront." : "Choose a question quiz or Skin Scan, then add your questions and product recommendations."}</s-paragraph>
                 <s-stack direction="inline" gap="small">
-                  <s-button variant="primary" href={quizzes.length ? "/app/scan-appearance" : "/app/quizzes/new"}>{quizzes.length ? "Customize Skin Scan" : "Create quiz"}</s-button>
+                  <s-button variant="primary" href={quizzes.length ? "/app/scan-appearance" : "/app/quizzes/new"}>{quizzes.length ? "Customize Skin Scan" : "Create Quiz"}</s-button>
                   <s-button variant="tertiary" href="/app/documentation">View setup guide</s-button>
                 </s-stack>
               </s-stack>

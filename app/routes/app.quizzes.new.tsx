@@ -57,9 +57,9 @@ export default function NewQuiz() {
   const create = () => { if (valid && layout) submit({ name: name.trim(), layout, paths: paths.join(",") }, { method: "post" }); };
 
   return (
-    <s-page heading="Create quiz" inlineSize="base">
+    <s-page heading="Create Quiz" inlineSize="base">
       <s-button slot="breadcrumb-actions" href="/app/quizzes" accessibilityLabel="Back to Quizzes and Skin Scan">Quizzes &amp; Skin Scan</s-button>
-      <s-button slot="primary-action" variant="primary" loading={pending} disabled={!valid} onClick={create}>Create quiz</s-button>
+      <s-button slot="primary-action" variant="primary" loading={pending} disabled={!valid} onClick={create}>Create Quiz</s-button>
       <Form method="post" onSubmit={event => { event.preventDefault(); create(); }}>
         <s-stack gap="base">
           {actionData?.error ? <s-banner tone="critical" heading="Could not create quiz">{actionData.error}</s-banner> : null}
@@ -103,7 +103,7 @@ export default function NewQuiz() {
           {layout === "scan" ? scanSetup : null}
           <s-stack direction="inline" justifyContent="end" gap="small">
             <s-button href="/app/quizzes" disabled={pending}>Cancel</s-button>
-            <s-button type="submit" variant="primary" loading={pending} disabled={!valid}>Create quiz</s-button>
+            <s-button type="submit" variant="primary" loading={pending} disabled={!valid}>Create Quiz</s-button>
           </s-stack>
         </s-stack>
       </Form>

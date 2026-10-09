@@ -12,7 +12,7 @@ export default function Documentation() {
               <s-list-item>Single Quiz: Quick Skin Quiz or Dosha Quiz.</s-list-item>
               <s-list-item>Only Skin Scan: a dedicated camera or photo upload block. Create an Only Skin Scan widget, add this app block in the theme editor, and paste its numeric widget ID.</s-list-item>
             </s-unordered-list>
-            <s-button href="/app/quizzes/new">Create quiz</s-button>
+            <s-button href="/app/quizzes/new">Create Quiz</s-button>
           </s-stack>
         </s-section>
         <s-section heading="2. Edit questions and answers">
