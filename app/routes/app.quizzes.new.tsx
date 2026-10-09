@@ -58,7 +58,7 @@ export default function NewQuiz() {
 
   return (
     <s-page heading="Create quiz" inlineSize="base">
-      <s-button slot="breadcrumb-actions" href="/app/quizzes" accessibilityLabel="Back to quizzes">Quizzes</s-button>
+      <s-button slot="breadcrumb-actions" href="/app/quizzes" accessibilityLabel="Back to Quizzes and Skin Scan">Quizzes &amp; Skin Scan</s-button>
       <s-button slot="primary-action" variant="primary" loading={pending} disabled={!valid} onClick={create}>Create quiz</s-button>
       <Form method="post" onSubmit={event => { event.preventDefault(); create(); }}>
         <s-stack gap="base">

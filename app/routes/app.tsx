@@ -19,7 +19,7 @@ export default function App() {
     <AppProvider apiKey={apiKey}>
       <s-app-nav>
         <s-link href="/app" {...{ rel: "home" }}>Home</s-link>
-        <s-link href="/app/quizzes">Quizzes</s-link>
+        <s-link href="/app/quizzes">Quizzes &amp; Skin Scan</s-link>
         <s-link href="/app/emails">Collected emails</s-link>
         <s-link href="/app/settings">Global Settings</s-link>
         <s-link href="/app/scan-appearance">Skin Scan appearance</s-link>

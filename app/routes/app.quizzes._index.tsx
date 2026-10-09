@@ -23,7 +23,7 @@ export default function Quizzes() {
   const { quizzes, themeActivated, themeEditorUrl } = useLoaderData<typeof loader>();
   const submit = useSubmit();
   const pending = useNavigation().state !== "idle";
-  const [developerQuiz, setDeveloperQuiz] = useState<{ handle: string; name: string } | null>(null);
+  const [developerQuiz, setDeveloperQuiz] = useState<{ handle: string; name: string; layout: string } | null>(null);
   const [copyStatus, setCopyStatus] = useState("");
   const apiPath = developerQuiz ? `/apps/dosha-quiz/quiz?code=${encodeURIComponent(developerQuiz.handle)}` : "";
   const fetchExample = `const response = await fetch(${JSON.stringify(apiPath)}, {
@@ -37,10 +37,10 @@ if (!response.ok) throw new Error(quiz.error || "Could not load quiz");
     try { await navigator.clipboard.writeText(value); setCopyStatus(`${label} copied.`); }
     catch { setCopyStatus("Copy is blocked by this browser. Select the text below and copy it manually."); }
   }
-  const [deleting, setDeleting] = useState<{ handle: string; name: string } | null>(null);
+  const [deleting, setDeleting] = useState<{ handle: string; name: string; layout: string } | null>(null);
 
   return (
-    <s-page heading="Quizzes" inlineSize="large">
+    <s-page heading="Quizzes &amp; Skin Scan" inlineSize="large">
       <s-button slot="primary-action" variant="primary" href="/app/quizzes/new">Create quiz</s-button>
       {themeActivated ? <s-button slot="secondary-actions" href={themeEditorUrl} target="_top">Open theme editor</s-button> : null}
       {!quizzes.length ? <s-section>
@@ -61,7 +61,7 @@ if (!response.ok) throw new Error(quiz.error || "Could not load quiz");
                 <s-button icon="menu-horizontal" variant="tertiary" accessibilityLabel={`Actions for ${quiz.name}`} commandFor={`quiz-actions-${quiz.handle}`} command="--toggle" />
                 <s-popover id={`quiz-actions-${quiz.handle}`}><s-box padding="small"><s-stack gap="small">
                   <s-button icon="store" variant="tertiary" href={quiz.addUrl} target="_top">Add to theme</s-button>
-                  <s-button icon="delete" variant="tertiary" tone="critical" disabled={pending} commandFor="delete-quiz-modal" command="--show" onClick={() => setDeleting({ handle: quiz.handle, name: quiz.name })}>Delete quiz</s-button>
+                  <s-button icon="delete" variant="tertiary" tone="critical" disabled={pending} commandFor="delete-quiz-modal" command="--show" onClick={() => setDeleting({ handle: quiz.handle, name: quiz.name, layout: quiz.layout })}>{quiz.layout === "scan" ? "Delete Skin Scan" : "Delete quiz"}</s-button>
                 </s-stack></s-box></s-popover>
               </s-stack>
               <s-stack direction="inline" gap="small">
@@ -72,15 +72,15 @@ if (!response.ok) throw new Error(quiz.error || "Could not load quiz");
               </s-stack>
               <s-text color="subdued">{quiz.layout === "scan" ? "Camera or photo upload" : `${quiz.questions} ${quiz.questions === 1 ? "question" : "questions"}`}</s-text>
               <s-stack direction="inline" gap="small">
-                <s-button href={`/app/editor?quiz=${encodeURIComponent(quiz.handle)}`}>Edit quiz</s-button>
-                <s-button commandFor="quiz-developer-modal" command="--show" onClick={() => { setDeveloperQuiz({handle:quiz.handle,name:quiz.name}); setCopyStatus(""); }}>Quiz API</s-button>
+                <s-button href={`/app/editor?quiz=${encodeURIComponent(quiz.handle)}`}>{quiz.layout === "scan" ? "Edit Skin Scan" : "Edit quiz"}</s-button>
+                <s-button commandFor="quiz-developer-modal" command="--show" onClick={() => { setDeveloperQuiz({handle:quiz.handle,name:quiz.name,layout:quiz.layout}); setCopyStatus(""); }}>{quiz.layout === "scan" ? "Skin Scan API" : "Quiz API"}</s-button>
                 {!themeActivated ? <s-button icon="store" variant="tertiary" href={quiz.addUrl} target="_top">Activate in theme</s-button> : null}
               </s-stack>
             </s-stack>
           </s-box>
         </s-box>)}
       </s-grid>}
-      <s-modal id="quiz-developer-modal" heading={developerQuiz ? `${developerQuiz.name}: Quiz API` : "Quiz API"}>
+      <s-modal id="quiz-developer-modal" heading={developerQuiz ? `${developerQuiz.name}: ${developerQuiz.layout === "scan" ? "Skin Scan API" : "Quiz API"}` : "Quiz API"}>
         <s-stack gap="base">
           <s-paragraph>Use this saved quiz API to build your own storefront design. Available for Combined Quiz, Single Quiz and AI Skin Scan blocks.</s-paragraph>
           <s-stack direction="inline" justifyContent="space-between" alignItems="center">
@@ -100,9 +100,9 @@ if (!response.ok) throw new Error(quiz.error || "Could not load quiz");
         </s-stack>
         <s-button slot="secondary-actions" commandFor="quiz-developer-modal" command="--hide">Close</s-button>
       </s-modal>
-      <s-modal id="delete-quiz-modal" heading="Delete quiz?">
-        <s-paragraph>{deleting ? `"${deleting.name}" will be deleted with its questions, results and product mappings. Theme blocks using it will stop showing the quiz. This cannot be undone.` : ""}</s-paragraph>
-        <s-button slot="primary-action" variant="primary" tone="critical" commandFor="delete-quiz-modal" command="--hide" onClick={() => { if (deleting) submit({ intent: "delete", handle: deleting.handle }, { method: "post" }); setDeleting(null); }}>Delete quiz</s-button>
+      <s-modal id="delete-quiz-modal" heading={deleting?.layout === "scan" ? "Delete Skin Scan?" : "Delete quiz?"}>
+        <s-paragraph>{deleting ? `"${deleting.name}" will be deleted with its ${deleting.layout === "scan" ? "results and product mappings" : "questions, results and product mappings"}. Theme blocks using it will stop showing this ${deleting.layout === "scan" ? "scan widget" : "quiz"}. This cannot be undone.` : ""}</s-paragraph>
+        <s-button slot="primary-action" variant="primary" tone="critical" commandFor="delete-quiz-modal" command="--hide" onClick={() => { if (deleting) submit({ intent: "delete", handle: deleting.handle }, { method: "post" }); setDeleting(null); }}>{deleting?.layout === "scan" ? "Delete Skin Scan" : "Delete quiz"}</s-button>
         <s-button slot="secondary-actions" commandFor="delete-quiz-modal" command="--hide" onClick={() => setDeleting(null)}>Cancel</s-button>
       </s-modal>
     </s-page>

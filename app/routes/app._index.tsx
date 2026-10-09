@@ -16,6 +16,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 export default function Home() {
   const { quizzes, themeChecked, themeActivated, themeEditorUrl, stats } = useLoaderData<typeof loader>();
   const [calloutDismissed, setCalloutDismissed] = useState(false);
+  const scanWidget = quizzes.find(quiz => quiz.layout === "scan");
   const liveCount = quizzes.filter((quiz) => quiz.live).length;
 
   return (
@@ -46,6 +47,25 @@ export default function Home() {
             </div>
           </s-section>)}
         </s-grid>
+        {scanWidget ? <s-section>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:24,flexWrap:"wrap",padding:"4px 0"}}>
+            <div style={{display:"flex",alignItems:"center",gap:18,flex:"1 1 340px",minWidth:0}}>
+              <div style={{width:80,flexShrink:0,padding:6,borderRadius:16,background:"#F1F6F2"}}><HomeIllustration name="scan" /></div>
+              <div style={{display:"grid",gap:7,minWidth:0}}>
+                <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
+                  <s-heading>{scanWidget.name}</s-heading>
+                  <span style={{fontSize:11,fontWeight:600,lineHeight:"18px",padding:"2px 8px",borderRadius:6,background:scanWidget.live ? "#E4F3E8" : "#F0F1F1",color:scanWidget.live ? "#245B37" : "#555C58"}}>{scanWidget.live ? "Live in theme" : "Scan widget"}</span>
+                </div>
+                <div style={{fontSize:13,lineHeight:"20px",color:"#616964"}}>Consent, photo and personalized skin results.</div>
+                <div style={{fontSize:11,lineHeight:"18px",color:"#757C77"}}>Widget ID <span style={{fontVariantNumeric:"tabular-nums",color:"#47514A",marginLeft:6}}>{scanWidget.handle}</span></div>
+              </div>
+            </div>
+            <s-stack direction="inline" gap="small">
+              <s-button icon="edit" href={`/app/editor?quiz=${encodeURIComponent(scanWidget.handle)}`}>Edit Skin Scan</s-button>
+              <s-button icon="store" variant="primary" href={scanWidget.addUrl} target="_top">Add to theme</s-button>
+            </s-stack>
+          </div>
+        </s-section> : null}
         <s-section heading="Set up your customer experience">
           <s-grid gridTemplateColumns="repeat(auto-fit, minmax(min(100%, 420px), 1fr))" gap="base">
             {[
