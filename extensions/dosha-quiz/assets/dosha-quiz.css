@@ -1892,8 +1892,8 @@
 
 /* Shared question design: scan screens keep their own appearance. */
 /* Reference quiz design. Edit these variables to customize it. */
-.prana-quiz :where([data-screen="quick"], [data-screen="deep"]) { --quiz-card: #f4e4cb; --quiz-answer: #e4c3a0; --quiz-border: #651d30; --quiz-answer-border: #b77920; }
-.prana-quiz [data-screen="quick"], .prana-quiz [data-screen="deep"] { background: #f3ecd9; padding: clamp(20px, 4vw, 52px) 16px; min-height: 0; }
+.prana-quiz :where([data-screen="quick"], [data-screen="deep"]) { --quiz-card: #fff9ee; --quiz-answer: #e4c3a0; --quiz-border: #651d30; --quiz-answer-border: #b77920; }
+.prana-quiz [data-screen="quick"], .prana-quiz [data-screen="deep"] { background: #e9dfcb; padding: clamp(20px, 4vw, 52px) 16px; min-height: 0; }
 .prana-quiz :where([data-screen="quick"], [data-screen="deep"]) .quiz-wrap { max-width: 960px; margin: 0 auto; padding: clamp(20px, 3vw, 36px); border: 1px solid var(--quiz-border); border-radius: 12px; background: var(--quiz-card); box-shadow: 0 2px 5px #0002; }
 .prana-quiz :where([data-screen="quick"], [data-screen="deep"]) .q-text { font-family: Georgia, serif; font-size: clamp(20px, 2.2vw, 26px); text-align: center; color: var(--ink, #180d0c); margin: 0 0 28px; line-height: 1.4; }
 .prana-quiz :where([data-screen="quick"], [data-screen="deep"]) .q-options { display: grid; grid-template-columns: 1fr; gap: 14px; }
@@ -1913,3 +1913,5 @@
 
 .prana-quiz :where([data-screen="quick"], [data-screen="deep"]) .q-sub { text-align:center; margin-bottom:20px; }
 .prana-quiz :where([data-screen="quick"], [data-screen="deep"]) .q-opt-hint { font-size:13px; line-height:1.5; margin-top:4px; color:var(--quiz-border); opacity:.8; }
+
+.prana-quiz :where([data-screen="quick"], [data-screen="deep"]) .quiz-wrap > .back-nav { padding: 4px 10px; margin: 0 0 16px; min-height: 36px; border: 1px solid #D4BDA8; border-radius: 6px; background: #F3E8DA; color: #651D30; }
