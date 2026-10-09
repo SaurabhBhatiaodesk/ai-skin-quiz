@@ -1,5 +1,5 @@
 import { hasOpenAIKey, selectedProvider } from "./settings.server";
-import { loadLibrary } from "./quiz.server";
+import { ensureDefaultScanWidget, loadLibrary } from "./quiz.server";
 import { isThemeActivated, markThemeActivated } from "./setup.server";
 import { isQuizLive, themeStatus } from "./theme.server";
 
@@ -7,6 +7,7 @@ type AdminGraphql = { graphql: (query: string, options?: { variables?: Record<st
 
 // Quiz cards plus theme activation state, shared by the Home and Quizzes pages.
 export async function quizOverview(shop: string, admin: AdminGraphql) {
+  await ensureDefaultScanWidget(shop);
   const [quizzes, theme, activatedBefore] = await Promise.all([loadLibrary(shop), themeStatus(admin), isThemeActivated(shop)]);
   const scanReady = await selectedProvider(shop) === "openai" && await hasOpenAIKey(shop);
   const live = quizzes.map((quiz) => isQuizLive(theme, { handle: quiz.handle, legacyHandles: quiz.legacyHandles, layout: quiz.layout || "three" }, quizzes.filter((item) => (item.layout || "three") === (quiz.layout || "three")).length === 1));

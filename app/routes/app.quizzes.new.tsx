@@ -1,9 +1,10 @@
 import { useState } from "react";
 import type { ActionFunctionArgs, HeadersFunction, LoaderFunctionArgs } from "react-router";
-import { Form, redirect, useActionData, useNavigation, useSubmit } from "react-router";
+import { Form, redirect, useActionData, useLoaderData, useNavigation, useSubmit } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
 import { createQuiz } from "../quiz.server";
+import { providerHasKey, selectedProvider } from "../settings.server";
 import HomeIllustration from "../components/HomeIllustration";
 
 type Path = "quick" | "deep" | "scan";
@@ -21,8 +22,9 @@ const PATHS: Array<{ value: Path; title: string; detail: string }> = [
 ];
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  await authenticate.admin(request);
-  return null;
+  const { session } = await authenticate.admin(request);
+  const provider = await selectedProvider(session.shop);
+  return { scanConfigured: provider === "openai" && await providerHasKey(session.shop, "openai") };
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -41,6 +43,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 export default function NewQuiz() {
+  const { scanConfigured } = useLoaderData<typeof loader>();
+  const scanSetup = scanConfigured
+    ? <s-paragraph color="subdued">Customers must consent to photo analysis before scanning.</s-paragraph>
+    : <s-banner tone="info" heading="AI Skin Scan setup">Select OpenAI and add its API key in Global Settings. Customers must consent to photo analysis before scanning.</s-banner>;
   const actionData = useActionData<typeof action>();
   const submit = useSubmit();
   const pending = useNavigation().state !== "idle";
@@ -91,10 +97,10 @@ export default function NewQuiz() {
                   </s-clickable>;
                 })}
               </s-grid>
-              {paths.includes("scan") ? <s-banner tone="info" heading="AI Skin Scan setup">Add your OpenAI API key in Global Settings. Customers must consent to photo analysis before scanning.</s-banner> : null}
+              {paths.includes("scan") ? scanSetup : null}
             </s-stack>
           </s-section> : null}
-          {layout === "scan" ? <s-banner tone="info" heading="AI Skin Scan setup">Add your OpenAI API key in Global Settings. Customers must consent to photo analysis before scanning.</s-banner> : null}
+          {layout === "scan" ? scanSetup : null}
           <s-stack direction="inline" justifyContent="end" gap="small">
             <s-button href="/app/quizzes" disabled={pending}>Cancel</s-button>
             <s-button type="submit" variant="primary" loading={pending} disabled={!valid}>Create quiz</s-button>

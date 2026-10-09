@@ -472,9 +472,10 @@ async function readPayload(shop: string) {
   }
 }
 
-async function writePayload(shop: string, quizzes: QuizEntry[], expected: string | null) {
+async function writePayload(shop: string, quizzes: QuizEntry[], expected: string | null, scanDefaultInitialized = false) {
   await ensureQuizTable();
-  const payload = JSON.stringify({ quizzes });
+  const initialized = scanDefaultInitialized || Boolean(expected && JSON.parse(expected).scanDefaultInitialized);
+  const payload = JSON.stringify({ quizzes, ...(initialized ? { scanDefaultInitialized: true } : {}) });
   const changed = expected === null
     ? await prisma.$executeRawUnsafe(`INSERT INTO "QuizConfig" ("shop", "payload", "updatedAt") VALUES (?, ?, CURRENT_TIMESTAMP) ON CONFLICT("shop") DO NOTHING`, shop, payload)
     : await prisma.$executeRawUnsafe(`UPDATE "QuizConfig" SET "payload"=?, "updatedAt"=CURRENT_TIMESTAMP WHERE "shop"=? AND "payload"=?`, payload, shop, expected);
@@ -491,6 +492,27 @@ export async function loadLibrary(shop: string): Promise<QuizEntry[]> {
   const quizzes = payload ? normalizeLibrary(payload.value) : [];
   if (quizzes.length) return quizzes;
   return [];
+}
+
+// Initialize once from the app overview; deleting the starter does not recreate it.
+export async function ensureDefaultScanWidget(shop: string) {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const snapshot = await readPayload(shop);
+    if (snapshot?.value && typeof snapshot.value === "object" && (snapshot.value as { scanDefaultInitialized?: boolean }).scanDefaultInitialized) return;
+    const library = snapshot ? normalizeLibrary(snapshot.value) : [];
+    if (!library.some(item => item.layout === "scan") && library.length < 20) {
+      let number = Date.now();
+      while (library.some(item => item.handle === String(number))) number++;
+      const starter = defaultQuiz();
+      starter.layout = "scan";
+      starter.enabledPaths = ["scan"];
+      starter.quick = [];
+      starter.deep = [];
+      library.push(namedQuiz(normalizeQuiz(starter, { draft: true }), String(number), "Only Skin Scan"));
+    }
+    try { await writePayload(shop, library, snapshot?.raw ?? null, true); return; }
+    catch (error) { if (attempt === 2) throw error; }
+  }
 }
 
 export async function loadQuiz(shop: string, code?: unknown): Promise<QuizEntry> {
