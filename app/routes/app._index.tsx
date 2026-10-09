@@ -31,7 +31,7 @@ export default function Home() {
 
         <s-section heading="Enable app in your store">
           <s-stack direction="inline" justifyContent="space-between" alignItems="center" gap="base">
-            <s-paragraph>Enable Skin Scan floating button in App embeds and save your theme once. New widgets do not require activating the app again.</s-paragraph>
+            <s-paragraph>Enable AI Skin Quiz in your store and save your theme once. The floating button appears automatically when Skin Scan is connected. Creating more widgets does not require enabling the app again.</s-paragraph>
             <s-button variant="primary" icon="store" href={appEmbedUrl} target="_top">Enable app in store</s-button>
           </s-stack>
         </s-section>

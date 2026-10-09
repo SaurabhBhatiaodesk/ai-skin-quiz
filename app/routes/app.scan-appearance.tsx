@@ -33,7 +33,7 @@ export default function ScanAppearanceSettings() {
       {fetcher.state !== "idle" ? <s-stack gap="small-200"><s-text>Saving appearance</s-text><s-progress accessibilityLabel="Saving Skin Scan appearance" /></s-stack> : null}
       {fetcher.data?.ok ? <s-banner tone="success" heading="Appearance saved">Refresh your storefront to see the changes.</s-banner> : null}
       {fetcher.data?.error ? <s-banner tone="critical" heading="Could not save appearance">{fetcher.data.error}</s-banner> : null}
-      <s-banner tone="info" heading="Enable the floating button on your storefront">Click Enable in theme to switch Skin Scan floating button on, then click Save in the theme editor. It works on every page without adding a quiz block.<s-button href={embedUrl} target="_top">Enable in theme</s-button></s-banner>
+      <s-banner tone="info" heading="Enable app in your store">Click Enable app in store, then Save in the theme editor once. The floating button appears automatically when Skin Scan is connected, without adding a quiz block.<s-button href={embedUrl} target="_top">Enable app in store</s-button></s-banner>
       <s-section heading="Floating button"><s-icon slot="graphic" type="settings" />
         <s-stack gap="base">
           <s-paragraph>Applies to the Skin Scan button and popup across this store.</s-paragraph>

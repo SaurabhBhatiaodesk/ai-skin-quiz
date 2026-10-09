@@ -1,10 +1,9 @@
-// Stage the app embed as enabled; Shopify persists it when the merchant saves.
+// Open the embed settings and request activation in the same navigation.
+// Shopify persists the enabled state when the merchant clicks Save.
 export function skinScanActivationUrl(shop: string) {
   const apiKey = process.env.SHOPIFY_API_KEY;
   if (!apiKey) throw new Error("SHOPIFY_API_KEY is required for app embed activation.");
-  const url = new URL(`https://${shop}/admin/themes/current/editor`);
-  url.searchParams.set("context", "apps");
-  url.searchParams.set("template", "index");
-  url.searchParams.set("activateAppId", `${apiKey}/scan-assistant`);
-  return url.toString();
+  const store = shop.replace(/\.myshopify\.com$/, "");
+  const embed = `${encodeURIComponent(apiKey)}/scan-assistant`;
+  return `https://admin.shopify.com/store/${encodeURIComponent(store)}/themes/current/editor?context=apps&template=index&appEmbed=${embed}&activateAppId=${embed}`;
 }
