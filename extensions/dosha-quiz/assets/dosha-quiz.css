@@ -1793,3 +1793,8 @@
   margin: 0 auto 20px;
 }
 .prana-quiz .camera-zone:not(.active) + .face-scan-guidance { display: none; }
+
+/* Floating assistant exposes only the Skin Scan flow. */
+.prana-quiz.scan-chat-open [data-goto="quick"],
+.prana-quiz.scan-chat-open [data-goto="deep"],
+.prana-quiz.scan-chat-open [data-upgrade] { display: none !important; }

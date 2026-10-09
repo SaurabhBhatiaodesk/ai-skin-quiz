@@ -31,10 +31,15 @@ import { buildFaceMap } from "./face-map.js";
     var reportLocked = false;
     var submitting = false;
     var lastFocus = null;
+    var scanChatOpen = false;
 
     function q(sel) { return root.querySelector(sel); }
 
     function go(name, fromUser) {
+      if (scanChatOpen) {
+        if (name === "entry") { if (closeScanChat) closeScanChat(); return; }
+        if (name === "quick" || name === "deep") name = "scanner";
+      }
       if (quiz && quiz.layout === "single" && (name === "entry" || name === "deep" || name === "scanner")) name = quiz.singleFlow || "quick";
       if (quiz && quiz.layout === "scan" && (name === "entry" || name === "deep" || name === "quick")) name = "scanner";
       if (name === "scanner" && quiz && quiz.scanReady !== true) return;
@@ -803,12 +808,14 @@ import { buildFaceMap } from "./face-map.js";
         var previousOverflow = "";
         var closeScanChat = function () {
           if (!root.classList.contains("scan-chat-open")) return;
+          scanChatOpen = false;
           root.classList.remove("scan-chat-open"); root.removeAttribute("role"); root.removeAttribute("aria-modal"); root.removeAttribute("aria-label");
           document.body.style.overflow = previousOverflow;
           stopCamera(); launcher.setAttribute("aria-expanded", "false"); launcher.focus();
         };
         launcher.addEventListener("click", function () {
           previousOverflow = document.body.style.overflow; document.body.style.overflow = "hidden";
+          scanChatOpen = true;
           root.classList.add("scan-chat-open"); root.setAttribute("role", "dialog"); root.setAttribute("aria-modal", "true"); root.setAttribute("aria-label", "Skin scan assistant");
           launcher.setAttribute("aria-expanded", "true"); go("scanner", true); close.focus();
         });
