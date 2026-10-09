@@ -335,7 +335,6 @@ import { buildFaceMap } from "./face-map.js";
       if (!question) { area.textContent = "This quiz has no questions yet."; return; }
       setProgress(q("[data-deep-fill]"), deepStep + 1, quiz.deep.length);
       if (q("[data-deep-count]")) q("[data-deep-count]").textContent = (deepStep + 1) + " of " + quiz.deep.length;
-      if (q("[data-deep-phase]")) q("[data-deep-phase]").textContent = question.phase;
       var pills = root.querySelectorAll("[data-layer]");
       for (var i = 0; i < pills.length; i++) pills[i].classList.toggle("active", String(question.layer) === pills[i].getAttribute("data-layer"));
       area.innerHTML = questionHtml(question, deepAnswers[deepStep], "data-deep-opt", root.id + "-deep-q");
@@ -748,6 +747,20 @@ import { buildFaceMap } from "./face-map.js";
         root.style.setProperty("--gold", design.accent);
         root.style.setProperty("--button-text", design.buttonText);
         root.style.setProperty("--button-radius", design.radius === "pill" ? "999px" : design.radius === "square" ? "0px" : "8px");
+        if (design.background !== undefined) root.querySelectorAll('[data-screen="quick"], [data-screen="deep"]').forEach(function (element) { element.style.setProperty("background", String(design.background), "important"); });
+        if (design.cardColor !== undefined) root.querySelectorAll('.quiz-wrap').forEach(function (element) { element.style.setProperty("background", String(design.cardColor), "important"); });
+        if (design.headingColor !== undefined) root.querySelectorAll('.hdr-title, .rh-dosha').forEach(function (element) { element.style.setProperty("color", String(design.headingColor), "important"); });
+        if (design.headingSize !== undefined) root.querySelectorAll('.hdr-title, .rh-dosha').forEach(function (element) { element.style.setProperty("font-size", String(design.headingSize) + "px", "important"); });
+        if (design.questionSize !== undefined) root.querySelectorAll('.q-text').forEach(function (element) { element.style.setProperty("font-size", String(design.questionSize) + "px", "important"); });
+        if (design.headingColor !== undefined) root.querySelectorAll('.q-text').forEach(function (element) { element.style.setProperty("color", String(design.headingColor), "important"); });
+        if (design.answerColor !== undefined) root.querySelectorAll('.q-opt:not(.selected)').forEach(function (element) { element.style.setProperty("background", String(design.answerColor), "important"); });
+        if (design.answerText !== undefined) root.querySelectorAll('.q-opt:not(.selected) .q-opt-main').forEach(function (element) { element.style.setProperty("color", String(design.answerText), "important"); });
+        if (design.selectedColor !== undefined) root.querySelectorAll('.q-opt.selected').forEach(function (element) { element.style.setProperty("background", String(design.selectedColor), "important"); });
+        if (design.selectedText !== undefined) root.querySelectorAll('.q-opt.selected .q-opt-main').forEach(function (element) { element.style.setProperty("color", String(design.selectedText), "important"); });
+        if (design.answerSize !== undefined) root.querySelectorAll('.q-opt-main').forEach(function (element) { element.style.setProperty("font-size", String(design.answerSize) + "px", "important"); });
+        if (design.accent !== undefined) root.querySelectorAll('.btn-next, .btn-eb, .btn-retake, .btn-upgrade').forEach(function (element) { element.style.setProperty("background", String(design.accent), "important"); });
+        if (design.buttonSize !== undefined) root.querySelectorAll('.btn-next, .btn-eb, .btn-retake, .btn-upgrade').forEach(function (element) { element.style.setProperty("font-size", String(design.buttonSize) + "px", "important"); });
+        if (design.bodySize !== undefined) root.querySelectorAll('.q-sub, .insight-text, .hdr-sub').forEach(function (element) { element.style.setProperty("font-size", String(design.bodySize) + "px", "important"); });
         if (design.font === "sans") root.setAttribute("data-font", "sans");
       }
       var scanReady = data.scanReady === true;

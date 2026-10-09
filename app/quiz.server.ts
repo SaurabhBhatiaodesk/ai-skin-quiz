@@ -362,7 +362,25 @@ export function normalizeQuiz(input: unknown, { draft = false }: { draft?: boole
     if (typeof value !== "string" || !/^#[0-9a-f]{6}$/i.test(value)) throw new Error("Use six-digit hex colors in Quiz design.");
     return value;
   }
+  function fontSize(value: unknown, fallback: number) {
+    if (value === undefined) return fallback;
+    const size = Number(value);
+    if (!Number.isFinite(size) || size < 10 || size > 64) throw new Error("Font sizes must be between 10 and 64 px.");
+    return size;
+  }
   const design: NonNullable<StoredQuiz["design"]> = {
+    headingColor: color(suppliedDesign?.headingColor, "#000000"),
+    cardColor: color(suppliedDesign?.cardColor, "#fff9ee"),
+    answerColor: color(suppliedDesign?.answerColor, "#e4c3a0"),
+    answerText: color(suppliedDesign?.answerText, "#651d30"),
+    selectedColor: color(suppliedDesign?.selectedColor, "#571c29"),
+    selectedText: color(suppliedDesign?.selectedText, "#ffffff"),
+    headingSize: fontSize(suppliedDesign?.headingSize, 36),
+    questionSize: fontSize(suppliedDesign?.questionSize, 26),
+    bodySize: fontSize(suppliedDesign?.bodySize, 14),
+    answerSize: fontSize(suppliedDesign?.answerSize, 18),
+    buttonSize: fontSize(suppliedDesign?.buttonSize, 20),
+
     background: color(suppliedDesign?.background, "#faf7f2"), text: color(suppliedDesign?.text, "#1a1208"),
     accent: color(suppliedDesign?.accent, "#8f6330"), buttonText: color(suppliedDesign?.buttonText, "#ffffff"),
     font: suppliedDesign?.font === "sans" ? "sans" : "classic",

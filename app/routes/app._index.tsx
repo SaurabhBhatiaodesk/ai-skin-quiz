@@ -15,7 +15,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export default function Home() {
-  const { quizzes, themeChecked, themeActivated, themeEditorUrl, appEmbedUrl, appEmbedEnabled, stats, installCount } = useLoaderData<typeof loader>();
+  const { quizzes, themeEditorUrl, appEmbedUrl, appEmbedEnabled, stats, installCount } = useLoaderData<typeof loader>();
   const revalidator = useRevalidator();
   useEffect(() => {
     const check = () => {
@@ -32,7 +32,6 @@ export default function Home() {
   }, [appEmbedEnabled, revalidator]);
   const [calloutDismissed, setCalloutDismissed] = useState(false);
   const scanWidget = quizzes.find(quiz => quiz.layout === "scan");
-  const liveCount = quizzes.filter((quiz) => quiz.live).length;
 
   return (
     <s-page heading="Home" inlineSize="large">
@@ -53,7 +52,6 @@ export default function Home() {
           {[
             {label:"Installed stores",value:String(installCount),detail:"Current installations",href:"",icon:"theme"},
             {label:"Quizzes",value:String(quizzes.length),detail:"Quizzes created",href:"/app/quizzes",icon:"quiz"},
-            {label:"Theme blocks",value:themeChecked ? themeActivated ? "Enabled" : "Not added" : "Unverified",detail:themeChecked ? `${liveCount} quiz blocks enabled in the theme` : "Open the theme editor to check",href:themeEditorUrl,icon:"theme"},
             {label:"Results",value:String(stats.results),detail:"Quiz and scan results - last 7 days",href:"",icon:"results"},
             {label:"Emails",value:String(stats.emails),detail:"Email-linked results - last 7 days",href:"/app/emails",icon:"emails"},
           ].map(item => <s-section key={item.label}>
@@ -63,8 +61,8 @@ export default function Home() {
               </s-box>
               <div style={{display:"grid",gap:4,minWidth:0}}>
                 <div style={{fontSize:12,fontWeight:500,lineHeight:"18px",color:"#000000"}}>{item.label}</div>
-                <div style={{minHeight:38,display:"flex",alignItems:"center",fontSize:item.label === "Theme blocks" ? 22 : 28,fontWeight:600,lineHeight:"38px",letterSpacing:"-0.6px",fontVariantNumeric:"tabular-nums",color:"#000000"}}>{item.value}</div>
-                <div style={{fontSize:11,lineHeight:"17px",color:"#000000"}}>{item.label === "Results" || item.label === "Emails" ? "Last 7 days" : item.label === "Theme blocks" ? themeChecked ? `${liveCount} ${liveCount === 1 ? "block" : "blocks"} in theme` : "Check theme setup" : item.label === "Installed stores" ? "Current installations" : "Total quizzes"}</div>
+                <div style={{minHeight:38,display:"flex",alignItems:"center",fontSize:28,fontWeight:600,lineHeight:"38px",letterSpacing:"-0.6px",fontVariantNumeric:"tabular-nums",color:"#000000"}}>{item.value}</div>
+                <div style={{fontSize:11,lineHeight:"17px",color:"#000000"}}>{item.label === "Results" || item.label === "Emails" ? "Last 7 days" : item.label === "Installed stores" ? "Current installations" : "Total quizzes"}</div>
               </div>
             </div>
           </s-section>)}

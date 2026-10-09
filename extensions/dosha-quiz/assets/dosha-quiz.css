@@ -55,7 +55,7 @@
 .prana-quiz .hdr {
   text-align: center;
   padding: 2.5rem 2rem 1.5rem;
-  border-bottom: 1px solid var(--border);
+  border-bottom: none;
 }
 
 .prana-quiz .hdr-logo {
