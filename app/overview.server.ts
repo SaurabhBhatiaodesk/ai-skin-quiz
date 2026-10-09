@@ -1,3 +1,4 @@
+import { skinScanActivationUrl } from "./theme-activation.server";
 import { hasOpenAIKey, selectedProvider } from "./settings.server";
 import { ensureDefaultScanWidget, loadLibrary } from "./quiz.server";
 import { isThemeActivated, markThemeActivated } from "./setup.server";
@@ -17,7 +18,7 @@ export async function quizOverview(shop: string, admin: AdminGraphql) {
   const store = shop.replace(".myshopify.com", "");
   const apiKey = process.env.SHOPIFY_API_KEY || "";
   return {
-    appEmbedUrl: `https://admin.shopify.com/store/${store}/themes/current/editor?context=apps&activateAppId=${apiKey}/scan-assistant`,
+    appEmbedUrl: skinScanActivationUrl(shop),
     themeChecked: theme.checked,
     themeActivated: theme.checked ? live.some(Boolean) : activatedBefore,
     themeEditorUrl: `https://admin.shopify.com/store/${store}/themes/current/editor`,

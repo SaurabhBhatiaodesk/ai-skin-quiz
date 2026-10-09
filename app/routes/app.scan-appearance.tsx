@@ -1,3 +1,4 @@
+import { skinScanActivationUrl } from "../theme-activation.server";
 import { defaultScanIcon } from "../default-scan-icon.js";
 import UnsavedChangesBar from "../components/UnsavedChangesBar";
 import { useEffect, useRef, useState } from "react";
@@ -7,7 +8,7 @@ import { authenticate } from "../shopify.server";
 import { loadScanAppearance, saveScanAppearance } from "../scan-appearance.server";
 export async function loader({ request }: LoaderFunctionArgs) {
   const { session } = await authenticate.admin(request);
-  return { appearance: await loadScanAppearance(session.shop), embedUrl: `https://admin.shopify.com/store/${session.shop.replace(".myshopify.com", "")}/themes/current/editor?context=apps&activateAppId=${process.env.SHOPIFY_API_KEY || ""}/scan-assistant` };
+  return { appearance: await loadScanAppearance(session.shop), embedUrl: skinScanActivationUrl(session.shop) };
 }
 export async function action({ request }: ActionFunctionArgs) {
   const { session } = await authenticate.admin(request);
@@ -32,7 +33,7 @@ export default function ScanAppearanceSettings() {
       {fetcher.state !== "idle" ? <s-stack gap="small-200"><s-text>Saving appearance</s-text><s-progress accessibilityLabel="Saving Skin Scan appearance" /></s-stack> : null}
       {fetcher.data?.ok ? <s-banner tone="success" heading="Appearance saved">Refresh your storefront to see the changes.</s-banner> : null}
       {fetcher.data?.error ? <s-banner tone="critical" heading="Could not save appearance">{fetcher.data.error}</s-banner> : null}
-      <s-banner tone="info" heading="Enable the floating button on your storefront">Enable Skin Scan floating button in Theme editor / App embeds, then save the theme. It works on every page without adding a quiz block.<s-button href={embedUrl} target="_top">Enable in theme</s-button></s-banner>
+      <s-banner tone="info" heading="Enable the floating button on your storefront">Click Enable in theme to switch Skin Scan floating button on, then click Save in the theme editor. It works on every page without adding a quiz block.<s-button href={embedUrl} target="_top">Enable in theme</s-button></s-banner>
       <s-section heading="Floating button"><s-icon slot="graphic" type="settings" />
         <s-stack gap="base">
           <s-paragraph>Applies to the Skin Scan button and popup across this store.</s-paragraph>
