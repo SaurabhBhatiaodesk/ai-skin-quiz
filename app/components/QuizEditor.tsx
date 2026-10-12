@@ -241,6 +241,7 @@ export default function QuizEditor({
   }
 
   function persist(next: StoredQuiz) {
+    submittedQuiz.current = next;
     setQuiz(next);
     fetcher.submit(next, { method: "POST", encType: "application/json", action: `/app/editor?quiz=${encodeURIComponent(code)}` });
   }
@@ -296,7 +297,7 @@ export default function QuizEditor({
     <s-page heading={`${quiz.name || "Quiz"} · ${editorTabs.find(item => item.id === tab)?.label || "Quiz editor"}`} inlineSize="large">
       <UnsavedChangesBar id="quiz-editor-save-bar" dirty={JSON.stringify(quiz) !== JSON.stringify(savedQuiz)} pending={pending} onSave={save} onDiscard={() => { setQuiz(savedQuiz); setTagDrafts({}); setMappingDraft(null); setPickedRows([]); setQuestionOpen(false); }} />
       <s-button slot="breadcrumb-actions" href="/app/quizzes" accessibilityLabel="Back to Quizzes and Skin Scan">Quizzes &amp; Skin Scan</s-button>
-      <s-button slot="primary-action" variant="primary" loading={pending} onClick={save}>Save</s-button>
+      {!(tab === "products" && mappingDraft) ? <s-button slot="primary-action" variant="primary" loading={pending} disabled={JSON.stringify(quiz) === JSON.stringify(savedQuiz)} onClick={save}>Save quiz</s-button> : null}
       <s-stack gap="base">
         {quiz.profileImage ? <s-stack direction="inline" justifyContent="space-between" alignItems="center"><s-heading>{quiz.name || "Quiz"}</s-heading><s-box inlineSize="80px"><s-image src={quiz.profileImage} alt={`${quiz.name || "Quiz"} image`} aspectRatio="1 / 1" objectFit="cover" borderRadius="large" /></s-box></s-stack> : null}
         <s-stack direction="inline" gap="small">
@@ -460,6 +461,7 @@ export default function QuizEditor({
             </s-section> : null}
 
             {tab === "products" ? <>
+              <s-paragraph color="subdued">Save mapping applies the product link immediately. No additional Save quiz is needed.</s-paragraph>
               {productsError ? <s-banner tone="warning" heading="Products could not be loaded">Refresh the page to try again. Existing mappings are kept.</s-banner> : null}
               <s-modal id="delete-mappings-modal" heading="Delete product mappings?">
                 <s-paragraph>{`${pickedRows.length} selected ${pickedRows.length === 1 ? "mapping" : "mappings"} will be removed and the change is saved right away.`}</s-paragraph>
