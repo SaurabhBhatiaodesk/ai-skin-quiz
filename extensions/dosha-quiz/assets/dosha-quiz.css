@@ -1945,3 +1945,82 @@
 .prana-quiz.scan-chat-open .scan-step-intro { margin-bottom: 12px; }
 .prana-quiz.scan-chat-open .consent-note { padding: 12px; margin-bottom: 12px; }
 .prana-quiz.scan-chat-open .consent-text { font-size: 13px; line-height: 1.5; }
+
+/* Anchor the popup above its floating launcher. */
+.prana-quiz.scan-chat-open {
+  top: auto; bottom: calc(var(--scan-offset, 24px) + 76px);
+  left: auto; right: var(--scan-offset, 24px);
+  height: auto; max-height: calc(100dvh - var(--scan-offset, 24px) - 92px);
+  transform: none;
+}
+.prana-quiz.scan-chat-open[data-scan-position="left"] { top: auto; bottom: calc(var(--scan-offset, 24px) + 76px); left: var(--scan-offset, 24px); right: auto; }
+@media (max-width:600px) {
+  .prana-quiz.scan-chat-open { width: min(var(--scan-width, 520px), calc(100vw - 32px)); border-radius: var(--scan-radius, 24px); right: 16px; left: auto; }
+  .prana-quiz.scan-chat-open[data-scan-position="left"] { left:16px; right:auto; }
+}
+
+.prana-quiz .scanner-wrap > .back-nav { padding: 4px 10px; margin: 0 0 16px; min-height: 36px; border: 1px solid #D4BDA8; border-radius: 6px; background: #F3E8DA; color: #651D30; }
+
+/* Inline Skin Scan shares the quiz card design; floating popup retains its layout. */
+.prana-quiz:not(.scan-chat-open) [data-screen="scanner"] { padding: 0 16px clamp(20px, 4vw, 52px); }
+.prana-quiz:not(.scan-chat-open) [data-screen="scanner"] .scanner-wrap {
+  width:100%; max-width:var(--widget-panel-width, 960px); margin:0 auto;
+  padding:clamp(20px, 3vw, 36px); background:var(--quiz-card, #fff9ee);
+  border:1px solid var(--quiz-border, #651d30); border-radius:12px; box-shadow:0 2px 5px #0002;
+}
+.prana-quiz:not(.scan-chat-open) [data-screen="scanner"] .scan-step-title { text-align:center; font-size:26px; line-height:1.4; }
+.prana-quiz:not(.scan-chat-open) [data-screen="scanner"] .scan-step-intro { text-align:center; font-size:16px; line-height:1.5; }
+.prana-quiz:not(.scan-chat-open) [data-screen="scanner"] .consent-label { font-size:16px; line-height:1.5; letter-spacing:normal; }
+.prana-quiz:not(.scan-chat-open) [data-screen="scanner"] .consent-notice { font-size:14px; line-height:1.6; }
+.prana-quiz:not(.scan-chat-open) [data-screen="scanner"] .consent-box { background:#fff; }
+.prana-quiz:not(.scan-chat-open) [data-screen="scanner"] [data-consent-submit] { border-radius:var(--button-radius,8px); font-size:18px; letter-spacing:normal; }
+
+/* Keep inline scan content readable within the full-width quiz card. */
+.prana-quiz:not(.scan-chat-open) [data-screen="scanner"] [data-scan-step] { max-width:700px; margin:0 auto; }
+.prana-quiz:not(.scan-chat-open) [data-screen="scanner"] .scan-steps { max-width:700px; margin:0 auto 24px; padding-bottom:16px; }
+.prana-quiz:not(.scan-chat-open) [data-screen="scanner"] .scanner-wrap { padding:clamp(20px,3vw,32px); }
+.prana-quiz:not(.scan-chat-open) [data-screen="scanner"] .consent-box { padding:18px 20px; margin-bottom:20px; }
+.prana-quiz:not(.scan-chat-open) [data-screen="scanner"] .consent-row { margin:0 0 16px; padding:0; gap:12px; }
+.prana-quiz:not(.scan-chat-open) [data-screen="scanner"] .consent-row:last-child { margin-bottom:0; }
+.prana-quiz:not(.scan-chat-open) [data-screen="scanner"] .consent-label { font-size:15px; line-height:1.55; }
+.prana-quiz:not(.scan-chat-open) [data-screen="scanner"] .consent-notice { padding:14px 16px; margin-bottom:16px; font-size:13px; }
+.prana-quiz:not(.scan-chat-open) [data-screen="scanner"] [data-scan-continue] { display:block; width:auto; min-width:180px; margin:0 auto; padding:13px 28px; border-radius:var(--button-radius,8px); font-size:18px; letter-spacing:normal; }
+
+/* Smaller inline scan card with tighter spacing. */
+.prana-quiz:not(.scan-chat-open) [data-screen="scanner"] .scanner-wrap { max-width:800px; padding:24px; }
+.prana-quiz:not(.scan-chat-open) [data-screen="scanner"] .scan-steps { margin-bottom:18px; padding-bottom:12px; }
+.prana-quiz:not(.scan-chat-open) [data-screen="scanner"] .scanner-wrap > .back-nav { margin-bottom:12px; }
+.prana-quiz:not(.scan-chat-open) [data-screen="scanner"] .scan-step-title { font-size:23px; margin-bottom:6px; }
+.prana-quiz:not(.scan-chat-open) [data-screen="scanner"] .scan-step-intro { font-size:15px; margin-bottom:16px; }
+.prana-quiz:not(.scan-chat-open) [data-screen="scanner"] .consent-notice { padding:12px; margin-bottom:12px; }
+.prana-quiz:not(.scan-chat-open) [data-screen="scanner"] .consent-box { padding:16px; margin-bottom:16px; }
+.prana-quiz:not(.scan-chat-open) [data-screen="scanner"] .consent-row { margin-bottom:12px; }
+.prana-quiz:not(.scan-chat-open) [data-screen="scanner"] .consent-row:last-child { margin-bottom:0; }
+.prana-quiz:not(.scan-chat-open) [data-screen="scanner"] [data-scan-continue] { padding:11px 24px; font-size:16px; }
+
+.prana-quiz:not(.scan-chat-open) [data-screen="scanner"] .consent-notice { padding:10px 14px; margin:0 0 10px; gap:10px; min-height:0; }
+.prana-quiz:not(.scan-chat-open) [data-screen="scanner"] .consent-notice .cn-text { margin:0; line-height:1.5; }
+.prana-quiz:not(.scan-chat-open) [data-screen="scanner"] .consent-box { margin-top:0; }
+
+.prana-quiz:not(.scan-chat-open) [data-screen="scanner"] .consent-box { display:grid; gap:12px; padding:16px; }
+.prana-quiz:not(.scan-chat-open) [data-screen="scanner"] .consent-row { min-height:0; margin:0; padding:0; gap:12px; }
+.prana-quiz:not(.scan-chat-open) [data-screen="scanner"] .consent-label { margin:0; padding:0; line-height:1.5; }
+.prana-quiz:not(.scan-chat-open) [data-screen="scanner"] .consent-label a { white-space:nowrap; }
+
+/* Balanced outer spacing for the inline Skin Scan section. */
+.prana-quiz:not(.scan-chat-open) [data-screen="scanner"] { padding:32px 16px; }
+.prana-quiz:not(.scan-chat-open) [data-screen="scanner"] .hdr { padding-top:0 !important; padding-bottom:24px; }
+@media (max-width:600px) {
+  .prana-quiz:not(.scan-chat-open) [data-screen="scanner"] { padding:24px 16px; }
+}
+
+/* Compact popup width and evenly spaced consent rows. */
+.prana-quiz.scan-chat-open { width:min(var(--scan-width,520px),480px,calc(100vw - 32px)); }
+.prana-quiz.scan-chat-open [data-screen="scanner"] .consent-box { display:grid; gap:14px; padding:14px 16px; }
+.prana-quiz.scan-chat-open [data-screen="scanner"] .consent-row { min-height:0; margin:0; padding:0; gap:10px; align-items:flex-start; }
+.prana-quiz.scan-chat-open [data-screen="scanner"] .consent-label { margin:0; padding:0; font-size:13px; line-height:1.5; }
+.prana-quiz.scan-chat-open [data-screen="scanner"] .consent-label a { white-space:nowrap; }
+.prana-quiz.scan-chat-open [data-screen="scanner"] .consent-check { margin:2px 0 0; }
+
+.prana-quiz:not(.scan-chat-open) [data-screen="scanner"] .scan-steps { justify-content:center; gap:28px; }
+@media(max-width:480px) { .prana-quiz:not(.scan-chat-open) [data-screen="scanner"] .scan-steps { gap:16px; } }

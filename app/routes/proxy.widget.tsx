@@ -19,7 +19,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   // mark to iframe URLs. Strip only that known suffix, not arbitrary input.
   const code = params.get("code")?.trim().replace(/\?oseid=[^?&]*(?:&.*)?$/, "");
   const quiz = (await loadLibrary(shop)).find(item => item.handle === code || (code && item.legacyHandles?.includes(code)));
-  if (!quiz) return new Response(`<!doctype html><html><head><style>html,body{margin:0;padding:0;background:transparent;overflow:hidden}</style></head><body><script>(function(){parent.postMessage({type:'prana-widget-height',height:1},location.origin);parent.postMessage({type:'prana-widget-height',height:0},location.origin);try{if(window.frameElement){window.frameElement.style.display='none';window.frameElement.style.height='0px';}}catch(e){}})();</script></body></html>`, { status: 404, headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" } });
+  if (!quiz) return new Response(`<!doctype html><html><head><meta name="prana-widget" content="1"><style>html,body{margin:0;padding:0;background:transparent;overflow:hidden}</style></head><body><script>(function(){parent.postMessage({type:'prana-widget-height',height:1},location.origin);parent.postMessage({type:'prana-widget-height',height:0},location.origin);try{if(window.frameElement){window.frameElement.style.display='none';window.frameElement.style.height='0px';}}catch(e){}})();</script></body></html>`, { status: 404, headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" } });
   const values: Record<string, string> = {
     "block.id": `embed-${quiz.handle}`,
     "expected_layout": quiz.layout || "three",
@@ -38,9 +38,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   try {
     config = { ...await publicQuiz(shop, quiz.handle), scanAppearance: await loadScanAppearance(shop), scanProvider: PROVIDER_NAMES[provider], scanReady: provider === "openai" && await hasOpenAIKey(shop) };
   } catch (error) {
-    return new Response(`<p role="alert">${escapeHtml(error instanceof Error ? error.message : "Widget is not ready yet.")}</p>`, { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" } });
+    return new Response(`<!doctype html><meta name="prana-widget" content="1"><p role="alert">${escapeHtml(error instanceof Error ? error.message : "Widget is not ready yet.")}</p>`, { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" } });
   }
   const configJson = JSON.stringify(config).replace(/</g, "\\u003c");
-  const html = `<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><base target="_top"><style>html,body{margin:0;padding:0}${stylesheet} .prana-quiz,.prana-quiz .screen{min-height:0}</style></head><body>${markup}<script type="application/json" id="prana-embed-config">${configJson}</script><script>${widgetScript}</script><script>new ResizeObserver(function(){parent.postMessage({type:'prana-widget-height',height:document.body.scrollHeight},location.origin)}).observe(document.body);</script></body></html>`;
+  const html = `<!doctype html><html><head><meta name="prana-widget" content="1"><meta name="viewport" content="width=device-width,initial-scale=1"><base target="_top"><style>html,body{margin:0;padding:0}${stylesheet} .prana-quiz,.prana-quiz .screen{min-height:0}</style></head><body>${markup}<script type="application/json" id="prana-embed-config">${configJson}</script><script>${widgetScript}</script><script>new ResizeObserver(function(){parent.postMessage({type:'prana-widget-height',height:document.body.scrollHeight},location.origin)}).observe(document.body);</script></body></html>`;
   return new Response(html, { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" } });
 };

@@ -2,6 +2,7 @@
   class="prana-quiz"
   id="prana-quiz-{{ block.id }}"
   data-block-layout="{{ expected_layout | default: 'three' }}"
+  data-floating-embed="{{ floating_embed | default: false }}"
   data-configured="false"
   data-design-mode="{{ request.design_mode }}"
   data-prana-quiz
@@ -137,13 +138,14 @@
   </div>
 
   <div class="screen" data-screen="scanner">
-    <button class="back-nav" type="button" data-goto="entry"><span class="back-arrow">←</span> Back</button>
+    
     <div class="hdr" style="padding-top:1rem">
       <div class="hdr-logo">{{ block.settings.brand_name | escape }}</div>
       <h2 class="hdr-title">Skin <em>Insights</em></h2>
       <div class="hdr-sub">Discover your skin insights. Not a medical diagnosis.</div>
     </div>
     <div class="scanner-wrap">
+      <button class="back-nav" type="button" data-goto="entry"><span class="back-arrow">&#8592;</span> Back</button>
       <ol class="scan-steps" aria-label="Skin scan progress"><li data-scan-step-label="1" aria-current="step"><span>1</span> Consent</li><li data-scan-step-label="2"><span>2</span> Photo</li><li data-scan-step-label="3"><span>3</span> Results</li></ol>
       <section data-scan-step="1">
         <h3 class="scan-step-title">Ready to scan?</h3>

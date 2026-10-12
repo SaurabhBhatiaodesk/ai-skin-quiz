@@ -748,6 +748,7 @@ import { buildFaceMap } from "./face-map.js";
         root.style.setProperty("--button-text", design.buttonText);
         root.style.setProperty("--button-radius", design.radius === "pill" ? "999px" : design.radius === "square" ? "0px" : "8px");
         if (design.background !== undefined) root.querySelectorAll('[data-screen="quick"], [data-screen="deep"]').forEach(function (element) { element.style.setProperty("background", String(design.background), "important"); });
+        if (design.cardColor !== undefined) root.style.setProperty('--quiz-card', design.cardColor);
         if (design.cardColor !== undefined) root.querySelectorAll('.quiz-wrap').forEach(function (element) { element.style.setProperty("background", String(design.cardColor), "important"); });
         if (design.headingColor !== undefined) root.querySelectorAll('[data-screen]:not([data-screen="scanner"]) .hdr-title, .rh-dosha').forEach(function (element) { element.style.setProperty("color", String(design.headingColor), "important"); });
         if (design.headingSize !== undefined) root.querySelectorAll('[data-screen]:not([data-screen="scanner"]) .hdr-title, .rh-dosha').forEach(function (element) { element.style.setProperty("font-size", String(design.headingSize) + "px", "important"); });
@@ -807,7 +808,7 @@ import { buildFaceMap } from "./face-map.js";
         go("scanner");
       }
       var appearance = data.scanAppearance || {};
-      if (appearance.enabled !== false && scanReady && enabledPaths.indexOf("scan") !== -1 && !document.querySelector("[data-scan-chat-launcher]")) {
+      if (root.getAttribute("data-floating-embed") === "true" && appearance.enabled !== false && scanReady && enabledPaths.indexOf("scan") !== -1 && !document.querySelector("[data-scan-chat-launcher]")) {
         var launcher = document.createElement("button");
         launcher.type = "button"; launcher.className = "prana-scan-launcher";
         launcher.setAttribute("data-scan-chat-launcher", "");
@@ -839,6 +840,7 @@ import { buildFaceMap } from "./face-map.js";
         launcher.style.bottom = (appearance.offset == null ? 24 : appearance.offset) + "px";
         launcher.style[appearance.position === "left" ? "left" : "right"] = (appearance.offset == null ? 24 : appearance.offset) + "px";
         launcher.style[appearance.position === "left" ? "right" : "left"] = "auto";
+        root.style.setProperty("--scan-offset", (appearance.offset == null ? 24 : appearance.offset) + "px");
         root.style.setProperty("--scan-panel", appearance.panelColor || "#faf7f2");
         root.style.setProperty("--scan-text", appearance.textColor || "#1a1208");
         root.style.setProperty("--scan-accent", appearance.accentColor || "#8f6330");
