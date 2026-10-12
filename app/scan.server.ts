@@ -59,7 +59,7 @@ export async function scanResult(submission: {code?: unknown; image?: unknown; i
   const hour = Math.floor(Date.now() / 3600000);
   await prisma.$executeRawUnsafe("CREATE TABLE IF NOT EXISTS ScanUsage (shop TEXT NOT NULL, hour INTEGER NOT NULL, count INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(shop,hour))");
   await prisma.$executeRawUnsafe("DELETE FROM ScanUsage WHERE hour < ?", hour - 1);
-  const allowance = await prisma.$executeRawUnsafe("INSERT INTO ScanUsage (shop,hour,count) VALUES (?,?,1) ON CONFLICT(shop,hour) DO UPDATE SET count=count+1 WHERE count<60", shop, hour);
+  const allowance = await prisma.$executeRawUnsafe("INSERT INTO ScanUsage (shop,hour,count) VALUES (?,?,1) ON CONFLICT(shop,hour) DO UPDATE SET count=ScanUsage.count+1 WHERE ScanUsage.count<60", shop, hour);
   if (!allowance) throw new Error("Scan limit reached. Please try again later.");
   const result = await analysePhoto(submission.images ?? submission.image, key);
   const catalog = admin ? await loadStoreProducts(admin) : [];

@@ -11,7 +11,7 @@
     "env": "shopify app env",
     "start": "react-router-serve ./build/server/index.js",
     "docker-start": "npm run setup && npm run start",
-    "setup": "prisma generate && prisma migrate deploy",
+    "setup": "node scripts/database-setup.mjs --migrate",
     "lint": "eslint --ignore-path .gitignore --ignore-pattern extensions/dosha-quiz/assets/dosha-quiz.js --ignore-pattern extensions/dosha-quiz/assets/dosha-quiz-runtime.js --cache --cache-location ./node_modules/.cache/eslint .",
     "shopify": "shopify",
     "prisma": "prisma",
@@ -19,7 +19,8 @@
     "vite": "vite",
     "typecheck": "react-router typegen && tsc --noEmit",
     "build:widget": "esbuild app/storefront-quiz.js --bundle --minify --outfile=extensions/dosha-quiz/assets/dosha-quiz-runtime.js",
-    "prebuild": "npm run build:widget"
+    "prebuild": "npm run build:widget",
+    "postinstall": "node scripts/database-setup.mjs"
   },
   "type": "module",
   "engines": {
