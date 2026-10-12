@@ -1,0 +1,44 @@
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import { pathToFileURL } from 'node:url';
+import { resolve } from 'node:path';
+import { build } from 'esbuild';
+import { DatabaseSync } from 'node:sqlite';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { migrateSqlite } from './migrate-sqlite-data.mjs';
+import { postgresSql } from '../app/database-sql.js';
+const modulePath=process.argv[2];
+if(!modulePath) throw new Error('Pass the temporary PGlite module path.');
+const {PGlite}=await import(pathToFileURL(resolve(modulePath)).href);
+const db=new PGlite();
+await db.exec(await readFile('prisma/production/migrations/20261012000000_initial/migration.sql','utf8'));
+globalThis.productionTestDb={
+  async $executeRawUnsafe(sql,...values){const result=await db.query(postgresSql(sql),values);return result.affectedRows||0;},
+  async $queryRawUnsafe(sql,...values){return (await db.query(postgresSql(sql),values)).rows;},
+};
+const bundle=await build({stdin:{contents:`export * as quiz from './app/quiz.server.ts';export * as reports from './app/report.server.ts';export * as appearance from './app/scan-appearance.server.ts';export * as setup from './app/setup.server.ts';export * as settings from './app/settings.server.ts';`,resolveDir:process.cwd()},bundle:true,write:false,platform:'node',format:'esm',packages:'external',plugins:[{name:'test-db',setup(build){build.onResolve({filter:/^\.\/db\.server$/},()=>({path:'test-db',namespace:'test'}));build.onLoad({filter:/.*/,namespace:'test'},()=>({contents:'export default globalThis.productionTestDb;'}));}}]});
+const api=await import('data:text/javascript;base64,'+Buffer.from(bundle.outputFiles[0].text).toString('base64'));
+await api.quiz.ensureDefaultScanWidget('production-test');
+const library=await api.quiz.loadLibrary('production-test');assert.equal(library.length,2);
+await api.quiz.saveQuiz('production-test',library[1],library[1].handle);assert.equal((await api.quiz.publicQuiz('production-test',library[1].handle)).handle,library[1].handle);
+await api.setup.markThemeActivated('production-test');assert.equal(await api.setup.isThemeActivated('production-test'),true);
+await api.appearance.loadScanAppearance('production-test');
+process.env.SETTINGS_ENCRYPTION_KEY='test-only-key';await api.settings.saveOpenAIKey('production-test','sk-'+ 'a'.repeat(40));assert.equal(await api.settings.hasOpenAIKey('production-test'),true);assert.equal(await api.settings.getOpenAIKey('production-test'),'sk-'+ 'a'.repeat(40));
+const result={dosha:'vata',source:'Quick Quiz',insight:'Test',profile:{name:'Vata',insight:'Test',products:[]},products:[]};
+const report=await api.reports.storeReport('production-test',result);assert.ok(report.reportId);const unlocked=await api.reports.unlockReport('production-test',report.reportId,'test@example.com');assert.equal(unlocked.result.insight,'Test');assert.equal((await api.reports.reportStats('production-test')).results,1);
+await db.query(postgresSql('CREATE TABLE ScanUsage (shop TEXT NOT NULL, hour INTEGER NOT NULL, count INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(shop,hour))'));
+const sql='INSERT INTO ScanUsage (shop,hour,count) VALUES (?,?,1) ON CONFLICT(shop,hour) DO UPDATE SET count=ScanUsage.count+1 WHERE ScanUsage.count<60';
+for(let i=0;i<60;i++) assert.equal((await db.query(postgresSql(sql),['test',1])).affectedRows,1);
+assert.equal((await db.query(postgresSql(sql),['test',1])).affectedRows,0);
+assert.equal(postgresSql("SELECT '?' AS literal, ? AS bound"),"SELECT '?' AS literal, $1 AS bound");
+const fixtureDir=await mkdtemp(join(tmpdir(),'prana-db-fixture-'));
+const fixturePath=join(fixtureDir,'source.sqlite');const fixture=new DatabaseSync(fixturePath);
+fixture.exec('CREATE TABLE ScanAppearance (shop TEXT PRIMARY KEY,payload TEXT NOT NULL)');fixture.prepare('INSERT INTO ScanAppearance VALUES (?,?)').run('migrated-shop','{"accentColor":"#123456"}');
+fixture.exec('CREATE TABLE "QuizShopSetup" (shop TEXT PRIMARY KEY,"themeActivatedAt" INTEGER)');fixture.prepare('INSERT INTO QuizShopSetup VALUES (?,?)').run('migrated-shop',Date.now());fixture.close();
+assert.equal((await migrateSqlite(fixturePath,globalThis.productionTestDb,false)).length,2);
+await migrateSqlite(fixturePath,globalThis.productionTestDb,true);
+assert.equal((await db.query('SELECT payload FROM scanappearance WHERE shop=$1',['migrated-shop'])).rows[0].payload,'{"accentColor":"#123456"}');
+assert.equal(await api.setup.isThemeActivated('migrated-shop'),true);await rm(fixtureDir,{recursive:true});
+await db.close();console.log('PASS: PostgreSQL migrations, independent quiz config, encrypted keys, reports, millisecond timestamps, and atomic scan quota.');
