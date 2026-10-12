@@ -3,7 +3,7 @@
 client_id = "7c7f0cc16b5b8d2c0ea9bd2158176233"
 application_url = "https://example.com"
 embedded = true
-name = "ai-skin-quiz"
+name = "Skin Scan and Quiz"
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes

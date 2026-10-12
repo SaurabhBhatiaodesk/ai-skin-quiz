@@ -33,7 +33,7 @@ export default function App() {
   return (
     <>
       <script src="https://cdn.shopify.com/shopifycloud/polaris.js" />
-      <s-page heading="AI Skin Quiz">
+      <s-page heading="Skin Scan and Quiz">
         <s-section heading="Create personalized skin quizzes">
           <s-stack gap="base">
             <s-paragraph>Create quizzes, tag answers and recommend products from your Shopify store.</s-paragraph>
