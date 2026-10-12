@@ -10,7 +10,7 @@ import type { DeepQuestion, ProductMapping, QuickQuestion, ResultTag, ShopProduc
 
 type SaveResult = { ok: true; quiz: StoredQuiz } | { ok: false; error: string };
 type Kind = "quick" | "deep" | "scan";
-type Tab = "edit" | "design" | "tags" | "products" | "content" | "branching" | "settings";
+type Tab = "edit" | "design" | "tags" | "products" | "content" | "settings";
 
 const TABS: Array<{ id: Tab; label: string; icon: "edit" | "design" | "tag" | "link" | "content" | "branch" | "gear" }> = [
   { id: "edit", label: "Quiz edit", icon: "edit" },
@@ -18,7 +18,6 @@ const TABS: Array<{ id: Tab; label: string; icon: "edit" | "design" | "tag" | "l
   { id: "tags", label: "Answer tags", icon: "tag" },
   { id: "products", label: "Link product", icon: "link" },
   { id: "content", label: "Personalized content", icon: "content" },
-  { id: "branching", label: "Branching", icon: "branch" },
   { id: "settings", label: "Settings", icon: "gear" },
 ];
 
@@ -169,7 +168,7 @@ export default function QuizEditor({
     } as Partial<QuickQuestion & DeepQuestion>);
   }
 
-  function addQuestion() {
+  function addQuestion(position?: number) {
     if (questions.length >= (kind === "deep" || quiz.layout === "single" ? 40 : 12)) return;
     // Open the new question straight away so it can be filled in.
     if (tab === "edit") setQuestionOpen(true);
@@ -188,7 +187,9 @@ export default function QuizEditor({
             ],
           },
         ];
-        setIndex(quick.length - 1);
+        const target = position === undefined ? quick.length - 1 : Math.max(0, Math.min(position, quick.length - 1));
+        if (target < quick.length - 1) quick.splice(target, 0, quick.pop()!);
+        setIndex(target);
         return { ...current, quick };
       }
       const deep = [
@@ -205,9 +206,26 @@ export default function QuizEditor({
           ],
         },
       ];
-      setIndex(deep.length - 1);
+      const target = position === undefined ? deep.length - 1 : Math.max(0, Math.min(position, deep.length - 1));
+      if (target < deep.length - 1) deep.splice(target, 0, deep.pop()!);
+      setIndex(target);
       return { ...current, deep };
     });
+  }
+
+  function moveQuestion(target: number) {
+    if (!Number.isInteger(target) || target < 0 || target >= questions.length || target === safeIndex) return;
+    setQuiz(current => {
+      if (kind === "quick") {
+        const quick = [...current.quick];
+        quick.splice(target, 0, quick.splice(safeIndex, 1)[0]);
+        return { ...current, quick };
+      }
+      const deep = [...current.deep];
+      deep.splice(target, 0, deep.splice(safeIndex, 1)[0]);
+      return { ...current, deep };
+    });
+    setIndex(target);
   }
 
   function removeQuestion() {
@@ -303,7 +321,7 @@ export default function QuizEditor({
                   </s-select> : null}
                   <s-stack direction="inline" gap="base" justifyContent="space-between" alignItems="center">
                     <s-text color="subdued">{kind === "scan" ? "Configure camera and photo upload for the scan block." : "Select a question to edit, or add a new one."}</s-text>
-                    {tab === "edit" && kind !== "scan" ? <s-button icon="plus" variant="primary" onClick={addQuestion} disabled={questions.length >= (kind === "deep" || quiz.layout === "single" ? 40 : 12)}>Add question</s-button> : null}
+                    {tab === "edit" && kind !== "scan" ? <s-button icon="plus" variant="primary" onClick={() => addQuestion()} disabled={questions.length >= (kind === "deep" || quiz.layout === "single" ? 40 : 12)}>Add question</s-button> : null}
                   </s-stack>
                   {kind !== "scan" && !questions.length ? <s-banner tone="warning" heading="No questions yet">Click Add question to create the first question for this quiz, then Save.</s-banner> : null}
                   <s-grid gridTemplateColumns={tab === "tags" ? "minmax(0, 1fr)" : "repeat(auto-fit, minmax(220px, 1fr))"} gap="base">
@@ -440,30 +458,7 @@ export default function QuizEditor({
               <s-paragraph>Provider configuration is shared across all quizzes in this store.</s-paragraph>
               <s-link href="/app/settings">Open Global Settings</s-link>
             </s-section> : null}
-            {tab === "branching" ? <s-section heading="Quiz flow">
-              <s-stack gap="base">
-                <s-banner tone="info" heading="Questions follow a fixed order">Answer-based branching is not available yet. Customers continue through the questions in their selected quiz flow.</s-banner>
-                {quiz.layout === "scan" ? <s-paragraph>This block opens Skin Scan directly with camera or photo upload.</s-paragraph> : quiz.layout === "single" ? <s-paragraph>This single quiz contains {quiz.quick.length} questions in one flow.</s-paragraph> : <>
-                  <s-paragraph>Quick Quiz has {quiz.quick.length} questions. Deep Quiz has {quiz.deep.length} questions grouped into the sections below.</s-paragraph>
-                  <s-table><s-table-header-row><s-table-header listSlot="primary">Deep question</s-table-header><s-table-header listSlot="labeled">Section</s-table-header></s-table-header-row><s-table-body>
-                    {quiz.deep.map((item, itemIndex) => <s-table-row key={itemIndex}><s-table-cell>{itemIndex + 1}. {item.text}</s-table-cell><s-table-cell>
-                      <s-select label={`Section for question ${itemIndex + 1}`} labelAccessibilityVisibility="exclusive" value={String(item.layer)} onChange={event => {
-                        const layer = Number(event.currentTarget.value);
-                        setQuiz(current => ({ ...current, deep: current.deep.map((question, at) => {
-                          if (at !== itemIndex) return question;
-                          return { ...question, layer, options: question.options.map(option => {
-                            const scores: Record<string, number> = {};
-                            for (const [key, value] of Object.entries(option.scores)) { const base = key.replace(/v$/, ""); const next = layer === 2 ? `${base}v` : base; scores[next] = (scores[next] || 0) + value; }
-                            return { ...option, scores };
-                          }) };
-                        }) }));
-                      }}><s-option value="1">Baseline nature</s-option><s-option value="2">Current state</s-option><s-option value="3">Environment</s-option></s-select>
-                    </s-table-cell></s-table-row>)}
-                  </s-table-body></s-table>
-                </>}
-                <s-stack direction="inline" justifyContent="end"><s-button variant="primary" loading={pending} onClick={save}>Save flow</s-button></s-stack>
-              </s-stack>
-            </s-section> : null}
+
             {tab === "products" ? <>
               {productsError ? <s-banner tone="warning" heading="Products could not be loaded">Refresh the page to try again. Existing mappings are kept.</s-banner> : null}
               <s-modal id="delete-mappings-modal" heading="Delete product mappings?">
@@ -575,7 +570,16 @@ export default function QuizEditor({
             </s-section> : null}
             {showQuestions && question && (tab !== "edit" || questionOpen) ? <s-section heading={`Question ${safeIndex + 1}`}>
               <s-stack gap="base">
-                {tab === "edit" ? <s-stack direction="inline" justifyContent="space-between" gap="small"><s-button icon="arrow-left" onClick={() => setQuestionOpen(false)}>Back to questions</s-button><s-button icon="delete" tone="critical" variant="secondary" commandFor="delete-question-modal" command="--show" disabled={questions.length <= 1}>Delete question</s-button></s-stack> : null}
+                {tab === "edit" ? <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:16,flexWrap:"wrap"}}>
+                  <s-button icon="arrow-left" onClick={() => setQuestionOpen(false)}>Back to questions</s-button>
+                  <div style={{display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
+                    <div style={{width:160}}><s-select label="Position" labelAccessibilityVisibility="exclusive" value={String(safeIndex)} onChange={event => moveQuestion(Number(event.currentTarget.value))}>
+                      {questions.map((_, at) => <s-option key={at} value={String(at)}>Question {at + 1}</s-option>)}
+                    </s-select></div>
+                    <s-button icon="plus" onClick={() => addQuestion(safeIndex)} disabled={questions.length >= (kind === "deep" || quiz.layout === "single" ? 40 : 12)}>Add question before</s-button>
+                    <s-button icon="delete" tone="critical" variant="secondary" commandFor="delete-question-modal" command="--show" disabled={questions.length <= 1}>Delete question</s-button>
+                  </div>
+                </div> : null}
                 <s-text-area label="Question" rows={3} value={question.text} onInput={event => patch({ text: event.currentTarget.value })} />
                 <s-grid gridTemplateColumns={tab === "tags" ? "repeat(2, minmax(0, 1fr))" : "repeat(auto-fit, minmax(240px, 1fr))"} gap="base">
                   {question.options.map((option, optionIndex) => <s-box key={optionIndex} border="base" borderRadius="base" padding="base">

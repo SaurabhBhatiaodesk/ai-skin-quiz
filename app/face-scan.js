@@ -143,7 +143,7 @@ export async function createFaceScan(video, zone, onStatus) {
     const w = overlay.width, h = overlay.height, oval = guideOval(w, h);
     context.fillStyle = "#00000066";
     context.beginPath(); context.rect(0, 0, w, h); context.ellipse(oval.centerX, oval.centerY, oval.radiusX, oval.radiusY, 0, 0, Math.PI * 2, true); context.fill("evenodd");
-    context.strokeStyle = ok ? "#75e6ae" : "#ffffff"; context.lineWidth = Math.max(3, w / 220);
+    context.strokeStyle = ok ? "#8DC8A4" : "#E4EDE7"; context.lineWidth = Math.max(3, w / 220);
     context.beginPath(); context.ellipse(oval.centerX, oval.centerY, oval.radiusX, oval.radiusY, 0, 0, Math.PI * 2); context.stroke();
     if (!points || !ok) return;
     context.save(); context.beginPath(); context.ellipse(oval.centerX, oval.centerY, oval.radiusX, oval.radiusY, 0, 0, Math.PI * 2); context.clip();
@@ -154,25 +154,14 @@ export async function createFaceScan(video, zone, onStatus) {
       [61,40,37,0,267,270,291,321,314,17,84,91,61], [168,6,197,195,5,4,1],
       [50,101,205,187,147,123,50], [280,330,425,411,376,352,280]
     ];
-    context.strokeStyle = "#a4f5cd70"; context.lineWidth = Math.max(1, w/800);
+    context.strokeStyle = "#A8D6BA65"; context.lineWidth = Math.max(1, w/800);
     for (const contour of contours) {
       context.beginPath();
       contour.forEach((index, i) => { const point = points[index]; if (!point) return; if (i === 0) context.moveTo(point.x*w,point.y*h); else context.lineTo(point.x*w,point.y*h); });
       context.stroke();
     }
-    context.fillStyle = "#c2ffe3b0";
+    context.fillStyle = "#CEEBD8A0";
     for (let i = 0; i < points.length; i += 9) { context.beginPath(); context.arc(points[i].x * w, points[i].y * h, Math.max(1,w/650), 0, Math.PI * 2); context.fill(); }
-    if (scanning && faceBox) {
-      // Sweep is visual capture guidance, not a claim to measure skin. Time pauses when framing fails.
-      const phase = (sweepTime % 2400) / 1200;
-      const position = phase <= 1 ? phase : 2-phase;
-      const x = faceBox.minX + (faceBox.maxX-faceBox.minX)*position;
-      const glow = context.createLinearGradient(x-18,0,x+18,0);
-      glow.addColorStop(0,"#91ffd000"); glow.addColorStop(.5,"#91ffd070"); glow.addColorStop(1,"#91ffd000");
-      context.fillStyle = glow; context.fillRect(x-18,faceBox.minY,36,faceBox.maxY-faceBox.minY);
-      context.strokeStyle = "#c6ffe6"; context.lineWidth = 2;
-      context.beginPath(); context.moveTo(x,faceBox.minY); context.lineTo(x,faceBox.maxY); context.stroke();
-    }
     context.restore();
   }
 
@@ -285,7 +274,7 @@ export async function createFaceScan(video, zone, onStatus) {
         assertActive();
         if (!freshFace()) { countdown.textContent = ""; countdownDone = false; break; }
         countdown.textContent = String(count);
-        instruction.textContent = "Hold still"; hint.textContent = "Capturing in " + count + "...";
+        instruction.textContent = "Face aligned"; hint.textContent = "Keep still ? " + count;
         onStatus("Hold still. Capturing in " + count); await wait(550);
       }
       if (!freshFace()) countdownDone = false;
@@ -318,7 +307,7 @@ export async function createFaceScan(video, zone, onStatus) {
       if (disposed) return Promise.reject(new Error("Camera closed. Please reopen it."));
       if (scanning) return Promise.reject(new Error("A scan is already running."));
       scanning = true;
-      return capture().then((images) => { onStatus("Photo taken. Checking your skin..."); return images; }).finally(() => { scanning = false; countdown.textContent = ""; });
+      return capture().then((images) => { onStatus("Photo captured. Analysing visible skin details?"); return images; }).finally(() => { scanning = false; countdown.textContent = ""; });
     },
     close() {
       disposed = true; clearTimeout(timer); flash(false); detector.close();

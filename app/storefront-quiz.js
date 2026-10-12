@@ -855,15 +855,19 @@ import { buildFaceMap } from "./face-map.js";
         close.type = "button"; close.className = "scan-chat-close"; close.textContent = "\u00d7";
         close.setAttribute("aria-label", "Close skin scan assistant"); root.prepend(close);
         var previousOverflow = "";
+        var scrollLocked = false;
         closeScanChat = function () {
-          if (!root.classList.contains("scan-chat-open")) return;
+          if (!scanChatOpen && !scrollLocked) return;
           scanChatOpen = false;
           root.classList.remove("scan-chat-open"); root.removeAttribute("role"); root.removeAttribute("aria-modal"); root.removeAttribute("aria-label");
-          document.body.style.overflow = previousOverflow;
-          stopCamera(); launcher.setAttribute("aria-expanded", "false"); launcher.focus();
+          if (scrollLocked) document.body.style.overflow = previousOverflow;
+          scrollLocked = false;
+          stopCamera(); launcher.setAttribute("aria-expanded", "false"); launcher.focus({ preventScroll: true });
         };
         launcher.addEventListener("click", function () {
-          previousOverflow = document.body.style.overflow; document.body.style.overflow = "hidden";
+          if (scanChatOpen) { closeScanChat(); return; }
+          if (!scrollLocked) { previousOverflow = document.body.style.overflow; scrollLocked = true; }
+          document.body.style.overflow = "hidden";
           scanChatOpen = true;
           root.classList.add("scan-chat-open"); root.setAttribute("role", "dialog"); root.setAttribute("aria-modal", "true"); root.setAttribute("aria-label", "Skin scan assistant");
           launcher.setAttribute("aria-expanded", "true"); go("scanner", true); close.focus();
