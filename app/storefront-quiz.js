@@ -189,6 +189,8 @@ import { buildFaceMap } from "./face-map.js";
       if (email) { email.disabled = false; email.value = ""; }
       var confirm = q("[data-email-confirm]");
       if (confirm) confirm.classList.remove("show");
+      var ritualSection = q("[data-ritual-section]");
+      if (ritualSection) ritualSection.style.display = reportLocked ? "none" : "";
       var box = q("[data-products]");
       if (box) {
         box.innerHTML = (result.products || []).map(function (product) {
