@@ -33,6 +33,17 @@ import { buildFaceMap } from "./face-map.js";
     var lastFocus = null;
     var scanChatOpen = false;
     var closeScanChat = null;
+    var removed = false;
+    var removeLauncher = null;
+    function cleanupWidget(event) {
+      if (event && event.type === "shopify:section:unload" && event.target !== root && !(event.target && event.target.contains(root))) return;
+      removed = true;
+      if (closeScanChat) closeScanChat();
+      stopCamera();
+      if (removeLauncher) removeLauncher();
+      document.removeEventListener("shopify:section:unload", cleanupWidget);
+    }
+    document.addEventListener("shopify:section:unload", cleanupWidget);
 
     function q(sel) { return root.querySelector(sel); }
 
@@ -701,6 +712,7 @@ import { buildFaceMap } from "./face-map.js";
       });
     }
     loadQuiz().then(function (data) {
+      if (removed) return;
       var expectedLayout = root.getAttribute("data-block-layout");
       if (expectedLayout && expectedLayout !== (data.layout || "three")) throw new Error("Paste the widget code of a " + (expectedLayout === "single" ? "Single Quiz" : expectedLayout === "scan" ? "scan" : "Combined Quiz") + " from All quizzes in the app.");
       root.setAttribute("data-configured", "true");
@@ -850,7 +862,9 @@ import { buildFaceMap } from "./face-map.js";
         root.style.setProperty("--scan-width", (appearance.modalWidth || 520) + "px");
         root.style.setProperty("--scan-radius", (appearance.modalRadius == null ? 24 : appearance.modalRadius) + "px");
         root.setAttribute("data-scan-position", appearance.position === "left" ? "left" : "right");
+        if (removed) return;
         document.body.appendChild(launcher);
+        removeLauncher = function () { launcher.remove(); };
         var close = document.createElement("button");
         close.type = "button"; close.className = "scan-chat-close"; close.textContent = "\u00d7";
         close.setAttribute("aria-label", "Close skin scan assistant"); root.prepend(close);
@@ -862,7 +876,7 @@ import { buildFaceMap } from "./face-map.js";
           root.classList.remove("scan-chat-open"); root.removeAttribute("role"); root.removeAttribute("aria-modal"); root.removeAttribute("aria-label");
           if (scrollLocked) document.body.style.overflow = previousOverflow;
           scrollLocked = false;
-          stopCamera(); launcher.setAttribute("aria-expanded", "false"); launcher.focus({ preventScroll: true });
+          stopCamera(); launcher.setAttribute("aria-expanded", "false"); if (!removed) launcher.focus({ preventScroll: true });
         };
         launcher.addEventListener("click", function () {
           if (scanChatOpen) { closeScanChat(); return; }
