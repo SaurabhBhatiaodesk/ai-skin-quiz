@@ -62,7 +62,7 @@ if (!response.ok) throw new Error(quiz.error || "Could not load quiz");
           <s-box padding="base">
             <s-stack gap="base">
               <s-stack direction="inline" justifyContent="space-between" alignItems="center">
-                <div style={{ minHeight: 48, flex: 1, minWidth: 0 }}><s-link href={`/app/editor?quiz=${encodeURIComponent(quiz.handle)}`}><span style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", fontSize: 15, lineHeight: "24px", fontWeight: 600, color: "#000000" }}>{quiz.name}</span></s-link></div>
+                <div style={{ minHeight: 44, flex: 1, minWidth: 0 }}><s-link href={`/app/editor?quiz=${encodeURIComponent(quiz.handle)}`}><span style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", fontSize: 15, lineHeight: "24px", fontWeight: 600, color: "#000000" }}>{quiz.name}</span></s-link></div>
                 <s-button icon="menu-horizontal" variant="tertiary" accessibilityLabel={`Actions for ${quiz.name}`} commandFor={`quiz-actions-${quiz.handle}`} command="--toggle" />
                 <s-popover id={`quiz-actions-${quiz.handle}`}><s-box padding="small"><s-stack gap="small">
                   <s-button icon="store" variant="tertiary" href={quiz.addUrl} target="_top">Add to theme</s-button>
@@ -77,8 +77,8 @@ if (!response.ok) throw new Error(quiz.error || "Could not load quiz");
               </s-stack>
               <s-text color="subdued">{quiz.layout === "scan" ? "Camera or photo upload" : `${quiz.questions} ${quiz.questions === 1 ? "question" : "questions"}`}</s-text>
               <s-stack direction="inline" gap="small">
-                <s-button href={`/app/editor?quiz=${encodeURIComponent(quiz.handle)}`}>{quiz.layout === "scan" ? "Edit Skin Scan" : "Edit quiz"}</s-button>
-                <s-button commandFor="quiz-developer-modal" command="--show" onClick={() => { setDeveloperQuiz({handle:quiz.handle,name:quiz.name,layout:quiz.layout}); setCopyStatus(""); setCopyTarget(""); }}>{quiz.layout === "scan" ? "Skin Scan actions" : "Quiz actions"}</s-button>
+                <s-button icon="edit" href={`/app/editor?quiz=${encodeURIComponent(quiz.handle)}`}>{quiz.layout === "scan" ? "Edit Skin Scan" : "Edit quiz"}</s-button>
+                <s-button icon="code" commandFor="quiz-developer-modal" command="--show" onClick={() => { setDeveloperQuiz({handle:quiz.handle,name:quiz.name,layout:quiz.layout}); setCopyStatus(""); setCopyTarget(""); }}>Embed &amp; API</s-button>
               </s-stack>
             </s-stack>
           </s-box>

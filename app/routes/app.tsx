@@ -17,6 +17,7 @@ export default function App() {
 
   return (
     <AppProvider apiKey={apiKey}>
+      <style>{`body { font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; } s-page { font-family: inherit; }`}</style>
       <s-app-nav>
         <s-link href="/app" {...{ rel: "home" }}>Home</s-link>
         <s-link href="/app/quizzes">Quizzes &amp; Skin Scan</s-link>
