@@ -1,3 +1,4 @@
+import { quizPreview } from "./quiz-preview";
 import { skinScanActivationUrl } from "./theme-activation.server";
 import { hasOpenAIKey, selectedProvider } from "./settings.server";
 import { ensureDefaultScanWidget, loadLibrary } from "./quiz.server";
@@ -26,7 +27,7 @@ export async function quizOverview(shop: string, admin: AdminGraphql) {
     quizzes: quizzes.map((quiz, index) => ({
       handle: quiz.handle,
       name: quiz.name,
-      cover: quiz.coverImage || quiz.quick.find(question => question.image)?.image || quiz.deep.find(question => question.image)?.image || `/images/onboarding/cover-${quiz.layout === "scan" ? "scan" : quiz.layout === "single" ? "single" : "three"}.svg`,
+      cover: quiz.coverImage || quiz.quick.find(question => question.image)?.image || quiz.deep.find(question => question.image)?.image || quizPreview(quiz.resultMode === "products" ? "products" : quiz.layout || "three", quiz),
       layout: quiz.layout || "three",
       questions: quiz.quick.length + quiz.deep.length,
       live: live[index],

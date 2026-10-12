@@ -1,3 +1,4 @@
+import { quizPreview } from "../quiz-preview";
 import { useState } from "react";
 import type { ActionFunctionArgs, HeadersFunction, LoaderFunctionArgs } from "react-router";
 import { Form, redirect, useActionData, useLoaderData, useNavigation, useSubmit } from "react-router";
@@ -5,7 +6,7 @@ import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
 import { createQuiz } from "../quiz.server";
 import { providerHasKey, selectedProvider } from "../settings.server";
-import HomeIllustration from "../components/HomeIllustration";
+
 
 type Path = "quick" | "deep" | "scan";
 
@@ -13,6 +14,7 @@ const TYPES = [
   { value: "three", icon: "theme", title: "Combined Quiz", detail: "Two or three quiz paths in one widget. Customers choose their path." },
   { value: "single", icon: "quiz", title: "Single Quiz", detail: "One question flow: Quick Skin Quiz or Dosha Quiz." },
   { value: "scan", icon: "scan", title: "Only Skin Scan", detail: "AI Skin Scan on its own, with consent, photo and results." },
+  { value: "products", icon: "quiz", title: "Product Quiz", detail: "Questions and matched products only. No personalized reading." },
 ] as const;
 
 const PATHS: Array<{ value: Path; title: string; detail: string }> = [
@@ -32,11 +34,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const form = await request.formData();
   const name = String(form.get("name") || "").trim();
   const layout = form.get("layout");
-  if (!["three", "single", "scan"].includes(String(layout))) return { error: "Choose a quiz type." };
+  if (!["three", "single", "scan", "products"].includes(String(layout))) return { error: "Choose a quiz type." };
   const paths = String(form.get("paths") || "").split(",").filter((path): path is Path => ["quick", "deep", "scan"].includes(path));
-  if (!name || !paths.length || (layout === "three" ? paths.length < 2 : paths.length !== 1) || (layout === "scan" && paths[0] !== "scan") || (layout === "single" && paths[0] === "scan")) return { error: "Enter a quiz name and choose its quiz paths." };
+  if (!name || !paths.length || (layout === "three" ? paths.length < 2 : paths.length !== 1) || (layout === "scan" && paths[0] !== "scan") || ((layout === "single" || layout === "products") && paths[0] === "scan")) return { error: "Enter a quiz name and choose its quiz paths." };
   try {
-  const quiz = await createQuiz(session.shop, name, paths.length === 1 && paths[0] === "scan" ? "scan" : layout === "three" ? "three" : "single", paths, form.get("resultMode") === "products" ? "products" : "personalized");
+  const quiz = await createQuiz(session.shop, name, paths.length === 1 && paths[0] === "scan" ? "scan" : layout === "three" ? "three" : "single", paths, layout === "products" ? "products" : "personalized");
   // Go straight to the new quiz so the merchant can add questions.
   return redirect(`/app/editor?quiz=${encodeURIComponent(quiz.handle)}`);
   } catch (error) { return { error: error instanceof Error ? error.message : "Could not create quiz." }; }
@@ -51,11 +53,10 @@ export default function NewQuiz() {
   const submit = useSubmit();
   const pending = useNavigation().state !== "idle";
   const [name, setName] = useState("");
-  const [layout, setLayout] = useState<"three" | "single" | "scan" | null>(null);
+  const [layout, setLayout] = useState<"three" | "single" | "scan" | "products" | null>(null);
   const [paths, setPaths] = useState<Path[]>([]);
-  const [resultMode, setResultMode] = useState<"personalized" | "products">("personalized");
   const valid = Boolean(name.trim() && layout && (layout === "three" ? paths.length >= 2 : paths.length === 1));
-  const create = () => { if (valid && layout) submit({ name: name.trim(), layout, paths: paths.join(","), resultMode }, { method: "post" }); };
+  const create = () => { if (valid && layout) submit({ name: name.trim(), layout, paths: paths.join(",") }, { method: "post" }); };
 
   return (
     <s-page heading="Create Quiz" inlineSize="base">
@@ -69,16 +70,16 @@ export default function NewQuiz() {
           </s-section>
           <s-section heading="Quiz type">
             <s-grid gridTemplateColumns="repeat(auto-fit, minmax(220px, 1fr))" gap="base">
-              {TYPES.map(option => <s-clickable key={option.value} accessibilityLabel={`Select ${option.title}`} border={layout === option.value ? "base strong" : "base"} background={layout === option.value ? "subdued" : "base"} borderRadius="base" padding="base" onClick={() => { setLayout(option.value); setPaths(option.value === "scan" ? ["scan"] : []); }}>
+              {TYPES.map(option => <s-clickable key={option.value} accessibilityLabel={`Select ${option.title}`} border={layout === option.value ? "base strong" : "base"} background={layout === option.value ? "subdued" : "base"} borderRadius="base" padding="base" onClick={() => { setLayout(option.value); setPaths(option.value === "scan" ? ["scan"] : option.value === "products" ? ["quick"] : []); }}>
                 <s-stack gap="small">
-                  <div style={{ width: 72, marginBottom: 4 }}><HomeIllustration name={option.icon} /></div>
+                  <s-image src={quizPreview(option.value)} alt={`${option.title} layout preview`} aspectRatio="12 / 7" objectFit="contain" />
                   <s-stack direction="inline" justifyContent="space-between" alignItems="center"><s-text type="strong">{option.title}</s-text>{layout === option.value ? <s-icon type="check-circle" /> : null}</s-stack>
                   <s-text color="subdued">{option.detail}</s-text>
                 </s-stack>
               </s-clickable>)}
             </s-grid>
           </s-section>
-          {layout && layout !== "scan" ? <s-section heading={layout === "three" ? "Choose quiz options" : "Choose your quiz"}>
+          {layout && layout !== "scan" && layout !== "products" ? <s-section heading={layout === "three" ? "Choose quiz options" : "Choose your quiz"}>
             <s-stack gap="base">
               <s-paragraph>{layout === "three" ? "Select two or three options." : "Select one option."}</s-paragraph>
               <s-grid gridTemplateColumns="repeat(auto-fit, minmax(250px, 1fr))" gap="base">
@@ -102,14 +103,6 @@ export default function NewQuiz() {
             </s-stack>
           </s-section> : null}
           {layout === "scan" ? scanSetup : null}
-          {layout && layout !== "scan" ? <s-section heading="Result experience">
-            <s-stack gap="base">
-              <s-select label="Results" value={resultMode} onChange={event => setResultMode(event.currentTarget.value === "products" ? "products" : "personalized")}>
-                <s-option value="personalized">Personalized content + products</s-option>
-                <s-option value="products">Products only</s-option>
-              </s-select>
-            </s-stack>
-          </s-section> : null}
           <s-stack direction="inline" justifyContent="end" gap="small">
             <s-button href="/app/quizzes" disabled={pending}>Cancel</s-button>
             <s-button type="submit" variant="primary" loading={pending} disabled={!valid}>Create Quiz</s-button>

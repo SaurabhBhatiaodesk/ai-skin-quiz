@@ -62,7 +62,7 @@ if (!response.ok) throw new Error(quiz.error || "Could not load quiz");
           <s-box padding="base">
             <s-stack gap="base">
               <s-stack direction="inline" justifyContent="space-between" alignItems="center">
-                <s-link href={`/app/editor?quiz=${encodeURIComponent(quiz.handle)}`}><s-text type="strong">{quiz.name}</s-text></s-link>
+                <div style={{ minHeight: 48, flex: 1, minWidth: 0 }}><s-link href={`/app/editor?quiz=${encodeURIComponent(quiz.handle)}`}><span style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", fontSize: 15, lineHeight: "24px", fontWeight: 600, color: "#000000" }}>{quiz.name}</span></s-link></div>
                 <s-button icon="menu-horizontal" variant="tertiary" accessibilityLabel={`Actions for ${quiz.name}`} commandFor={`quiz-actions-${quiz.handle}`} command="--toggle" />
                 <s-popover id={`quiz-actions-${quiz.handle}`}><s-box padding="small"><s-stack gap="small">
                   <s-button icon="store" variant="tertiary" href={quiz.addUrl} target="_top">Add to theme</s-button>
