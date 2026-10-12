@@ -1,6 +1,6 @@
 import UnsavedChangesBar from "../components/UnsavedChangesBar";
 import { asProvider, PROVIDER_NAMES } from "../ai-shared";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useFetcher, useLoaderData } from "react-router";
 import type { ActionFunctionArgs, HeadersFunction, LoaderFunctionArgs } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
@@ -16,6 +16,11 @@ export async function action({ request }: ActionFunctionArgs) {
   try {
     const input = await request.json();
     const provider = asProvider(input.provider);
+    if (input.intent === "reveal") {
+      const key = await getAIKey(session.shop, provider);
+      if (!key) return Response.json({ error: "No API key is saved for this store." }, { status: 404, headers: { "Cache-Control": "no-store, private" } });
+      return Response.json({ key }, { headers: { "Cache-Control": "no-store, private" } });
+    }
     if (input.intent === "test") {
       if (provider !== "openai") throw new Error("Photo provider connection is pending authorization and adapter setup.");
       const key = await getAIKey(session.shop,provider);
@@ -39,6 +44,32 @@ export default function GlobalSettings() {
   const [changing, setChanging] = useState(false);
   const [visible, setVisible] = useState(false);
   const [copyStatus, setCopyStatus] = useState("");
+  const [savedKey, setSavedKey] = useState("");
+  const [revealing, setRevealing] = useState(false);
+  const [revealError, setRevealError] = useState("");
+  const revealRequest = useRef<AbortController | null>(null);
+  useEffect(() => {
+    setSavedKey(""); setRevealError(""); setRevealing(false);
+    return () => { revealRequest.current?.abort(); revealRequest.current = null; };
+  }, [provider, changing]);
+  useEffect(() => {
+    if (!savedKey) return;
+    const timeout = window.setTimeout(() => setSavedKey(""), 60000);
+    return () => window.clearTimeout(timeout);
+  }, [savedKey]);
+  async function revealSavedKey() {
+    if (savedKey) { setSavedKey(""); return; }
+    const controller = new AbortController(); revealRequest.current = controller;
+    setRevealing(true); setRevealError("");
+    try {
+      const response = await fetch("/app/settings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ intent: "reveal", provider }), cache: "no-store", signal: controller.signal });
+      const result = await response.json();
+      if (!response.ok || typeof result.key !== "string") throw new Error(result.error || "Could not show the saved key.");
+      if (revealRequest.current === controller && !controller.signal.aborted) setSavedKey(result.key);
+    } catch (error) {
+      if (!controller.signal.aborted) setRevealError(error instanceof Error ? error.message : "Could not show the saved key.");
+    } finally { if (revealRequest.current === controller) { setRevealing(false); revealRequest.current = null; } }
+  }
   const fetcher = useFetcher<typeof action>();
   const keySaved = data.keys[provider];
   const testing = Boolean(fetcher.json && typeof fetcher.json === "object" && !Array.isArray(fetcher.json) && "intent" in fetcher.json && fetcher.json.intent === "test");
@@ -60,8 +91,9 @@ export default function GlobalSettings() {
         {fetcher.data && "connected" in fetcher.data && fetcher.data.connected ? <s-banner tone="success" heading="Connection verified">Photo analysis can use this saved key.</s-banner> : null}
         {fetcher.data?.ok && !("connected" in fetcher.data) ? <s-banner tone="success" heading="Provider saved">Your API key is stored securely.</s-banner> : null}
         {keySaved && !changing ? <s-stack gap="base">
-          <s-text-field label={`Saved ${providerName} API key`} value="????????????????" readOnly />
-          <s-stack direction="inline"><s-button onClick={() => setChanging(true)}>Change API key</s-button></s-stack>
+          <s-text-field label={`Saved ${providerName} API key`} value={savedKey || "\u2022".repeat(16)} readOnly />
+          <s-stack direction="inline" gap="base"><s-button loading={revealing} disabled={revealing} onClick={revealSavedKey}>{savedKey ? "Hide API key" : "Show API key"}</s-button><s-button onClick={() => setChanging(true)}>Change API key</s-button></s-stack>
+          {revealError ? <s-banner tone="critical" heading="Could not show API key">{revealError}</s-banner> : null}
         </s-stack> : <s-stack gap="base">
         {visible ? <s-text-field label={keySaved ? "Replace API key (optional)" : `${providerName} API key`} value={apiKey} onInput={event => { setApiKey(event.currentTarget.value); setCopyStatus(""); }} /> : <s-password-field label={keySaved ? "Replace API key (optional)" : `${providerName} API key`} value={apiKey} onInput={event => { setApiKey(event.currentTarget.value); setCopyStatus(""); }} />}
         <s-stack direction="inline" gap="base">
@@ -73,7 +105,7 @@ export default function GlobalSettings() {
         </s-stack>}
 
         <s-stack direction="inline"><s-button disabled={!keySaved} loading={fetcher.state !== "idle"} onClick={() => fetcher.submit({ intent: "test", provider }, { method: "POST", encType: "application/json" })}>Test connection</s-button></s-stack>
-        <s-paragraph color="subdued">Saved keys are encrypted and are not displayed again. Enter a new key here to replace it.</s-paragraph>
+        <s-paragraph color="subdued">Saved keys are encrypted. Show API key reveals it temporarily; it hides automatically after one minute.</s-paragraph>
         {provider !== "openai" ? <s-banner tone="warning" heading="Photo integration pending">You can save this provider key. Gemini and Claude scanning will be enabled after photo-processing approval and integration verification.</s-banner> : null}
         <s-paragraph color="subdued">Skin Scan uses the selected AI provider to describe visible cosmetic skin concerns. Customers must consent before their photo is sent.</s-paragraph>
         <s-link href={provider === "openai" ? "https://platform.openai.com/api-keys" : provider === "gemini" ? "https://aistudio.google.com/api-keys" : "https://console.anthropic.com/settings/keys"} target="_blank">Get {providerName} API key</s-link>
