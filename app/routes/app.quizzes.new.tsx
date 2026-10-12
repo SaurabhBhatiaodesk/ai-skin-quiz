@@ -36,7 +36,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const paths = String(form.get("paths") || "").split(",").filter((path): path is Path => ["quick", "deep", "scan"].includes(path));
   if (!name || !paths.length || (layout === "three" ? paths.length < 2 : paths.length !== 1) || (layout === "scan" && paths[0] !== "scan") || (layout === "single" && paths[0] === "scan")) return { error: "Enter a quiz name and choose its quiz paths." };
   try {
-  const quiz = await createQuiz(session.shop, name, paths.length === 1 && paths[0] === "scan" ? "scan" : layout === "three" ? "three" : "single", paths);
+  const quiz = await createQuiz(session.shop, name, paths.length === 1 && paths[0] === "scan" ? "scan" : layout === "three" ? "three" : "single", paths, form.get("resultMode") === "products" ? "products" : "personalized");
   // Go straight to the new quiz so the merchant can add questions.
   return redirect(`/app/editor?quiz=${encodeURIComponent(quiz.handle)}`);
   } catch (error) { return { error: error instanceof Error ? error.message : "Could not create quiz." }; }
@@ -53,8 +53,9 @@ export default function NewQuiz() {
   const [name, setName] = useState("");
   const [layout, setLayout] = useState<"three" | "single" | "scan" | null>(null);
   const [paths, setPaths] = useState<Path[]>([]);
+  const [resultMode, setResultMode] = useState<"personalized" | "products">("personalized");
   const valid = Boolean(name.trim() && layout && (layout === "three" ? paths.length >= 2 : paths.length === 1));
-  const create = () => { if (valid && layout) submit({ name: name.trim(), layout, paths: paths.join(",") }, { method: "post" }); };
+  const create = () => { if (valid && layout) submit({ name: name.trim(), layout, paths: paths.join(","), resultMode }, { method: "post" }); };
 
   return (
     <s-page heading="Create Quiz" inlineSize="base">
@@ -101,6 +102,14 @@ export default function NewQuiz() {
             </s-stack>
           </s-section> : null}
           {layout === "scan" ? scanSetup : null}
+          {layout && layout !== "scan" ? <s-section heading="Result experience">
+            <s-stack gap="base">
+              <s-select label="Results" value={resultMode} onChange={event => setResultMode(event.currentTarget.value === "products" ? "products" : "personalized")}>
+                <s-option value="personalized">Personalized content + products</s-option>
+                <s-option value="products">Products only</s-option>
+              </s-select>
+            </s-stack>
+          </s-section> : null}
           <s-stack direction="inline" justifyContent="end" gap="small">
             <s-button href="/app/quizzes" disabled={pending}>Cancel</s-button>
             <s-button type="submit" variant="primary" loading={pending} disabled={!valid}>Create Quiz</s-button>

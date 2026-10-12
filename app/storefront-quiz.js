@@ -100,6 +100,7 @@ import { buildFaceMap } from "./face-map.js";
 
     function paintResult(data) {
       var result = data.result || data;
+      var productsOnly = result.resultMode === "products";
       var profile = result.profile;
       reportId = result.reportId || null;
       reportLocked = Boolean(result.locked);
@@ -109,6 +110,7 @@ import { buildFaceMap } from "./face-map.js";
       modalKey = profile.modal || "tridoshic";
       var hero = q("[data-hero]");
       if (hero) hero.className = "result-hero " + profile.heroClass;
+      if (hero) { var heroTag = hero.querySelector(".rh-tag"); if (heroTag) heroTag.textContent = productsOnly ? "Your recommendations" : "Your Dosha Profile"; }
       q("[data-dosha-name]").textContent = profile.name;
       q("[data-dosha-sub]").textContent = profile.sub;
       q("[data-dosha-essence]").textContent = profile.essence;
@@ -170,9 +172,10 @@ import { buildFaceMap } from "./face-map.js";
         for (var sectionIndex = 1; sectionIndex < extraSections.length; sectionIndex++) extraSections[sectionIndex].style.display = "none";
       }
       var guideButton = q("[data-open-modal]");
-      if (guideButton) guideButton.style.display = reportLocked ? "none" : "";
+      if (guideButton) guideButton.style.display = productsOnly || reportLocked ? "none" : "";
       var emailBox = q(".email-box");
       if (emailBox) {
+        emailBox.style.display = productsOnly ? "none" : "";
         emailBox.querySelector(".eb-title").textContent = reportLocked ? "Unlock your full Prakriti analysis" : "Email your ritual guide";
         emailBox.querySelector(".eb-sub").textContent = reportLocked ? "Enter your email to view the detailed guide and recommended ritual." : "Optional: link this result to your email.";
       }
@@ -191,6 +194,7 @@ import { buildFaceMap } from "./face-map.js";
       if (confirm) confirm.classList.remove("show");
       var ritualSection = q("[data-ritual-section]");
       if (ritualSection) ritualSection.style.display = reportLocked ? "none" : "";
+      if (ritualSection) { var ritualLabel = ritualSection.querySelector(".rs-label"); if (ritualLabel) ritualLabel.textContent = productsOnly ? "Recommended products" : "Your Ritual"; }
       var box = q("[data-products]");
       if (box) {
         box.innerHTML = (result.products || []).map(function (product) {

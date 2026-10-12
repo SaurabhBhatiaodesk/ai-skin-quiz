@@ -32,6 +32,7 @@ export type QuizProduct = {
   why: string;
 };
 export type QuizResult = {
+  resultMode?: "personalized" | "products";
   scanAreas?: Array<{concern: string; observation: string; regions: string[]; intensity: string}>;
   percentages?: Record<string, number>;
   dosha: string;
@@ -402,7 +403,7 @@ export function normalizeQuiz(input: unknown, { draft = false }: { draft?: boole
   const widgetCss = typeof suppliedCss === "string" && !DEFAULT_CSS_MARKER.test(suppliedCss.trimStart()) ? suppliedCss : undefined;
   const email = (input as StoredQuiz)?.emailCapture;
   const emailCapture = { enabled: email?.enabled === true, heading: clip(email?.heading, 120) || "Where should we send your ritual?", button: clip(email?.button, 40) || "See my ritual", allowSkip: email?.allowSkip !== false };
-  return { cardIcons, emailCapture, enabledPaths, singleFlow, coverImage, profileImage, widgetCss, layout, scanner, design, scanIntegration, quick: enabledPaths.includes("quick") ? quick : [], deep: enabledPaths.includes("deep") ? deep : [], profiles: normalizeProfiles(source.profiles), mappings: normalizeMappings(source.mappings) };
+  return { resultMode: (input as StoredQuiz)?.resultMode === "products" ? "products" : "personalized", cardIcons, emailCapture, enabledPaths, singleFlow, coverImage, profileImage, widgetCss, layout, scanner, design, scanIntegration, quick: enabledPaths.includes("quick") ? quick : [], deep: enabledPaths.includes("deep") ? deep : [], profiles: normalizeProfiles(source.profiles), mappings: normalizeMappings(source.mappings) };
 }
 
 function normalizeMappings(value: unknown): ProductMapping[] {
@@ -586,7 +587,7 @@ export async function ensureNumericWidgetId(shop: string, code: string) {
   await writePayload(shop, library.map(item => item.handle === current.handle ? replacement : item), snapshot!.raw);
 }
 
-export async function createQuiz(shop: string, name: string, layout: "three" | "single" | "scan" = "three", paths?: Array<"quick" | "deep" | "scan">) {
+export async function createQuiz(shop: string, name: string, layout: "three" | "single" | "scan" = "three", paths?: Array<"quick" | "deep" | "scan">, resultMode: "personalized" | "products" = "personalized") {
   const snapshot = await readPayload(shop);
   const library = snapshot ? normalizeLibrary(snapshot.value) : [];
   if (library.length >= 20) throw new Error("This store supports up to 20 quizzes. Delete an unused quiz before creating another.");
@@ -597,6 +598,7 @@ export async function createQuiz(shop: string, name: string, layout: "three" | "
   // New quizzes start without questions; the merchant adds their own in the editor.
   const starter = defaultQuiz();
   starter.layout = layout;
+  starter.resultMode = layout === "scan" ? "personalized" : resultMode;
   if (paths) starter.enabledPaths = paths;
   starter.singleFlow = paths?.[0] === "deep" ? "deep" : "quick";
   starter.quick = [];
@@ -628,6 +630,7 @@ export async function publicQuiz(shop: string, code?: unknown) {
   return {
     handle: quiz.handle,
     name: quiz.name,
+    resultMode: quiz.resultMode,
     emailCapture: quiz.emailCapture,
     enabledPaths: quiz.enabledPaths,
     singleFlow: quiz.singleFlow,
@@ -638,12 +641,13 @@ export async function publicQuiz(shop: string, code?: unknown) {
     design: quiz.design,
     widgetCss: quiz.widgetCss,
     quick: quiz.quick,
+    mappings: quiz.mappings,
     deep: quiz.deep.map((question) => ({
       layer: question.layer,
       phase: question.phase,
       text: question.text,
       sub: question.sub,
-      options: question.options.map(({ label, hint }) => ({ label, hint })),
+      options: question.options.map(({ label, hint, tags }) => ({ label, hint, tags })),
     })),
   };
 }
@@ -988,8 +992,8 @@ export async function buildQuizResult(
       // Result tags use the same slug format as mapping tags, plus each dosha in a dual result.
       tags.push(slugTag(dosha), ...dosha.split("-").filter((part) => part === "vata" || part === "pitta" || part === "kapha"));
       if (quiz.mappings.length) products = mappedProducts(tags, quiz.mappings, storeProducts);
-      if (!products.length) products = ritualProducts(quiz, submission, dosha, storeProducts);
-      if (!products.length) products = matchProducts(dosha, storeProducts, quiz.profiles);
+      if (quiz.resultMode !== "products" && !products.length) products = ritualProducts(quiz, submission, dosha, storeProducts);
+      if (quiz.resultMode !== "products" && !products.length) products = matchProducts(dosha, storeProducts, quiz.profiles);
     } catch (error) {
       console.error("Quiz product recommendations failed", shop, error);
       products = [];
@@ -1000,5 +1004,5 @@ export async function buildQuizResult(
     ? note.trim()
     : `${profile.insight}${note}`;
 
-  return { dosha, percentages, source, showUpgrade, insight, profile, markers, products };
+  return { resultMode: quiz.resultMode, dosha, percentages: quiz.resultMode === "products" ? undefined : percentages, source, showUpgrade: quiz.resultMode === "products" ? false : showUpgrade, insight: quiz.resultMode === "products" ? "" : insight, profile: quiz.resultMode === "products" ? { ...profile, name: "Your product matches", sub: "Selected from your answers", essence: "", insight: "", products: [] } : profile, markers, products };
 }

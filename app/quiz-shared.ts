@@ -33,6 +33,7 @@ export type QuizProfile = {
 };
 export type ProductMapping = { id: string; tags: string[]; productHandle: string; grouping?: "and" | "or"; variantId?: string };
 export type StoredQuiz = {
+  resultMode?: "personalized" | "products";
   emailCapture?: { enabled: boolean; heading: string; button: string; allowSkip: boolean };
   widgetCss?: string;
   enabledPaths?: Array<"quick" | "deep" | "scan">;

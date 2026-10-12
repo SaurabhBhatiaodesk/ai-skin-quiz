@@ -288,7 +288,7 @@ export default function QuizEditor({
   const error = fetcher.data && !fetcher.data.ok ? fetcher.data.error : "";
   const result = quiz.profiles[resultKey];
   const scanOnly = quiz.layout === "scan";
-  const editorTabs = scanOnly ? TABS.filter(item => item.id === "edit" || item.id === "design" || item.id === "settings").map(item => ({ ...item, label: item.id === "edit" ? "Skin Scan settings" : item.id === "design" ? "Scan design" : item.label })) : TABS;
+  const editorTabs = scanOnly ? TABS.filter(item => item.id === "edit" || item.id === "design" || item.id === "settings").map(item => ({ ...item, label: item.id === "edit" ? "Skin Scan settings" : item.id === "design" ? "Scan design" : item.label })) : TABS.filter(item => quiz.resultMode !== "products" || item.id !== "content");
   const showQuestions = tab === "edit" || tab === "tags";
   const design = quiz.design || { background: "#faf7f2", text: "#1a1208", accent: "#8f6330", buttonText: "#ffffff", font: "classic" as const, radius: "rounded" as const };
   const showSidebar = (showQuestions && quiz.layout !== "scan" && !(tab === "edit" && questionOpen)) || tab === "content";

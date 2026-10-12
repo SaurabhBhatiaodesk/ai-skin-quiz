@@ -1,0 +1,19 @@
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import { transform } from 'esbuild';
+
+const source = await readFile('app/quiz.server.ts', 'utf8');
+const start = source.indexOf('export async function publicQuiz(');
+const end = source.indexOf('\nfunction profileFor(', start);
+const compiled = await transform(source.slice(start, end), { loader: 'ts', format: 'cjs' });
+const quiz = { handle: '123', quick: [], deep: [{ options: [{ label: 'Dry', tags: ['dry'], scores: { vata: 1 } }] }], mappings: [{ id: 'm1', tags: ['dry'], productHandle: 'cream' }], profiles: { privateGuide: 'locked content' } };
+const module = { exports: {} };
+new Function('loadQuiz', 'assertHasQuestions', 'scanAnalysisReady', 'module', compiled.code)(async (_shop, code) => { assert.equal(code, '123'); return quiz; }, () => {}, () => false, module);
+const result = await module.exports.publicQuiz('store', '123');
+assert.deepEqual(result.mappings, quiz.mappings);
+assert.deepEqual(result.deep[0].options[0].tags, ['dry']);
+assert.equal(result.profiles, undefined);
+assert.equal(result.deep[0].options[0].scores, undefined);
+quiz.mappings = [];
+assert.deepEqual((await module.exports.publicQuiz('store', '123')).mappings, []);
+console.log('PASS: quiz API exposes saved mappings and deep-answer tags without locked guides or scoring internals.');

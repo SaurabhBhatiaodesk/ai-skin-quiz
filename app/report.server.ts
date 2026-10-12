@@ -9,7 +9,7 @@ async function prepare() {
   await prisma.$executeRawUnsafe("DELETE FROM QuizReport WHERE expires < ?", Date.now());
 }
 export function publicReport(result: QuizResult, id: string, unlocked = false) {
-  const locked = result.source === "Deep Dosha" && !unlocked;
+  const locked = result.resultMode !== "products" && result.source === "Deep Dosha" && !unlocked;
   return { ...result, reportId: id, locked, profile: locked ? { ...result.profile, essence: "Enter your email to unlock your full Prakriti analysis.", insight: "", products: [] } : result.profile, insight: locked ? "" : result.insight, products: locked ? [] : result.products };
 }
 export async function storeReport(shop: string, result: QuizResult) {
