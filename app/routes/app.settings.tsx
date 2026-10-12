@@ -16,11 +16,6 @@ export async function action({ request }: ActionFunctionArgs) {
   try {
     const input = await request.json();
     const provider = asProvider(input.provider);
-    if (input.intent === "reveal") {
-      const key = await getAIKey(session.shop, provider);
-      if (!key) return Response.json({ error: "No API key is saved for this store." }, { status: 404, headers: { "Cache-Control": "no-store, private" } });
-      return Response.json({ key }, { headers: { "Cache-Control": "no-store, private" } });
-    }
     if (input.intent === "test") {
       if (provider !== "openai") throw new Error("Photo provider connection is pending authorization and adapter setup.");
       const key = await getAIKey(session.shop,provider);
@@ -62,7 +57,9 @@ export default function GlobalSettings() {
     const controller = new AbortController(); revealRequest.current = controller;
     setRevealing(true); setRevealError("");
     try {
-      const response = await fetch("/app/settings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ intent: "reveal", provider }), cache: "no-store", signal: controller.signal });
+      const token = await window.shopify.idToken();
+      const response = await fetch("/api/provider-key", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ provider }), cache: "no-store", signal: controller.signal });
+      if (!response.headers.get("Content-Type")?.includes("application/json")) throw new Error("Your session expired. Refresh the app and try again.");
       const result = await response.json();
       if (!response.ok || typeof result.key !== "string") throw new Error(result.error || "Could not show the saved key.");
       if (revealRequest.current === controller && !controller.signal.aborted) setSavedKey(result.key);

@@ -1,14 +1,14 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {transform} from 'esbuild';
-const original=await readFile('app/routes/app.settings.tsx','utf8');
-const source=original.slice(0,original.indexOf('export default function')).replace(/^import .*;\r?\n/gm,'');
+const original=await readFile('app/routes/api.provider-key.tsx','utf8');
+const source=original.replace(/^import .*;\r?\n/gm,'');
 const compiled=await transform(source,{loader:'ts',format:'cjs'});
 let allowed=true,requestedShop='';
 const env={Response,authenticate:{admin:async()=>{if(!allowed)throw new Error('Unauthenticated');return {session:{shop:'owner.myshopify.com'}};}},asProvider:value=>value,getAIKey:async(shop)=>{requestedShop=shop;return 'test-key-only';},selectedProvider:async()=> 'openai',providerHasKey:async()=>true};
 const module={exports:{}};new Function('env','module','with(env){'+compiled.code+'}')(env,module);
 const request=new Request('https://app.example/app/settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({intent:'reveal',provider:'openai',shop:'other.myshopify.com'})});
 const response=await module.exports.action({request});assert.equal(response.headers.get('Cache-Control'),'no-store, private');assert.equal((await response.json()).key,'test-key-only');assert.equal(requestedShop,'owner.myshopify.com');
-const loaderData=await module.exports.loader({request:new Request('https://app.example/app/settings')});assert.equal(JSON.stringify(loaderData).includes('test-key-only'),false);
+const loaderResponse=module.exports.loader();assert.equal(loaderResponse.status,405);assert.equal(JSON.stringify(await loaderResponse.json()).includes('test-key-only'),false);
 allowed=false;await assert.rejects(module.exports.action({request}),/Unauthenticated/);
 console.log('PASS: saved key reveal requires admin auth, uses the authenticated shop, disables caching, and never includes the key in loader data.');
