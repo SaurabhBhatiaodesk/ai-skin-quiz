@@ -1,5 +1,5 @@
 import prisma from "./db.server";
-export const scanAppearanceDefaults = { enabled: true, iconImage: "", shape: "rounded", label: "Skin Scan", position: "right", buttonColor: "#ee5368", buttonTextColor: "#ffffff", panelColor: "#faf7f2", textColor: "#1a1208", accentColor: "#8f6330", radius: 32, offset: 24, headingColor: "#000000", modalButtonTextColor: "#ffffff", modalFontSize: 13, modalWidth: 520, modalRadius: 24 };
+export const scanAppearanceDefaults = { enabled: true, iconImage: "", shape: "circle", label: "Skin Scan", position: "right", buttonColor: "#ffffff", buttonTextColor: "#ffffff", panelColor: "#faf7f2", textColor: "#1a1208", accentColor: "#8f6330", radius: 32, offset: 24, headingColor: "#000000", modalButtonTextColor: "#ffffff", modalFontSize: 13, modalWidth: 520, modalRadius: 24 };
 export type ScanAppearance = typeof scanAppearanceDefaults;
 async function prepare() { await prisma.$executeRawUnsafe("CREATE TABLE IF NOT EXISTS ScanAppearance (shop TEXT PRIMARY KEY, payload TEXT NOT NULL)"); }
 export function normalizeAppearance(value: unknown): ScanAppearance {
@@ -10,7 +10,7 @@ export function normalizeAppearance(value: unknown): ScanAppearance {
   if (icon.startsWith("https://")) { try { new URL(icon); } catch { throw new Error("Use a valid HTTPS image URL."); } }
   result.iconImage = icon;
   result.enabled = input?.enabled !== false;
-  result.shape = input?.shape === "circle" ? "circle" : "rounded";
+  result.shape = input?.shape === "rounded" ? "rounded" : "circle";
   result.label = String(input?.label || "Skin Scan").trim().slice(0, 40) || "Skin Scan";
   result.position = input?.position === "left" ? "left" : "right";
   for (const key of ["buttonColor", "buttonTextColor", "panelColor", "textColor", "accentColor", "headingColor", "modalButtonTextColor"] as const) {

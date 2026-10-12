@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import {transform} from 'esbuild';
+const source=(await readFile('app/scan-appearance.server.ts','utf8')).replace('import prisma from "./db.server";','const prisma = {};');
+const compiled=await transform(source,{loader:'ts',format:'cjs'});const module={exports:{}};new Function('module',compiled.code)(module);
+const {normalizeAppearance}=module.exports;
+assert.equal(normalizeAppearance({}).shape,'circle');assert.equal(normalizeAppearance({}).buttonColor,'#ffffff');assert.equal(normalizeAppearance({}).iconImage,'');
+assert.equal(normalizeAppearance({shape:'rounded',buttonColor:'#123456'}).shape,'rounded');assert.equal(normalizeAppearance({shape:'rounded',buttonColor:'#123456'}).buttonColor,'#123456');
+assert.equal(normalizeAppearance({iconImage:'https://example.com/icon.png'}).iconImage,'https://example.com/icon.png');
+console.log('PASS: new stores default to the illustrated circle; saved shapes, colors, and uploaded icons are preserved.');
