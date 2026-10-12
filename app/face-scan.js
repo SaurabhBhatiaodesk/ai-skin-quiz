@@ -123,7 +123,7 @@ export async function createFaceScan(video, zone, onStatus) {
   const sampleContext = sample.getContext("2d", { willReadFrequently: true });
 
   let disposed = false, timer = 0, lastCheck = { ok: false, message: "Loading camera..." }, readySince = 0;
-  let scanning = false, flashEl = null, checkedAt = 0, trackingFailed = false, faceBox = null, facePoints = null, sweepTime = 0, previousTick = 0;
+  let scanning = false, flashEl = null, checkedAt = 0, trackingFailed = false, faceBox = null, facePoints = null;
   // Count presented frames. Some mobile browsers never advance video.currentTime for a live camera,
   // so it cannot be used to tell whether a new frame has arrived.
   let presentedFrames = 0, processedFrames = -1, processedAt = 0;
@@ -200,8 +200,6 @@ export async function createFaceScan(video, zone, onStatus) {
       lastCheck = frameCheck({ faces, box, light, yaw, width: video.videoWidth, height: video.videoHeight });
       checkedAt = performance.now();
       faceBox = box; facePoints = points;
-      if (lastCheck.ok && scanning && previousTick) sweepTime += Math.min(checkedAt-previousTick,160);
-      previousTick = checkedAt;
       quality.textContent = [faces === 1 ? "Face detected" : "Face needed", light >= 30 ? "Lighting ready" : "More light needed", lastCheck.ok ? "Position ready" : "Adjust position"].join("  \u00b7  ");
       readySince = lastCheck.ok ? readySince || performance.now() : 0;
       if (!scanning) {
