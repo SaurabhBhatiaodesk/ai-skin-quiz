@@ -39,32 +39,25 @@ export default function GlobalSettings() {
   const [changing, setChanging] = useState(false);
   const [visible, setVisible] = useState(false);
   const [copyStatus, setCopyStatus] = useState("");
-  const [savedKey, setSavedKey] = useState("");
   const [revealing, setRevealing] = useState(false);
   const [revealError, setRevealError] = useState("");
   const revealRequest = useRef<AbortController | null>(null);
   useEffect(() => {
-    setSavedKey(""); setRevealError(""); setRevealing(false);
+    setCopyStatus(""); setRevealError(""); setRevealing(false);
     return () => { revealRequest.current?.abort(); revealRequest.current = null; };
   }, [provider, changing]);
-  useEffect(() => {
-    if (!savedKey) return;
-    const timeout = window.setTimeout(() => setSavedKey(""), 60000);
-    return () => window.clearTimeout(timeout);
-  }, [savedKey]);
-  async function revealSavedKey() {
-    if (savedKey) { setSavedKey(""); return; }
+  async function copySavedKey() {
     const controller = new AbortController(); revealRequest.current = controller;
-    setRevealing(true); setRevealError("");
+    setRevealing(true); setRevealError(""); setCopyStatus("");
     try {
       const token = await window.shopify.idToken();
       const response = await fetch("/api/provider-key", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ provider }), cache: "no-store", signal: controller.signal });
       if (!response.headers.get("Content-Type")?.includes("application/json")) throw new Error("Your session expired. Refresh the app and try again.");
       const result = await response.json();
-      if (!response.ok || typeof result.key !== "string") throw new Error(result.error || "Could not show the saved key.");
-      if (revealRequest.current === controller && !controller.signal.aborted) setSavedKey(result.key);
+      if (!response.ok || typeof result.key !== "string") throw new Error(result.error || "Could not copy the saved key.");
+      if (revealRequest.current === controller && !controller.signal.aborted) { await navigator.clipboard.writeText(result.key); setCopyStatus("API key copied"); }
     } catch (error) {
-      if (!controller.signal.aborted) setRevealError(error instanceof Error ? error.message : "Could not show the saved key.");
+      if (!controller.signal.aborted) setRevealError(error instanceof Error ? error.message : "Could not copy the saved key.");
     } finally { if (revealRequest.current === controller) { setRevealing(false); revealRequest.current = null; } }
   }
   const fetcher = useFetcher<typeof action>();
@@ -88,9 +81,10 @@ export default function GlobalSettings() {
         {fetcher.data && "connected" in fetcher.data && fetcher.data.connected ? <s-banner tone="success" heading="Connection verified">Photo analysis can use this saved key.</s-banner> : null}
         {fetcher.data?.ok && !("connected" in fetcher.data) ? <s-banner tone="success" heading="Provider saved">Your API key is stored securely.</s-banner> : null}
         {keySaved && !changing ? <s-stack gap="base">
-          <s-text-field label={`Saved ${providerName} API key`} value={savedKey || "\u2022".repeat(16)} readOnly />
-          <s-stack direction="inline" gap="base"><s-button loading={revealing} disabled={revealing} onClick={revealSavedKey}>{savedKey ? "Hide API key" : "Show API key"}</s-button><s-button onClick={() => setChanging(true)}>Change API key</s-button></s-stack>
-          {revealError ? <s-banner tone="critical" heading="Could not show API key">{revealError}</s-banner> : null}
+          <s-text-field label={`Saved ${providerName} API key`} value={"\u2022".repeat(16)} readOnly />
+          <s-stack direction="inline" gap="base"><s-button loading={revealing} disabled={revealing} onClick={copySavedKey}>Copy API key</s-button><s-button onClick={() => setChanging(true)}>Change API key</s-button></s-stack>
+          {copyStatus && !changing ? <s-text>{copyStatus}</s-text> : null}
+          {revealError ? <s-banner tone="critical" heading="Could not copy API key">{revealError}</s-banner> : null}
         </s-stack> : <s-stack gap="base">
         {visible ? <s-text-field label={keySaved ? "Replace API key (optional)" : `${providerName} API key`} value={apiKey} onInput={event => { setApiKey(event.currentTarget.value); setCopyStatus(""); }} /> : <s-password-field label={keySaved ? "Replace API key (optional)" : `${providerName} API key`} value={apiKey} onInput={event => { setApiKey(event.currentTarget.value); setCopyStatus(""); }} />}
         <s-stack direction="inline" gap="base">
@@ -102,7 +96,7 @@ export default function GlobalSettings() {
         </s-stack>}
 
         <s-stack direction="inline"><s-button disabled={!keySaved} loading={fetcher.state !== "idle"} onClick={() => fetcher.submit({ intent: "test", provider }, { method: "POST", encType: "application/json" })}>Test connection</s-button></s-stack>
-        <s-paragraph color="subdued">Saved keys are encrypted. Show API key reveals it temporarily; it hides automatically after one minute.</s-paragraph>
+        <s-paragraph color="subdued">Saved keys are encrypted and hidden. Use Copy API key to copy your saved key.</s-paragraph>
         {provider !== "openai" ? <s-banner tone="warning" heading="Photo integration pending">You can save this provider key. Gemini and Claude scanning will be enabled after photo-processing approval and integration verification.</s-banner> : null}
         <s-paragraph color="subdued">Skin Scan uses the selected AI provider to describe visible cosmetic skin concerns. Customers must consent before their photo is sent.</s-paragraph>
         <s-link href={provider === "openai" ? "https://platform.openai.com/api-keys" : provider === "gemini" ? "https://aistudio.google.com/api-keys" : "https://console.anthropic.com/settings/keys"} target="_blank">Get {providerName} API key</s-link>
