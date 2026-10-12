@@ -292,6 +292,8 @@ export default function QuizEditor({
   const showQuestions = tab === "edit" || tab === "tags";
   const design = quiz.design || { background: "#faf7f2", text: "#1a1208", accent: "#8f6330", buttonText: "#ffffff", font: "classic" as const, radius: "rounded" as const };
   const showSidebar = (showQuestions && quiz.layout !== "scan" && !(tab === "edit" && questionOpen)) || tab === "content";
+  const usedMappingTags = new Set(quiz.mappings.filter(mapping => mapping.id !== mappingDraft?.id).flatMap(mapping => mapping.tags));
+  const availableMappingTags = selectableTags(quiz, products).filter(tag => !usedMappingTags.has(tag) || mappingDraft?.tags.includes(tag));
 
   return (
     <s-page heading={`${quiz.name || "Quiz"} · ${editorTabs.find(item => item.id === tab)?.label || "Quiz editor"}`} inlineSize="large">
@@ -469,9 +471,9 @@ export default function QuizEditor({
                 <s-button slot="secondary-actions" commandFor="delete-mappings-modal" command="--hide">Cancel</s-button>
               </s-modal>
               {mappingDraft?.id ? <s-modal ref={mappingModal} id="edit-content-mapping" heading="Edit product mapping" onAfterHide={() => setMappingDraft(current => current?.id ? null : current)}>
-                <MappingEditor key={mappingDraft.id} draft={mappingDraft} products={products} tags={selectableTags(quiz, products)} onChange={setMappingDraft} onSave={commitMapping} onCancel={() => setMappingDraft(null)} pending={pending} compact />
+                <MappingEditor key={mappingDraft.id} draft={mappingDraft} products={products} tags={availableMappingTags} onChange={setMappingDraft} onSave={commitMapping} onCancel={() => setMappingDraft(null)} pending={pending} compact />
                 <s-button slot="primary-action" variant="primary" loading={pending} disabled={!mappingDraft.tags.length || !mappingDraft.productHandle} onClick={commitMapping}>Save mapping</s-button>
-              </s-modal> : mappingDraft ? <MappingEditor key="new" draft={mappingDraft} products={products} tags={selectableTags(quiz, products)} onChange={setMappingDraft} onSave={commitMapping} onCancel={() => setMappingDraft(null)} pending={pending} /> : null}
+              </s-modal> : mappingDraft ? <MappingEditor key="new" draft={mappingDraft} products={products} tags={availableMappingTags} onChange={setMappingDraft} onSave={commitMapping} onCancel={() => setMappingDraft(null)} pending={pending} /> : null}
               <s-section heading="Product mappings" padding="none">
                 {(quiz.mappings || []).length ? <s-table>
                   <s-table-header-row>
@@ -551,7 +553,7 @@ export default function QuizEditor({
                         </s-table-cell>
                         <s-table-cell><s-checkbox label={`Select ${title}`} checked={pickedRows.includes(mapping.id)} onChange={event => { const checked = event.currentTarget.checked; setPickedRows(current => checked ? [...current, mapping.id] : current.filter(id => id !== mapping.id)); }} /></s-table-cell>
                         <s-table-cell><s-stack direction="inline" gap="small">{mapping.tags.map((tag, tagIndex) => <s-stack key={tag} direction="inline" gap="small" alignItems="center">{tagIndex > 0 ? <s-text color="subdued">{(mapping.grouping || "or").toUpperCase()}</s-text> : null}<s-chip>{tag}</s-chip></s-stack>)}</s-stack></s-table-cell>
-                        <s-table-cell><s-badge>{mapping.variantId ? "Variant" : "Product"}</s-badge></s-table-cell><s-table-cell>{title}</s-table-cell>
+                        <s-table-cell><s-badge>{mapping.variantId ? "Variant" : "Product"}</s-badge></s-table-cell><s-table-cell><s-stack direction="inline" gap="base" alignItems="center">{variant?.image || product?.image ? <s-thumbnail src={variant?.image || product?.image || ""} alt={title} /> : <s-icon type="product" />}<s-text>{title}</s-text></s-stack></s-table-cell>
                         <s-table-cell><s-stack direction="inline" gap="small">
                           <s-button icon="edit" accessibilityLabel={`Edit ${title}`} onClick={() => setMappingDraft({ id: mapping.id, tags: mapping.tags, productHandle: mapping.productHandle, grouping: mapping.grouping || "or", variantId: mapping.variantId })} />
                           <s-button icon="delete" tone="critical" accessibilityLabel={`Delete ${title}`} disabled={pending} commandFor="delete-mappings-modal" command="--show" onClick={() => setPickedRows([mapping.id])} />

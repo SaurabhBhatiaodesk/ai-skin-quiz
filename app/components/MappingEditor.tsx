@@ -15,6 +15,7 @@ export default function MappingEditor({ draft, products, tags, onChange, onSave,
   const [resourceQuery, setResourceQuery] = useState("");
   const product = products.find(item => item.handle === draft.productHandle);
   const variant = product?.variants?.find(item => item.id === draft.variantId);
+  const resourceImage = variant?.image || product?.image;
   const resourceName = product ? `${product.title}${variant ? ` — ${variant.title}` : ""}` : draft.productHandle;
   const filteredTags = tags.filter(tag => tag.toLowerCase().includes(tagQuery.trim().toLowerCase()));
   const resources = products.flatMap<{ handle: string; variantId?: string; title: string; image: string; price: string }>(item => resourceType === "variant"
@@ -43,7 +44,7 @@ export default function MappingEditor({ draft, products, tags, onChange, onSave,
                     <s-stack gap="small">
                       {filteredTags.map(tag => <s-checkbox key={tag} label={tag} checked={draft.tags.includes(tag)} disabled={draft.tags.length >= 12 && !draft.tags.includes(tag)}
                         onChange={event => onChange({ ...draft, tags: event.currentTarget.checked ? [...draft.tags, tag] : draft.tags.filter(value => value !== tag) })} />)}
-                      {!filteredTags.length ? <s-paragraph color="subdued">No matching tags. Add tags in Answer tags.</s-paragraph> : null}
+                      {!filteredTags.length ? <s-paragraph color="subdued">{tagQuery.trim() ? "No matching tags." : "No available tags. Tags already linked to products are hidden."}</s-paragraph> : null}
                     </s-stack>
                   </s-scroll-box>
                 </s-stack>
@@ -64,7 +65,17 @@ export default function MappingEditor({ draft, products, tags, onChange, onSave,
                 <s-button onClick={() => openResources("product")}>Add product</s-button><s-text>OR</s-text><s-button onClick={() => openResources("variant")}>Add variant</s-button>
               </s-stack>
             </s-box> : null}
-            {draft.productHandle ? compact ? <s-box border="base" borderRadius="base" padding="none"><s-grid gridTemplateColumns="minmax(0, 1fr) auto" gap="none" alignItems="center"><s-clickable accessibilityLabel={`Replace ${resourceName}`} padding="small" onClick={() => openResources(draft.variantId ? "variant" : "product")}><s-text>{resourceName}</s-text></s-clickable><s-button icon="x" variant="tertiary" accessibilityLabel="Remove selected resource" onClick={() => onChange({ ...draft, productHandle: "", variantId: undefined })} /></s-grid></s-box> : <s-clickable-chip removable accessibilityLabel="Remove selected resource" onRemove={() => onChange({ ...draft, productHandle: "", variantId: undefined })}>{resourceName}</s-clickable-chip> : null}
+            {draft.productHandle ? <s-box border="base" borderRadius="base" padding="none">
+              <s-grid gridTemplateColumns="minmax(0, 1fr) auto" gap="none" alignItems="center">
+                <s-clickable accessibilityLabel={`Replace ${resourceName}`} padding="small" onClick={() => openResources(draft.variantId ? "variant" : "product")}>
+                  <s-grid gridTemplateColumns="48px minmax(0, 1fr)" gap="base" alignItems="center">
+                    {resourceImage ? <s-thumbnail src={resourceImage} alt={resourceName} /> : <s-icon type="product" />}
+                    <s-stack gap="small"><s-text type="strong">{resourceName}</s-text><s-text color="subdued">{draft.variantId ? "Variant" : "Product"}</s-text></s-stack>
+                  </s-grid>
+                </s-clickable>
+                <s-button icon="x" variant="tertiary" accessibilityLabel="Remove selected resource" onClick={() => onChange({ ...draft, productHandle: "", variantId: undefined })} />
+              </s-grid>
+            </s-box> : null}
           </s-stack>
         </s-grid>
         {!compact ? <s-stack direction="inline" gap="small" justifyContent="end">
