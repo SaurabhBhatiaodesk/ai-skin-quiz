@@ -12,13 +12,13 @@ type SaveResult = { ok: true; quiz: StoredQuiz } | { ok: false; error: string };
 type Kind = "quick" | "deep" | "scan";
 type Tab = "edit" | "design" | "tags" | "products" | "content" | "settings";
 
-const TABS: Array<{ id: Tab; label: string; icon: "edit" | "design" | "tag" | "link" | "content" | "branch" | "gear" }> = [
+const TABS: Array<{ id: Tab; label: string; icon: "edit" | "paint-brush-flat" | "hashtag" | "link" | "text" | "settings" }> = [
   { id: "edit", label: "Quiz edit", icon: "edit" },
-  { id: "design", label: "Quiz design", icon: "design" },
-  { id: "tags", label: "Answer tags", icon: "tag" },
+  { id: "design", label: "Quiz design", icon: "paint-brush-flat" },
+  { id: "tags", label: "Answer tags", icon: "hashtag" },
   { id: "products", label: "Link product", icon: "link" },
-  { id: "content", label: "Personalized content", icon: "content" },
-  { id: "settings", label: "Settings", icon: "gear" },
+  { id: "content", label: "Personalized content", icon: "text" },
+  { id: "settings", label: "Settings", icon: "settings" },
 ];
 
 const RESULTS = ["vata", "pitta", "kapha", "dual-vata-pitta", "dual-vata-kapha", "dual-kapha-pitta", "balanced"] as const;
@@ -303,7 +303,7 @@ export default function QuizEditor({
       <s-stack gap="base">
         {quiz.profileImage ? <s-stack direction="inline" justifyContent="space-between" alignItems="center"><s-heading>{quiz.name || "Quiz"}</s-heading><s-box inlineSize="80px"><s-image src={quiz.profileImage} alt={`${quiz.name || "Quiz"} image`} aspectRatio="1 / 1" objectFit="cover" borderRadius="large" /></s-box></s-stack> : null}
         <s-stack direction="inline" gap="small">
-          {editorTabs.map(item => <s-button key={item.id} variant={tab === item.id ? "primary" : "tertiary"} onClick={() => setTab(item.id)}>{item.label}</s-button>)}
+          {editorTabs.map(item => <s-button key={item.id} icon={item.icon} variant={tab === item.id ? "primary" : "tertiary"} onClick={() => setTab(item.id)}>{item.label}</s-button>)}
         </s-stack>
         {error ? <s-banner tone="critical" heading="Could not save quiz">{error}</s-banner> : null}
         <s-query-container>
