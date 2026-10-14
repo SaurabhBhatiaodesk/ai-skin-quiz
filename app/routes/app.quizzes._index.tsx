@@ -61,7 +61,7 @@ if (!response.ok) throw new Error(quiz.error || "Could not load quiz");
       </s-section> : <s-grid gridTemplateColumns="repeat(auto-fill, minmax(280px, 1fr))" gap="large">
         {quizzes.map(quiz => <s-box key={quiz.handle} border="base" borderRadius="large" overflow="hidden" background="base">
           <s-clickable href={`/app/editor?quiz=${encodeURIComponent(quiz.handle)}`} accessibilityLabel={`Open ${quiz.name}`}>
-            <s-image src={quiz.cover} alt={`${quiz.name} cover`} loading="lazy" aspectRatio="12 / 7" objectFit="cover" />
+            <img src={quiz.cover} alt={`${quiz.name} cover`} loading="lazy" style={{ display: "block", width: "100%", aspectRatio: "4 / 3", objectFit: "cover", background: "#f4f6f2" }} onError={event => { if (event.currentTarget.dataset.fallback) return; event.currentTarget.dataset.fallback = "1"; event.currentTarget.src = quiz.defaultCover; }} />
           </s-clickable>
           <s-box padding="base">
             <s-stack gap="base">

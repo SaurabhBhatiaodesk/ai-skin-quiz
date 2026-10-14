@@ -1,13 +1,16 @@
 import combined from "../public/images/onboarding/preview-three.svg?raw";
 import scan from "../public/images/onboarding/preview-scan.svg?raw";
 import single from "../public/images/onboarding/preview-single.svg?raw";
-import products from "../public/images/onboarding/preview-products.svg?raw";
 
-const previews: Record<string, string> = { three: combined, scan, single, products };
+const previews: Record<string, string> = { three: combined, scan, single };
 type PreviewQuiz = { name?: string; singleFlow?: string; quick: Array<{ text: string; options: Array<{ label: string }> }>; deep: Array<{ text: string; options: Array<{ label: string }> }> };
 const escape = (value: string) => value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 const shorten = (value: string, length: number) => value.length > length ? `${value.slice(0, length - 3)}...` : value;
 export function quizPreview(type: string, quiz?: PreviewQuiz) {
+  if (type === "three") return "/images/onboarding/premium-combined-quiz.png";
+  if (type === "scan") return "/images/onboarding/premium-skin-scan.png";
+  if (type === "products") return "/images/onboarding/premium-skincare-trio.png";
+  if (type === "single") return "/images/onboarding/premium-single-quiz.png";
   let svg = previews[type] || single;
   if (quiz && type === "single") {
     const question = (quiz.singleFlow === "deep" ? quiz.deep : quiz.quick)[0];
@@ -19,5 +22,5 @@ export function quizPreview(type: string, quiz?: PreviewQuiz) {
       return `${start}${escape(shorten(content[index++], limit))}${end}`;
     });
   }
-  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+  return `data:image/svg+xml;base64,${btoa(Array.from(new TextEncoder().encode(svg), byte => String.fromCharCode(byte)).join(""))}`;
 }

@@ -65,7 +65,13 @@ export default function NewQuiz() {
         .quiz-type { position:relative; display:flex; flex-direction:column; padding:0; overflow:hidden; border:1px solid #e1e5e2; border-radius:16px; background:#fff; text-align:left; color:#111; cursor:pointer; font:inherit; }
         .quiz-type:focus-visible { outline:3px solid #b6d1bf; outline-offset:3px; }
         .quiz-type[aria-pressed=true] { border-color:#41664e; box-shadow:0 0 0 1px #41664e; }
-        .quiz-type img { display:block; width:100%; aspect-ratio:12/7; object-fit:cover; }
+        .quiz-type img { display:block; width:100%; aspect-ratio:4/3; object-fit:cover; background:#f4f6f2; }
+        .product-preview { padding:14px; background:#eaf0eb; width:100%; aspect-ratio:12/7; box-sizing:border-box; }
+        .product-preview-inner { background:white; border-radius:12px; padding:12px; height:100%; box-sizing:border-box; }
+        .product-preview-title { font-size:14px; font-weight:600; margin-bottom:10px; color:#000; }
+        .product-preview-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; }
+        .product-preview-grid img { width:100%; height:70px; aspect-ratio:auto; object-fit:contain; background:#f6f3ed; border-radius:6px; }
+        .product-preview-name { font-size:9px; line-height:12px; margin-top:5px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; color:#000; }
         .quiz-type-body { padding:20px; display:flex; flex-direction:column; gap:10px; flex:1; }
         .quiz-type-title { display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:15px; font-weight:600; line-height:22px; }
         .quiz-type-check { display:grid; place-items:center; width:20px; height:20px; border:1px solid #d5ddd7; border-radius:50%; flex:none; }
