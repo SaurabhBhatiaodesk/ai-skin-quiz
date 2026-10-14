@@ -60,6 +60,20 @@ export default function NewQuiz() {
 
   return (
     <s-page heading="Create Quiz" inlineSize="base">
+      <style>{`
+        .quiz-types { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px; font-family:Inter,sans-serif; }
+        .quiz-type { position:relative; display:flex; flex-direction:column; padding:0; overflow:hidden; border:1px solid #e1e5e2; border-radius:16px; background:#fff; text-align:left; color:#111; cursor:pointer; font:inherit; }
+        .quiz-type:focus-visible { outline:3px solid #b6d1bf; outline-offset:3px; }
+        .quiz-type[aria-pressed=true] { border-color:#41664e; box-shadow:0 0 0 1px #41664e; }
+        .quiz-type img { display:block; width:100%; aspect-ratio:12/7; object-fit:cover; }
+        .quiz-type-body { padding:20px; display:flex; flex-direction:column; gap:10px; flex:1; }
+        .quiz-type-title { display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:15px; font-weight:600; line-height:22px; }
+        .quiz-type-check { display:grid; place-items:center; width:20px; height:20px; border:1px solid #d5ddd7; border-radius:50%; flex:none; }
+        .quiz-type[aria-pressed=true] .quiz-type-check { color:white; border-color:#41664e; background:#41664e; }
+        .quiz-type-description { color:#616961; font-size:13px; line-height:21px; margin:0; }
+        @media(max-width:900px) { .quiz-types { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+        @media(max-width:460px) { .quiz-types { grid-template-columns:1fr; } }
+      `}</style>
       <s-button slot="breadcrumb-actions" href="/app/quizzes" accessibilityLabel="Back to Quizzes and Skin Scan">Quizzes &amp; Skin Scan</s-button>
       <s-button slot="primary-action" variant="primary" loading={pending} disabled={!valid} onClick={create}>Create Quiz</s-button>
       <Form method="post" onSubmit={event => { event.preventDefault(); create(); }}>
@@ -69,15 +83,15 @@ export default function NewQuiz() {
             <s-text-field label="Quiz name" labelAccessibilityVisibility="exclusive" name="name" required placeholder="For example, Find your skin ritual" details="Give your quiz a name. Its numeric widget ID is generated automatically." value={name} onInput={event => setName(event.currentTarget.value)} />
           </s-section>
           <s-section heading="Quiz type">
-            <s-grid gridTemplateColumns="repeat(auto-fit, minmax(220px, 1fr))" gap="base">
-              {TYPES.map(option => <s-clickable key={option.value} accessibilityLabel={`Select ${option.title}`} border={layout === option.value ? "base strong" : "base"} background={layout === option.value ? "subdued" : "base"} borderRadius="base" padding="base" onClick={() => { setLayout(option.value); setPaths(option.value === "scan" ? ["scan"] : option.value === "products" ? ["quick"] : []); }}>
-                <s-stack gap="small">
-                  <s-image src={quizPreview(option.value)} alt={`${option.title} layout preview`} aspectRatio="12 / 7" objectFit="contain" />
-                  <s-stack direction="inline" justifyContent="space-between" alignItems="center"><s-text type="strong">{option.title}</s-text>{layout === option.value ? <s-icon type="check-circle" /> : null}</s-stack>
-                  <s-text color="subdued">{option.detail}</s-text>
-                </s-stack>
-              </s-clickable>)}
-            </s-grid>
+            <div className="quiz-types" role="group" aria-label="Quiz type">
+              {TYPES.map(option => <button type="button" className="quiz-type" key={option.value} aria-pressed={layout === option.value} onClick={() => { setLayout(option.value); setPaths(option.value === "scan" ? ["scan"] : option.value === "products" ? ["quick"] : []); }}>
+                <img src={quizPreview(option.value)} alt={`${option.title} layout preview`} />
+                <div className="quiz-type-body">
+                  <div className="quiz-type-title"><span>{option.title}</span><span className="quiz-type-check" aria-hidden="true">{layout === option.value ? "✓" : ""}</span></div>
+                  <p className="quiz-type-description">{option.detail}</p>
+                </div>
+              </button>)}
+            </div>
           </s-section>
           {layout && layout !== "scan" && layout !== "products" ? <s-section heading={layout === "three" ? "Choose quiz options" : "Choose your quiz"}>
             <s-stack gap="base">

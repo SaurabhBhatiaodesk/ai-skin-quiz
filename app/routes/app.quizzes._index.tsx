@@ -34,8 +34,12 @@ export default function Quizzes() {
 });
 const quiz = await response.json();
 if (!response.ok) throw new Error(quiz.error || "Could not load quiz");
-// Build your own UI using quiz.layout, quiz.enabledPaths,
-// quiz.quick, quiz.deep, quiz.design and quiz.cardIcons.`;
+// Build this widget using quiz.layout, quiz.resultMode,
+// quiz.enabledPaths, quiz.quick, quiz.deep and quiz.mappings.
+// quiz.defaultCss contains the default widget CSS.
+// quiz.widgetCss contains this widget's saved CSS overrides.
+// Use quiz.design and quiz.cardIcons for its appearance.
+// Send answers to quiz.endpoints.result to get the final result.`;
   async function copyDeveloperValue(value: string, label: string) {
     setCopyTarget(label);
     setCopyStatus("");
@@ -105,6 +109,7 @@ if (!response.ok) throw new Error(quiz.error || "Could not load quiz");
           </s-stack>
           <s-text-area label="Fetch quiz data" readOnly rows={8} value={fetchExample} />
           <s-paragraph>Render the returned data with your own HTML, CSS or frontend framework. This API returns JSON; it does not insert the app widget.</s-paragraph>
+          <s-paragraph>Every block has its own widget ID. The API includes its questions, answer tags, product mappings, result mode, design, default CSS and custom CSS. Final product recommendations and permitted personalized content come from the result endpoint.</s-paragraph>
           <s-paragraph>Submit answers or a consented scan photo to POST /apps/dosha-quiz/result for observations and matching products. Call from the same Shopify storefront domain. No API key is needed in frontend code.</s-paragraph>
           <s-link href="/app/documentation">API request and response guide</s-link>
           <div role="status" aria-live="polite">{copyTarget !== "Embed code" ? copyStatus : ""}</div>

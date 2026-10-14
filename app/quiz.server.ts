@@ -1,4 +1,5 @@
 import prisma from "./db.server";
+import defaultWidgetCss from "../extensions/dosha-quiz/assets/dosha-quiz.css?raw";
 import { scoresForTag, slugTag } from "./quiz-shared";
 import type {
   DeepQuestion,
@@ -640,9 +641,13 @@ export async function publicQuiz(shop: string, code?: unknown) {
     scanReady: scanAnalysisReady(),
     design: quiz.design,
     widgetCss: quiz.widgetCss,
+    defaultCss: defaultWidgetCss,
+    apiVersion: 1,
+    endpoints: { result: "/apps/dosha-quiz/result" },
     quick: quiz.quick,
     mappings: quiz.mappings,
     deep: quiz.deep.map((question) => ({
+      image: question.image,
       layer: question.layer,
       phase: question.phase,
       text: question.text,
