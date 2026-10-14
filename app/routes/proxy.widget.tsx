@@ -3,6 +3,9 @@ import { authenticate } from "../shopify.server";
 import { loadLibrary, publicQuiz } from "../quiz.server";
 import template from "../../extensions/dosha-quiz/snippets/quiz-widget.liquid?raw";
 import stylesheet from "../../extensions/dosha-quiz/assets/dosha-quiz.css?raw";
+if (!stylesheet.includes(".prana-quiz") || stylesheet.length < 1000) {
+  throw new Error("Widget stylesheet is missing. Restore the storefront CSS before deploying.");
+}
 // Vite ?raw exposes the classic browser bundle as a string.
 // eslint-disable-next-line import/default
 import widgetScript from "../../extensions/dosha-quiz/assets/dosha-quiz-runtime.js?raw";
