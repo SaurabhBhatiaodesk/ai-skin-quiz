@@ -101,7 +101,9 @@ export default function NewQuiz() {
           </s-section>
           {layout && layout !== "scan" && layout !== "products" ? <s-section heading={layout === "three" ? "Choose quiz options" : "Choose your quiz"}>
             <s-stack gap="base">
-              <s-paragraph>{layout === "three" ? "Select two or three options." : "Select one option."}</s-paragraph>
+              <s-paragraph>{layout === "three"
+                ? "Select two or three paths. Shoppers choose which path to take when they open the quiz. New question sets start empty; add questions after creating."
+                : "Select one path only: Quick for a short skin quiz, or Dosha for a detailed quiz. This starts empty so you can add your own questions next. To offer Quick, Dosha and Skin Scan together, choose Combined Quiz above."}</s-paragraph>
               <s-grid gridTemplateColumns="repeat(auto-fit, minmax(250px, 1fr))" gap="base">
                 {PATHS.filter(path => layout === "three" || path.value !== "scan").map(path => {
                   const selected = paths.includes(path.value);
@@ -121,6 +123,9 @@ export default function NewQuiz() {
               </s-grid>
               {paths.includes("scan") ? scanSetup : null}
             </s-stack>
+          </s-section> : null}
+          {layout === "products" ? <s-section heading="Product quiz setup">
+            <s-paragraph>This quiz uses the Quick question flow. Create it, then add questions and map answers to products in the editor.</s-paragraph>
           </s-section> : null}
           {layout === "scan" ? scanSetup : null}
           <s-stack direction="inline" justifyContent="end" gap="small">

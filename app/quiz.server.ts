@@ -1,5 +1,8 @@
 import prisma from "./db.server";
 import defaultWidgetCss from "../extensions/dosha-quiz/assets/dosha-quiz.css?raw";
+import scanCardIcon from "../public/images/onboarding/scan.svg?raw";
+import deepCardIcon from "../public/images/onboarding/dosha.svg?raw";
+import quickCardIcon from "../public/images/onboarding/quiz.svg?raw";
 import { scoresForTag, slugTag } from "./quiz-shared";
 import type {
   DeepQuestion,
@@ -12,6 +15,11 @@ import type {
 } from "./quiz-shared";
 
 export { scoresForTag, slugTag };
+export const DEFAULT_CARD_ICONS = {
+  scan: `data:image/svg+xml;base64,${Buffer.from(scanCardIcon).toString("base64")}`,
+  quick: `data:image/svg+xml;base64,${Buffer.from(quickCardIcon).toString("base64")}`,
+  deep: `data:image/svg+xml;base64,${Buffer.from(deepCardIcon).toString("base64")}`,
+} as const;
 export type {
   DeepOption,
   DeepQuestion,
@@ -637,7 +645,11 @@ export async function publicQuiz(shop: string, code?: unknown) {
     singleFlow: quiz.singleFlow,
     layout: quiz.layout || "three",
     scanner: quiz.scanner,
-    cardIcons: quiz.cardIcons,
+    cardIcons: {
+      scan: quiz.cardIcons?.scan || DEFAULT_CARD_ICONS.scan,
+      quick: quiz.cardIcons?.quick || DEFAULT_CARD_ICONS.quick,
+      deep: quiz.cardIcons?.deep || DEFAULT_CARD_ICONS.deep,
+    },
     scanReady: scanAnalysisReady(),
     design: quiz.design,
     widgetCss: quiz.widgetCss,

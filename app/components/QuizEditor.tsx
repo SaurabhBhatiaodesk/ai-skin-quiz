@@ -22,6 +22,11 @@ const TABS: Array<{ id: Tab; label: string; icon: "edit" | "paint-brush-flat" | 
 ];
 
 const RESULTS = ["vata", "pitta", "kapha", "dual-vata-pitta", "dual-vata-kapha", "dual-kapha-pitta", "balanced"] as const;
+const DEFAULT_CARD_ICON_URLS: Record<Kind, string> = {
+  scan: "/images/onboarding/scan.svg",
+  quick: "/images/onboarding/quiz.svg",
+  deep: "/images/onboarding/dosha.svg",
+};
 
 function tagsFor(option: { tags?: string[]; label: string }) {
   if (option.tags?.length) return option.tags;
@@ -422,18 +427,18 @@ export default function QuizEditor({
                 <s-text-field label="App block widget ID" details="Generated automatically. Use this ID when adding this widget to your theme." readOnly value={code} />
                 <s-text-area label="Shopify Custom Liquid embed code" rows={5} readOnly value={embedCode} />
                 <s-stack direction="inline" gap="base"><s-button icon="clipboard" onClick={async () => { try { await navigator.clipboard.writeText(embedCode); setEmbedCopyStatus("Embed code copied."); } catch { setEmbedCopyStatus("Select and copy the code above."); } }}>Copy code</s-button><s-text>{embedCopyStatus}</s-text></s-stack>
-                <s-paragraph>In your Shopify theme editor, add a Custom Liquid section, paste this complete code, and save. It loads this saved widget, including its Widget CSS. The embed adjusts its height automatically.</s-paragraph>
+                <s-paragraph>In your Shopify theme editor, add a Custom Liquid section, paste this complete code, and save. It loads this saved widget, including its Widget CSS. The iframe stays visible if the theme editor skips its resize script. If you already pasted an older embed, replace all of it with this version; existing theme code does not update itself.</s-paragraph>
                 <s-paragraph color="subdued">Or open Quizzes &amp; Skin Scan, choose Add to theme from the widget actions menu, paste its widget ID into the matching block, and save the theme.</s-paragraph>
                 <s-stack direction="inline" gap="small"><s-button href="/app/quizzes">All widgets</s-button></s-stack>
               </s-stack>
             </s-section> : null}
             {tab === "settings" ? <s-section heading={scanOnly ? "Skin Scan icon" : "Quiz card icons"}>
               <s-stack gap="base">
-                <s-paragraph>Upload an SVG, PNG, JPG or WebP icon (up to 64 KB) for each entry card, then save the quiz.</s-paragraph>
+                <s-paragraph>Each path starts with the matching illustrated icon. Upload an SVG, PNG, JPG or WebP image (up to 64 KB), or enter an HTTPS image URL, to customize it. Remove your image to restore the default.</s-paragraph>
                 <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(min(100%, 420px), 1fr))",gap:16}}>
                 {(["scan", "quick", "deep"] as const).map(path => <div key={path} style={{display:"grid",gap:12,padding:16,border:"1px solid #E3E8E4",borderRadius:12}}>
                   <s-heading>{path === "scan" ? "AI Skin Scan" : path === "quick" ? "Quick Quiz" : "Deep Dosha"}</s-heading>
-                  {quiz.cardIcons?.[path] ? <s-box inlineSize="48px" paddingBlock="small"><s-image src={quiz.cardIcons[path]} alt={`${path} card icon preview`} aspectRatio="1 / 1" objectFit="contain" /></s-box> : null}
+                  <s-box inlineSize="72px" paddingBlock="small"><s-image src={quiz.cardIcons?.[path] || DEFAULT_CARD_ICON_URLS[path]} alt={`${path} card icon preview`} aspectRatio="5 / 4" objectFit="contain" /></s-box>
                   <s-drop-zone id={`card-icon-upload-${path}`} label={quiz.cardIcons?.[path] ? "Change card icon" : "Upload card icon"} accept=".svg,.png,.jpg,.jpeg,.webp" accessibilityLabel={`Upload ${path} card icon`} onDropRejected={event => { event.currentTarget.error = "Choose an SVG, PNG, JPG or WebP image."; }} onChange={event => {
                     const input = event.currentTarget;
                     const file = input.files?.[0];

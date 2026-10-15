@@ -1,5 +1,5 @@
 import prisma from "./db.server";
-export const scanAppearanceDefaults = { enabled: true, iconImage: "", shape: "circle", label: "Skin Scan", position: "right", buttonColor: "#ffffff", buttonTextColor: "#ffffff", panelColor: "#faf7f2", textColor: "#1a1208", accentColor: "#8f6330", radius: 32, offset: 24, headingColor: "#000000", modalButtonTextColor: "#ffffff", modalFontSize: 13, modalWidth: 520, modalRadius: 24 };
+export const scanAppearanceDefaults = { enabled: true, iconImage: "", shape: "circle", label: "Skin Scan", position: "right", buttonColor: "#e8f0eb", buttonTextColor: "#284c37", panelColor: "#faf7f2", textColor: "#1a1208", accentColor: "#52695a", radius: 32, offset: 24, headingColor: "#1a1208", modalButtonTextColor: "#ffffff", modalFontSize: 14, modalWidth: 520, modalRadius: 24 };
 export type ScanAppearance = typeof scanAppearanceDefaults;
 async function prepare() { await prisma.$executeRawUnsafe("CREATE TABLE IF NOT EXISTS ScanAppearance (shop TEXT PRIMARY KEY, payload TEXT NOT NULL)"); }
 export function normalizeAppearance(value: unknown): ScanAppearance {

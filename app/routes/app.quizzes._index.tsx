@@ -34,12 +34,85 @@ export default function Quizzes() {
 });
 const quiz = await response.json();
 if (!response.ok) throw new Error(quiz.error || "Could not load quiz");
-// Build this widget using quiz.layout, quiz.resultMode,
-// quiz.enabledPaths, quiz.quick, quiz.deep and quiz.mappings.
-// quiz.defaultCss contains the default widget CSS.
-// quiz.widgetCss contains this widget's saved CSS overrides.
-// Use quiz.design and quiz.cardIcons for its appearance.
-// Send answers to quiz.endpoints.result to get the final result.`;
+// Use quiz.layout, quiz.enabledPaths, quiz.quick and quiz.deep
+// to build your own question flow and markup.
+// Use quiz.design for the merchant's saved style choices.
+// quiz.defaultCss and quiz.widgetCss are optional stylesheet starting points.`;
+  const designExample = `const design = quiz.design || {};
+const quizRoot = document.querySelector("#my-quiz");
+if (!quizRoot) throw new Error("Add an element with id=my-quiz first.");
+
+const tokens = {
+  "--quiz-background": design.background || "#faf7f2",
+  "--quiz-text": design.text || "#1a1208",
+  "--quiz-heading": design.headingColor || design.text || "#1a1208",
+  "--quiz-card": design.cardColor || "#fff9ee",
+  "--quiz-answer": design.answerColor || "#e4c3a0",
+  "--quiz-answer-text": design.answerText || "#651d30",
+  "--quiz-selected": design.selectedColor || "#571c29",
+  "--quiz-selected-text": design.selectedText || "#ffffff",
+  "--quiz-accent": design.accent || "#8f6330",
+  "--quiz-button-text": design.buttonText || "#ffffff",
+  "--quiz-heading-size": (design.headingSize || 36) + "px",
+  "--quiz-question-size": (design.questionSize || 26) + "px",
+  "--quiz-body-size": (design.bodySize || 14) + "px",
+  "--quiz-answer-size": (design.answerSize || 18) + "px",
+  "--quiz-button-size": (design.buttonSize || 20) + "px",
+  "--quiz-radius": design.radius === "pill" ? "999px" : design.radius === "square" ? "0" : "8px",
+  "--quiz-font": design.font === "sans" ? "system-ui, sans-serif" : "Georgia, serif"
+};
+Object.entries(tokens).forEach(([name, value]) => quizRoot.style.setProperty(name, String(value)));
+
+// Use quiz.quick / quiz.deep for your own HTML.
+// Apply quiz.cardIcons, quiz.widgetCss and quiz.defaultCss if needed.`;
+  const designCssExample = `#my-quiz {
+  background: var(--quiz-background);
+  color: var(--quiz-text);
+  font-family: var(--quiz-font);
+}
+#my-quiz .heading { color: var(--quiz-heading); font-size: var(--quiz-heading-size); }
+#my-quiz .question { background: var(--quiz-card); font-size: var(--quiz-question-size); }
+#my-quiz .answer { background: var(--quiz-answer); color: var(--quiz-answer-text); font-size: var(--quiz-answer-size); }
+#my-quiz .answer[aria-pressed="true"] { background: var(--quiz-selected); color: var(--quiz-selected-text); }
+#my-quiz .continue { background: var(--quiz-accent); color: var(--quiz-button-text); border-radius: var(--quiz-radius); font-size: var(--quiz-button-size); }
+#my-quiz .description { font-size: var(--quiz-body-size); }`;
+  const resultExample = `const response = await fetch("/apps/dosha-quiz/result", {
+  method: "POST",
+  headers: { "Content-Type": "application/json", Accept: "application/json" },
+  body: JSON.stringify({
+    code: quiz.handle,
+    path: "quick", // or "deep"
+    answers: selectedOptionIndexes // one valid option index per question
+  })
+});
+const payload = await response.json();
+if (!response.ok || !payload.ok) {
+  throw new Error(payload.error || "Could not submit quiz.");
+}
+// Render payload.result and payload.result.products in your design.`;
+  const scanExample = `if (!quiz.enabledPaths.includes("scan") || !quiz.scanReady) {
+  throw new Error("Skin Scan is not enabled and ready for this quiz.");
+}
+if (!ageConfirmed || !photoConsentGiven) {
+  throw new Error("Confirm age and photo-analysis consent first.");
+}
+const response = await fetch("/apps/dosha-quiz/result", {
+  method: "POST",
+  headers: { "Content-Type": "application/json", Accept: "application/json" },
+  body: JSON.stringify({
+    code: quiz.handle,
+    path: "scan",
+    images: [photoDataUrl], // JPG, PNG or WebP data URL; max 5 MB combined
+    adult: ageConfirmed,
+    consent: photoConsentGiven
+  })
+});
+const payload = await response.json();
+if (!response.ok || !payload.ok) {
+  throw new Error(payload.error || "Could not analyze this photo.");
+}
+// Render payload.result observations and matched products.
+// This is cosmetic observation, not medical diagnosis.`;
   async function copyDeveloperValue(value: string, label: string) {
     setCopyTarget(label);
     setCopyStatus("");
@@ -92,25 +165,43 @@ if (!response.ok) throw new Error(quiz.error || "Could not load quiz");
         <s-stack gap="base">
           <s-stack gap="small">
             <s-heading>Embed code</s-heading>
-            <s-paragraph>Paste this code into a Custom Liquid section in your Shopify theme, then save. It loads this widget and adjusts its height automatically.</s-paragraph>
+            <s-paragraph>Paste this code into a Custom Liquid section in your Shopify theme, then save. It loads this widget and adjusts its height automatically. If you already pasted an older embed, replace the entire old code with this version—saved theme code does not update itself.</s-paragraph>
             <s-text-area label="Shopify Custom Liquid embed code" readOnly rows={5} value={embedCode} />
             <s-stack direction="inline" gap="small" alignItems="center"><s-button icon={copyStatus === "Embed code copied." ? "check" : "clipboard"} onClick={() => copyDeveloperValue(embedCode, "Embed code")}>{copyStatus === "Embed code copied." ? "Copied" : "Copy code"}</s-button>{copyTarget === "Embed code" && copyStatus ? <span role="status" style={{fontSize:12,color:copyStatus.endsWith("copied.") ? "#27633D" : "#A12D2D"}}>{copyStatus}</span> : null}</s-stack>
           </s-stack>
-          <s-heading>API access</s-heading>
-          <s-paragraph>Use this saved quiz API to build your own storefront design. Available for Combined Quiz, Single Quiz and AI Skin Scan blocks.</s-paragraph>
+          <s-heading>Build your own quiz design</s-heading>
+          <s-paragraph>Use the storefront API from your store's domain—no API key in browser code. Your custom HTML/CSS can use the saved quiz settings and design values returned by the API.</s-paragraph>
           <s-stack direction="inline" justifyContent="space-between" alignItems="center">
-            <s-text type="strong">Quiz data API</s-text>
+            <s-text type="strong">1. Load this quiz</s-text>
             <s-button variant="secondary" onClick={() => copyDeveloperValue(apiPath,"API URL")}>{copyStatus === "API URL copied." ? "Copied" : "Copy API URL"}</s-button>
           </s-stack>
           <s-text-field label="Quiz data API" readOnly value={apiPath} />
           <s-stack direction="inline" justifyContent="space-between" alignItems="center">
-            <s-text type="strong">JavaScript example</s-text>
+            <s-text type="strong">Fetch quiz data</s-text>
             <s-button variant="secondary" onClick={() => copyDeveloperValue(fetchExample, "Example")}>{copyStatus === "Example copied." ? "Copied" : "Copy example"}</s-button>
           </s-stack>
-          <s-text-area label="Fetch quiz data" readOnly rows={8} value={fetchExample} />
-          <s-paragraph>Render the returned data with your own HTML, CSS or frontend framework. This API returns JSON; it does not insert the app widget.</s-paragraph>
-          <s-paragraph>Every block has its own widget ID. The API includes its questions, answer tags, product mappings, result mode, design, default CSS and custom CSS. Final product recommendations and permitted personalized content come from the result endpoint.</s-paragraph>
-          <s-paragraph>Submit answers or a consented scan photo to POST /apps/dosha-quiz/result for observations and matching products. Call from the same Shopify storefront domain. No API key is needed in frontend code.</s-paragraph>
+          <s-text-area label="JavaScript: load saved quiz" readOnly rows={7} value={fetchExample} />
+          <s-paragraph>Every quiz has its own ID. The response includes questions, available paths, product mappings and saved design values. The data endpoint is read-only; merchants change saved settings in the app, then your custom storefront reads the latest saved values.</s-paragraph>
+          <s-stack direction="inline" justifyContent="space-between" alignItems="center">
+            <s-text type="strong">2. Apply the saved design</s-text>
+            <s-button variant="secondary" onClick={() => copyDeveloperValue(designExample, "Design example")}>{copyStatus === "Design example copied." ? "Copied" : "Copy design example"}</s-button>
+          </s-stack>
+          <s-text-area label="JavaScript: map design values to CSS tokens" readOnly rows={13} value={designExample} />
+          <s-text-area label="CSS: style your own markup" readOnly rows={10} value={designCssExample} />
+          <s-paragraph>Design values include background, text, heading, question card, answer and selected-answer colors; font sizes; button color, text and shape; and font style. Keep your markup scoped to your quiz container so store theme styles remain unaffected.</s-paragraph>
+          {developerQuiz?.layout !== "scan" ? <>
+            <s-stack direction="inline" justifyContent="space-between" alignItems="center">
+              <s-text type="strong">3. Submit quiz answers</s-text>
+              <s-button variant="secondary" onClick={() => copyDeveloperValue(resultExample, "Result example")}>{copyStatus === "Result example copied." ? "Copied" : "Copy example"}</s-button>
+            </s-stack>
+            <s-text-area label="JavaScript: submit answers" readOnly rows={9} value={resultExample} />
+          </> : null}
+          <s-stack direction="inline" justifyContent="space-between" alignItems="center">
+            <s-text type="strong">{developerQuiz?.layout === "scan" ? "3. Submit a consented Skin Scan" : "4. Optional: submit a Skin Scan"}</s-text>
+            <s-button variant="secondary" onClick={() => copyDeveloperValue(scanExample, "Skin Scan example")}>{copyStatus === "Skin Scan example copied." ? "Copied" : "Copy example"}</s-button>
+          </s-stack>
+          <s-text-area label="JavaScript: submit a photo for cosmetic observations" readOnly rows={13} value={scanExample} />
+          <s-paragraph>Before sending a photo, show and obtain explicit consent and age confirmation. Photos must be JPG, PNG or WebP data URLs, up to five and 5 MB combined. The result endpoint returns cosmetic observations and matched products—not a medical diagnosis. Deep report details stay email-gated. Call through the Shopify storefront app proxy; never put provider keys or credentials in browser code.</s-paragraph>
           <s-link href="/app/documentation">API request and response guide</s-link>
           <div role="status" aria-live="polite">{copyTarget !== "Embed code" ? copyStatus : ""}</div>
         </s-stack>

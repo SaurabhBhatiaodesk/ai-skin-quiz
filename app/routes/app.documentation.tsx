@@ -34,7 +34,8 @@ export default function Documentation() {
         </s-section>
         <s-section heading="4. Customize the design and result">
           <s-stack gap="small">
-            <s-paragraph>Quiz design controls background, text and button colors, font style and button shape. Press Save to apply them to this quiz on your storefront.</s-paragraph>
+            <s-paragraph>Quiz design controls the background, text and heading colors, question card, answer and selected-answer colors, font sizes, button colors and shape, and font style. Press Save design to apply the saved choices to the app widget.</s-paragraph>
+            <s-paragraph>For a custom storefront UI, GET /apps/dosha-quiz/quiz?code=YOUR_WIDGET_ID returns these saved values in design, along with defaultCss and widgetCss. Map design values to CSS variables in your own quiz container and scope your stylesheet to that container. The data endpoint is read-only; edit saved settings in the app.</s-paragraph>
             <s-paragraph>Personalized content controls result names and descriptions. Branching shows the fixed quiz flow and lets you group Deep Quiz questions into baseline, current state and environment sections. Answer-based branching is not available.</s-paragraph>
           </s-stack>
         </s-section>
@@ -62,7 +63,7 @@ if (!response.ok) throw new Error('Quiz not available');
 const quiz = await response.json();
 // quiz.quick, quiz.deep, quiz.design, quiz.widgetCss, quiz.emailCapture`}</pre>
             <s-paragraph>Score answers with POST /apps/dosha-quiz/result using JSON: code, path (quick or deep), and answers (zero-based option indexes). The response contains result and matching store products. Deep report details remain email-gated.</s-paragraph>
-            <s-paragraph>All saved block types use the same API with their own widget ID: layout three is Combined Quiz, single is Single Quiz, and scan is AI Skin Scan. Use enabledPaths to decide which choices to display; use singleFlow for the Single Quiz path. Design and cardIcons are optional starting points for your custom interface.</s-paragraph>
+            <s-paragraph>All saved block types use the same API with their own widget ID: layout three is Combined Quiz, single is Single Quiz, and scan is AI Skin Scan. Use enabledPaths to decide which choices to display; use singleFlow for the Single Quiz path. The design object includes background, text, headingColor, cardColor, answerColor, answerText, selectedColor, selectedText, accent, buttonText, headingSize, questionSize, bodySize, answerSize, buttonSize, radius and font. cardIcons are optional image starting points for your custom interface.</s-paragraph>
             <pre style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{`// Collect one zero-based option index for every question in the selected path.
 const answers = selectedOptionIndexes;
 const response = await fetch('/apps/dosha-quiz/result', {

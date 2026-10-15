@@ -5,10 +5,10 @@ import { useEffect, useRef, useState } from "react";
 import { useFetcher, useLoaderData } from "react-router";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { authenticate } from "../shopify.server";
-import { loadScanAppearance, saveScanAppearance } from "../scan-appearance.server";
+import { loadScanAppearance, saveScanAppearance, scanAppearanceDefaults } from "../scan-appearance.server";
 export async function loader({ request }: LoaderFunctionArgs) {
   const { session } = await authenticate.admin(request);
-  return { appearance: await loadScanAppearance(session.shop), embedUrl: skinScanActivationUrl(session.shop) };
+  return { appearance: await loadScanAppearance(session.shop), recommendedAppearance: scanAppearanceDefaults, embedUrl: skinScanActivationUrl(session.shop) };
 }
 export async function action({ request }: ActionFunctionArgs) {
   const { session } = await authenticate.admin(request);
@@ -16,7 +16,7 @@ export async function action({ request }: ActionFunctionArgs) {
   catch (error) { return { ok: false, error: error instanceof Error ? error.message : "Could not save appearance." }; }
 }
 export default function ScanAppearanceSettings() {
-  const { appearance: defaults, embedUrl } = useLoaderData<typeof loader>();
+  const { appearance: defaults, recommendedAppearance, embedUrl } = useLoaderData<typeof loader>();
   const [value, setValue] = useState(defaults);
   const [savedValue, setSavedValue] = useState(defaults);
   const submittedValue = useRef(defaults);
@@ -111,6 +111,10 @@ export default function ScanAppearanceSettings() {
         <div style={{ display: "flex", justifyContent: value.position === "left" ? "flex-start" : "flex-end", padding: 12, background: value.panelColor, borderRadius: 8 }}>
           <div role="img" style={{ background: value.buttonColor, color: value.buttonTextColor, borderRadius: value.shape === "circle" ? "50%" : value.radius, width: value.shape === "circle" ? 64 : undefined, height: value.shape === "circle" ? 64 : undefined, display: "inline-flex", alignItems: "center", justifyContent: "center", border: 0, padding: value.shape === "circle" ? 0 : "18px 24px", font: "600 16px system-ui" }} aria-label={value.label || "Skin Scan"}>{value.iconImage ? <img src={value.iconImage} alt="" style={{width:value.shape === "circle" ? "100%" : 28,height:value.shape === "circle" ? "100%" : 28,objectFit:"cover",borderRadius:"50%",marginRight:value.shape === "circle" ? 0 : 8}} /> : null}{value.shape === "circle" ? value.iconImage ? null : <img src={defaultScanIcon} alt="" style={{width:52,height:52,objectFit:"contain",display:"block"}} /> : value.label || "Skin Scan"}</div>
         </div>
+        <s-stack direction="inline" gap="base" alignItems="center">
+          <s-button disabled={JSON.stringify(value) === JSON.stringify(recommendedAppearance)} onClick={() => { setValue({ ...recommendedAppearance }); setIconError(""); }}>Restore recommended defaults</s-button>
+          <s-text color="subdued">Changes apply after you save.</s-text>
+        </s-stack>
       </s-section>
       <s-stack direction="inline"><s-button variant="primary" loading={fetcher.state !== "idle"} onClick={save}>Save appearance</s-button></s-stack>
     </s-stack>
