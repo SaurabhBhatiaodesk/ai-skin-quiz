@@ -317,10 +317,17 @@ export default function QuizEditor({
                     {RESULTS.map(key => <s-button key={key} variant={resultKey === key ? "primary" : "secondary"} accessibilityLabel={`Edit ${quiz.profiles[key].name} result`} onClick={() => setResultKey(key)}>{quiz.profiles[key].name}</s-button>)}
                   </s-stack>
                 </> : <>
-                  {enabledPaths.length > 1 ? <s-select label="Quiz flow" value={kind} onChange={event => { setKind(event.currentTarget.value === "scan" ? "scan" : event.currentTarget.value === "deep" ? "deep" : "quick"); setIndex(0); }}>
-                    {enabledPaths.includes("quick") ? <s-option value="quick">Quick Quiz ({quiz.quick.length} questions)</s-option> : null}
-                    {enabledPaths.includes("deep") ? <s-option value="deep">Deep Quiz ({quiz.deep.length} questions)</s-option> : null}
-                    {enabledPaths.includes("scan") ? <s-option value="scan">AI Skin Scan</s-option> : null}
+                  {quiz.layout === "three" || enabledPaths.length > 1 ? <s-select label="Quiz flow" value={kind} onChange={event => {
+                    const nextKind: Kind = event.currentTarget.value === "scan" ? "scan" : event.currentTarget.value === "deep" ? "deep" : "quick";
+                    setKind(nextKind);
+                    setIndex(0);
+                    if (quiz.layout === "three" && !enabledPaths.includes(nextKind)) {
+                      setQuiz(current => ({ ...current, enabledPaths: [...(current.enabledPaths || enabledPaths), nextKind] }));
+                    }
+                  }}>
+                    {(quiz.layout === "three" || enabledPaths.includes("quick")) ? <s-option value="quick">Quick Quiz ({quiz.quick.length} questions)</s-option> : null}
+                    {(quiz.layout === "three" || enabledPaths.includes("deep")) ? <s-option value="deep">Deep Quiz ({quiz.deep.length} questions)</s-option> : null}
+                    {(quiz.layout === "three" || enabledPaths.includes("scan")) ? <s-option value="scan">AI Skin Scan</s-option> : null}
                   </s-select> : null}
                   <s-stack direction="inline" gap="base" justifyContent="space-between" alignItems="center">
                     <s-text color="subdued">{kind === "scan" ? "Configure camera and photo upload for the scan block." : "Select a question to edit, or add a new one."}</s-text>
