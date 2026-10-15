@@ -5,7 +5,7 @@ import { useAppBridge } from "@shopify/app-bridge-react";
 import MappingEditor from "./MappingEditor";
 import type { MappingDraft } from "./MappingEditor";
 import { useFetcher } from "react-router";
-import { scoresForTag, slugTag } from "../quiz-shared";
+import { recommendedQuizDesign, scoresForTag, slugTag } from "../quiz-shared";
 import type { DeepQuestion, ProductMapping, QuickQuestion, ResultTag, ShopProduct, StoredQuiz } from "../quiz-shared";
 
 type SaveResult = { ok: true; quiz: StoredQuiz } | { ok: false; error: string };
@@ -295,7 +295,7 @@ export default function QuizEditor({
   const scanOnly = quiz.layout === "scan";
   const editorTabs = scanOnly ? TABS.filter(item => item.id === "edit" || item.id === "design" || item.id === "settings").map(item => ({ ...item, label: item.id === "edit" ? "Skin Scan settings" : item.id === "design" ? "Scan design" : item.label })) : TABS.filter(item => quiz.resultMode !== "products" || item.id !== "content");
   const showQuestions = tab === "edit" || tab === "tags";
-  const design = quiz.design || { background: "#faf7f2", text: "#1a1208", accent: "#8f6330", buttonText: "#ffffff", font: "classic" as const, radius: "rounded" as const };
+  const design = { ...recommendedQuizDesign, ...quiz.design };
   const showSidebar = (showQuestions && quiz.layout !== "scan" && !(tab === "edit" && questionOpen)) || tab === "content";
   const usedMappingTags = new Set(quiz.mappings.filter(mapping => mapping.id !== mappingDraft?.id).flatMap(mapping => mapping.tags));
   const availableMappingTags = selectableTags(quiz, products).filter(tag => !usedMappingTags.has(tag) || mappingDraft?.tags.includes(tag));
@@ -372,6 +372,7 @@ export default function QuizEditor({
               <s-stack gap="base">
                 <s-paragraph color="subdued">{scanOnly ? "Customize this Skin Scan widget on your storefront. These settings are saved for this widget." : "Colors and font sizes are saved only for this widget and apply to its theme block and embed code."}</s-paragraph>
                 <s-paragraph color="subdued">Heading and body fonts follow your Shopify theme.</s-paragraph>
+                {!scanOnly ? <s-button onClick={() => setQuiz(current => ({ ...current, design: { ...recommendedQuizDesign } }))}>Restore recommended design</s-button> : null}
                 <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(300px, 1fr))",gap:16}}>
                   <div style={{border:"1px solid #E1E3E1",borderRadius:12,padding:20,background:"#FFFFFF"}}><s-stack gap="base"><s-heading>Background and body</s-heading><s-color-field label="Background color" value={design.background} onInput={event => { const value = event.currentTarget.value; setQuiz(current => ({ ...current, design: { ...design, ...current.design, background: value } })); }} /><s-color-field label="Body text color" value={design.text} onInput={event => { const value = event.currentTarget.value; setQuiz(current => ({ ...current, design: { ...design, ...current.design, text: value } })); }} /><s-number-field label="Body text size" suffix="px" min={10} max={64} value={String(design.bodySize ?? 14)} onInput={event => { const value = Number(event.currentTarget.value); setQuiz(current => ({ ...current, design: { ...design, ...current.design, bodySize: value } })); }} /></s-stack></div>
                   <div style={{border:"1px solid #E1E3E1",borderRadius:12,padding:20,background:"#FFFFFF"}}><s-stack gap="base"><s-heading>Heading</s-heading><s-color-field label="Heading color" value={design.headingColor || "#000000"} onInput={event => { const value = event.currentTarget.value; setQuiz(current => ({ ...current, design: { ...design, ...current.design, headingColor: value } })); }} /><s-number-field label="Heading size" suffix="px" min={10} max={64} value={String(design.headingSize ?? 36)} onInput={event => { const value = Number(event.currentTarget.value); setQuiz(current => ({ ...current, design: { ...design, ...current.design, headingSize: value } })); }} /></s-stack></div>

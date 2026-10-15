@@ -17,6 +17,11 @@ source = source.replace('import prisma from "./db.server";', `const prisma = {
   },
   async $queryRawUnsafe(sql, ...args) { return globalThis.quizTestDatabase.prepare(sql).all(...args); }
 };`);
+source = source
+  .replace('import defaultWidgetCss from "../extensions/dosha-quiz/assets/dosha-quiz.css?raw";', 'const defaultWidgetCss = "";')
+  .replace('import scanCardIcon from "../public/images/onboarding/scan.svg?raw";', 'const scanCardIcon = "<svg/>";')
+  .replace('import deepCardIcon from "../public/images/onboarding/dosha.svg?raw";', 'const deepCardIcon = "<svg/>";')
+  .replace('import quickCardIcon from "../public/images/onboarding/quiz.svg?raw";', 'const quickCardIcon = "<svg/>";');
 source = source.replace('from "./quiz-shared";', `from "data:text/javascript;base64,${Buffer.from(shared.code).toString("base64")}";`);
 const compiled = await transform(source, { loader: "ts", format: "esm" });
 const api = await import(`data:text/javascript;base64,${Buffer.from(compiled.code).toString("base64")}`);
@@ -51,6 +56,11 @@ console.log("Passed: default scan initialization, concurrent opens, existing sca
 assert.equal(api.quizCode(1791540340856), "1791540340856");
 assert.equal(api.quizCode("[dosha-quiz:1791540340856]"), "1791540340856");
 const legacy = api.normalizeQuiz({ quick: api.QUICK_QUESTIONS, deep: api.DEEP_QUESTIONS });
+assert.equal(legacy.design.background, "#f4f6f2");
+assert.equal(legacy.design.cardColor, "#fffdfa");
+assert.equal(legacy.design.answerColor, "#eff4ef");
+assert.equal(legacy.design.selectedColor, "#52695a");
+assert.equal(api.normalizeQuiz({ quick: api.QUICK_QUESTIONS, deep: api.DEEP_QUESTIONS, design: { ...legacy.design, answerColor: "#123456" } }).design.answerColor, "#123456");
 assert.equal(legacy.layout, "three");
 assert.ok(legacy.deep.length);
 assert.equal(legacy.deep.length, 18);
@@ -146,6 +156,7 @@ async function storefront(layout, scanReady = false, embedded = false) {
     classList: { remove() { active.delete(name); }, add() { active.add(name); } },
   }));
   const root = {
+    id: "test-widget-root",
     getAttribute(key) { return key === "data-quiz-code" ? "single" : null; },
     setAttribute() {}, addEventListener() {},
     querySelectorAll(selector) { return selector === ".screen" ? screens : []; },
@@ -154,8 +165,12 @@ async function storefront(layout, scanReady = false, embedded = false) {
       return match ? screens[["entry", "quick", "deep", "scanner"].indexOf(match[1])] : null;
     },
   };
+  const embeddedConfig = embedded ? {
+    getAttribute(key) { return key === "data-widget-root" ? root.id : null; },
+    textContent: JSON.stringify({ layout, scanReady, quick: [] }),
+  } : null;
   vm.runInNewContext(storefrontBundle, {
-    document: { getElementById() { return embedded ? { textContent: JSON.stringify({ layout, scanReady, quick: [] }) } : null; }, readyState: "complete", querySelectorAll() { return [root]; }, addEventListener() {} },
+    document: { getElementById(id) { return id === "prana-embed-config" ? embeddedConfig : null; }, readyState: "complete", querySelectorAll() { return [root]; }, addEventListener() {} },
     window: { scrollTo() {} },
     URLSearchParams,
     navigator: {},

@@ -3,7 +3,7 @@ import defaultWidgetCss from "../extensions/dosha-quiz/assets/dosha-quiz.css?raw
 import scanCardIcon from "../public/images/onboarding/scan.svg?raw";
 import deepCardIcon from "../public/images/onboarding/dosha.svg?raw";
 import quickCardIcon from "../public/images/onboarding/quiz.svg?raw";
-import { scoresForTag, slugTag } from "./quiz-shared";
+import { recommendedQuizDesign, scoresForTag, slugTag } from "./quiz-shared";
 import type {
   DeepQuestion,
   ProductMapping,
@@ -379,22 +379,22 @@ export function normalizeQuiz(input: unknown, { draft = false }: { draft?: boole
     return size;
   }
   const design: NonNullable<StoredQuiz["design"]> = {
-    headingColor: color(suppliedDesign?.headingColor, "#000000"),
-    cardColor: color(suppliedDesign?.cardColor, "#fff9ee"),
-    answerColor: color(suppliedDesign?.answerColor, "#e4c3a0"),
-    answerText: color(suppliedDesign?.answerText, "#651d30"),
-    selectedColor: color(suppliedDesign?.selectedColor, "#571c29"),
-    selectedText: color(suppliedDesign?.selectedText, "#ffffff"),
-    headingSize: fontSize(suppliedDesign?.headingSize, 36),
-    questionSize: fontSize(suppliedDesign?.questionSize, 26),
-    bodySize: fontSize(suppliedDesign?.bodySize, 14),
-    answerSize: fontSize(suppliedDesign?.answerSize, 18),
-    buttonSize: fontSize(suppliedDesign?.buttonSize, 20),
+    headingColor: color(suppliedDesign?.headingColor, recommendedQuizDesign.headingColor),
+    cardColor: color(suppliedDesign?.cardColor, recommendedQuizDesign.cardColor),
+    answerColor: color(suppliedDesign?.answerColor, recommendedQuizDesign.answerColor),
+    answerText: color(suppliedDesign?.answerText, recommendedQuizDesign.answerText),
+    selectedColor: color(suppliedDesign?.selectedColor, recommendedQuizDesign.selectedColor),
+    selectedText: color(suppliedDesign?.selectedText, recommendedQuizDesign.selectedText),
+    headingSize: fontSize(suppliedDesign?.headingSize, recommendedQuizDesign.headingSize),
+    questionSize: fontSize(suppliedDesign?.questionSize, recommendedQuizDesign.questionSize),
+    bodySize: fontSize(suppliedDesign?.bodySize, recommendedQuizDesign.bodySize),
+    answerSize: fontSize(suppliedDesign?.answerSize, recommendedQuizDesign.answerSize),
+    buttonSize: fontSize(suppliedDesign?.buttonSize, recommendedQuizDesign.buttonSize),
 
-    background: color(suppliedDesign?.background, "#faf7f2"), text: color(suppliedDesign?.text, "#1a1208"),
-    accent: color(suppliedDesign?.accent, "#8f6330"), buttonText: color(suppliedDesign?.buttonText, "#ffffff"),
-    font: suppliedDesign?.font === "sans" ? "sans" : "classic",
-    radius: suppliedDesign?.radius === "square" ? "square" : suppliedDesign?.radius === "pill" ? "pill" : "rounded",
+    background: color(suppliedDesign?.background, recommendedQuizDesign.background), text: color(suppliedDesign?.text, recommendedQuizDesign.text),
+    accent: color(suppliedDesign?.accent, recommendedQuizDesign.accent), buttonText: color(suppliedDesign?.buttonText, recommendedQuizDesign.buttonText),
+    font: suppliedDesign?.font === "sans" ? "sans" : recommendedQuizDesign.font,
+    radius: suppliedDesign?.radius === "square" ? "square" : suppliedDesign?.radius === "pill" ? "pill" : recommendedQuizDesign.radius,
   };
   const suppliedIntegration = (input as StoredQuiz)?.scanIntegration;
   const scanIntegration = { provider: clip(suppliedIntegration?.provider, 80), endpoint: clip(suppliedIntegration?.endpoint, 500), documentation: clip(suppliedIntegration?.documentation, 500) };

@@ -59,6 +59,7 @@ import { buildFaceMap } from "./face-map.js";
       for (var i = 0; i < screens.length; i++) screens[i].classList.remove("active");
       var target = q('[data-screen="' + name + '"]');
       if (target) target.classList.add("active");
+      if (name === "result" && scanChatOpen) root.scrollTop = 0;
       if (name !== "scanner") stopCamera();
       if (name === "scanner") showScanStep(1);
       if (name === "quick") resetQuick();
@@ -107,14 +108,17 @@ import { buildFaceMap } from "./face-map.js";
       if (!profile) { showError("Could not show your result. Please try again.", source === "Deep Dosha" ? "deep" : "quick"); return; }
       doshaKey = result.dosha || doshaKey;
       source = result.source || source;
+      var isScanResult = source === "AI Skin Scan";
+      if (isScanResult) root.setAttribute("data-scan-result", "");
+      else root.removeAttribute("data-scan-result");
       modalKey = profile.modal || "tridoshic";
       var hero = q("[data-hero]");
       if (hero) hero.className = "result-hero " + profile.heroClass;
-      if (hero) { var heroTag = hero.querySelector(".rh-tag"); if (heroTag) heroTag.textContent = productsOnly ? "Your recommendations" : "Your Dosha Profile"; }
+      if (hero) { var heroTag = hero.querySelector(".rh-tag"); if (heroTag) heroTag.textContent = isScanResult ? "AI Skin Scan" : productsOnly ? "Your recommendations" : "Your Dosha Profile"; }
       q("[data-dosha-name]").textContent = profile.name;
       q("[data-dosha-sub]").textContent = profile.sub;
       q("[data-dosha-essence]").textContent = profile.essence;
-      q("[data-dosha-source]").textContent = (source === "AI Skin Scan" ? "Scan Complete | " : "via ") + source;
+      q("[data-dosha-source]").textContent = isScanResult ? "" : "via " + source;
       var reading = q("[data-skin-reading]");
       var insightHtml = safeHtml(result.insight || profile.insight);
       q("[data-insight]").innerHTML = insightHtml;
@@ -198,7 +202,7 @@ import { buildFaceMap } from "./face-map.js";
       var box = q("[data-products]");
       if (box) {
         box.innerHTML = (result.products || []).map(function (product) {
-          var img = product.image ? '<img src="' + esc(product.image) + '" alt="" loading="lazy">' : '<span class="no-img" aria-hidden="true">âœ¦</span>';
+          var img = product.image ? '<img src="' + esc(product.image) + '" alt="" loading="lazy">' : '<span class="no-img" aria-hidden="true">+</span>';
           var href = "/products/" + encodeURIComponent(product.handle || "") + (product.variantId ? "?variant=" + encodeURIComponent(String(product.variantId).split("/").pop()) : "");
           return '<div class="product-card"><div class="pc-img">' + img + '</div><div class="pc-body"><div class="pc-name">' + esc(product.title) + "</div>" + (product.why ? '<div class="pc-why">' + esc(product.why) + "</div>" : "") + '<div class="pc-bottom"><span class="pc-price">' + esc(product.price) + '</span><a class="btn-shop" href="' + esc(href) + '" aria-label="Shop ' + esc(product.title) + '">Shop Now →</a></div></div></div>';
         }).join("");
@@ -375,6 +379,7 @@ import { buildFaceMap } from "./face-map.js";
         if (label.getAttribute("data-scan-step-label") === String(step)) label.setAttribute("aria-current", "step");
         else label.removeAttribute("aria-current");
       });
+      if (scanChatOpen) root.scrollTop = 0;
       if (step === 2) selectMode(scanMode); else stopCamera();
     }
 
@@ -728,10 +733,10 @@ import { buildFaceMap } from "./face-map.js";
       var plural = function (count) { return count + (count === 1 ? " question" : " questions"); };
       var copy = {
         "[data-quick-desc]": plural(quickCount) + " about your skin. Instant ritual match — no camera needed.",
-        "[data-quick-time]": "âœ¦ About " + minutes(quickCount, 20) + " min",
+        "[data-quick-time]": "About " + minutes(quickCount, 20) + " min",
         "[data-quick-sub]": plural(quickCount) + ". Your personal ritual.",
         "[data-deep-desc]": plural(deepCount) + " across constitution, current state, and environment. The full Ayurvedic reading.",
-        "[data-deep-time]": "âœ¦ About " + minutes(deepCount, 15) + " min"
+        "[data-deep-time]": "About " + minutes(deepCount, 15) + " min"
       };
       Object.keys(copy).forEach(function (selector) { var node = q(selector); if (node) node.textContent = copy[selector]; });
       if (data.widgetCss) {
@@ -763,6 +768,8 @@ import { buildFaceMap } from "./face-map.js";
         root.style.setProperty("--canvas", design.background);
         root.style.setProperty("--ink", design.text);
         root.style.setProperty("--gold", design.accent);
+        root.style.setProperty("--quiz-border", design.accent || "#52695a");
+        root.style.setProperty("--quiz-selected", design.selectedColor || "#52695a");
         root.style.setProperty("--button-text", design.buttonText);
         root.style.setProperty("--button-radius", design.radius === "pill" ? "999px" : design.radius === "square" ? "0px" : "8px");
         if (design.background !== undefined) root.querySelectorAll('[data-screen="quick"], [data-screen="deep"]').forEach(function (element) { element.style.setProperty("background", String(design.background), "important"); });
@@ -790,7 +797,7 @@ import { buildFaceMap } from "./face-map.js";
         var value = data.cardIcons && data.cardIcons[path];
         if (!icon || !value || !(value.indexOf("https://") === 0 || /^data:image\/(png|jpeg|webp|svg\+xml);base64,/.test(value))) return;
         var image = document.createElement("img"); image.alt = "";
-        image.style.cssText = "width:68px;height:68px;object-fit:contain";
+        image.style.cssText = "width:100px;height:100px;object-fit:contain";
         image.addEventListener("load", function() { icon.textContent = ""; icon.classList.add("has-image"); icon.appendChild(image); });
         image.src = value;
       });

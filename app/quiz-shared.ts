@@ -50,6 +50,27 @@ export type StoredQuiz = {
   profiles: Record<string, QuizProfile>;
   mappings: ProductMapping[];
 };
+
+export const recommendedQuizDesign: Required<NonNullable<StoredQuiz["design"]>> = {
+  headingColor: "#1c3328",
+  cardColor: "#fffdfa",
+  answerColor: "#eff4ef",
+  answerText: "#30473a",
+  selectedColor: "#52695a",
+  selectedText: "#ffffff",
+  headingSize: 36,
+  questionSize: 30,
+  bodySize: 15,
+  answerSize: 18,
+  buttonSize: 18,
+  background: "#f4f6f2",
+  text: "#1a2921",
+  accent: "#52695a",
+  buttonText: "#ffffff",
+  font: "classic",
+  radius: "rounded",
+};
+
 export type ShopProduct = {
   title: string;
   handle: string;
