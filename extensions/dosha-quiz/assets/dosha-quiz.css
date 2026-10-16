@@ -3843,3 +3843,9 @@
 .prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open)[data-entry-time] .entry-card .ec-time { color: var(--entry-time) !important; }
 .prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open)[data-entry-ghost] .entry-card .btn-entry.ghost { color: var(--entry-ghost) !important; border-color: var(--entry-ghost) !important; }
 .prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open)[data-entry-ghost] .entry-card .btn-entry.ghost:hover { background: var(--entry-ghost) !important; color: #fff !important; }
+/* Entry card icon box: background colour and size (desktop/mobile). */
+.prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open) .entry-card .ec-icon.has-image { width: var(--layout-entryIconSize, 116px); height: var(--layout-entryIconSize, 116px); }
+.prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open)[data-entry-icon-bg] .entry-card .ec-icon { background: var(--entry-icon-bg) !important; }
+@media (max-width: 600px) {
+  .prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open) .entry-card .ec-icon.has-image { width: var(--layout-mobileEntryIconSize, 104px); height: var(--layout-mobileEntryIconSize, 104px); }
+}
