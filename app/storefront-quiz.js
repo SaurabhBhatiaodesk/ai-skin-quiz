@@ -870,7 +870,7 @@ import { buildScanReport } from "./scan-report.js";
       if (data.design) {
         var design = data.design;
         root.style.setProperty("--canvas", design.background);
-        ["desktopButtonWidth","mobileButtonWidth","desktopButtonHeight","mobileButtonHeight","mobileButtonSize","desktopWidth","desktopPadding","mobileWidth","mobilePadding","mobileHeadingSize","mobileQuestionSize","mobileAnswerSize","answerSpacing","mobileAnswerSpacing","answerPadding","mobileAnswerPadding","headingSize","bodySize","brandSize","mobileBrandSize","mobileSubtitleSize","questionGap","mobileQuestionGap","buttonGap","mobileButtonGap","entryTitleSize","mobileEntryTitleSize","entryTextSize","mobileEntryTextSize","entryPadding","mobileEntryPadding","entryGap","mobileEntryGap","entryRadius","entryIconSize","mobileEntryIconSize","entryTimeSize","mobileEntryTimeSize","headerTop","mobileHeaderTop","headerGap","mobileHeaderGap"].forEach(function(key) { if (Number.isFinite(Number(design[key]))) root.style.setProperty('--layout-' + key, Number(design[key]) + (['mobileWidth','desktopButtonWidth','mobileButtonWidth'].includes(key) ? '%' : 'px')); });
+        ["desktopButtonWidth","mobileButtonWidth","desktopButtonHeight","mobileButtonHeight","mobileButtonSize","desktopWidth","desktopPadding","mobileWidth","mobilePadding","mobileHeadingSize","mobileQuestionSize","mobileAnswerSize","answerSpacing","mobileAnswerSpacing","answerPadding","mobileAnswerPadding","headingSize","bodySize","brandSize","mobileBrandSize","mobileSubtitleSize","questionGap","mobileQuestionGap","buttonGap","mobileButtonGap","entryTitleSize","mobileEntryTitleSize","entryTextSize","mobileEntryTextSize","entryPadding","mobileEntryPadding","entryGap","mobileEntryGap","entryRadius","entryIconSize","mobileEntryIconSize","entryTimeSize","mobileEntryTimeSize","headerTop","mobileHeaderTop","headerGap","mobileHeaderGap","scanTitleSize","mobileScanTitleSize","scanTextSize","mobileScanTextSize"].forEach(function(key) { if (Number.isFinite(Number(design[key]))) root.style.setProperty('--layout-' + key, Number(design[key]) + (['mobileWidth','desktopButtonWidth','mobileButtonWidth'].includes(key) ? '%' : 'px')); });
         root.dataset.buttonAlignment = ["left", "right"].includes(design.buttonAlignment) ? design.buttonAlignment : "center";
         root.style.setProperty("--ink", design.text);
         root.style.setProperty("--gold", design.accent);
@@ -880,7 +880,7 @@ import { buildScanReport } from "./scan-report.js";
         root.style.setProperty("--button-radius", design.radius === "pill" ? "999px" : design.radius === "square" ? "0px" : "8px");
         root.querySelectorAll('[data-screen="quick"], [data-screen="deep"]').forEach(function (element) { element.style.setProperty("background", "transparent", "important"); });
         // Skin Scan colours of this widget (inline scan screen only; the floating popup has its own appearance).
-        [["scanCard", "--sx-card"], ["scanText", "--sx-text"], ["scanHeading", "--sx-heading"], ["scanButton", "--sx-button"], ["scanButtonText", "--sx-button-text"], ["backBg", "--back-bg"], ["backText", "--back-text"], ["backBorder", "--back-border"], ["headingAccent", "--heading-accent"], ["entryBg", "--entry-bg"], ["entryBorder", "--entry-border"], ["entryFeatured", "--entry-featured"], ["brandColor", "--brand-color"], ["subtitleColor", "--subtitle-color"], ["entryTitleColor", "--entry-title"], ["entryTextColor", "--entry-text"], ["entryTimeColor", "--entry-time"], ["entryGhost", "--entry-ghost"], ["entryIconBg", "--entry-icon-bg"]].forEach(function (pair) {
+        [["scanCard", "--sx-card"], ["scanText", "--sx-text"], ["scanHeading", "--sx-heading"], ["scanButton", "--sx-button"], ["scanButtonText", "--sx-button-text"], ["backBg", "--back-bg"], ["backText", "--back-text"], ["backBorder", "--back-border"], ["headingAccent", "--heading-accent"], ["entryBg", "--entry-bg"], ["entryBorder", "--entry-border"], ["entryFeatured", "--entry-featured"], ["brandColor", "--brand-color"], ["subtitleColor", "--subtitle-color"], ["entryTitleColor", "--entry-title"], ["entryTextColor", "--entry-text"], ["entryTimeColor", "--entry-time"], ["entryGhost", "--entry-ghost"], ["entryIconBg", "--entry-icon-bg"], ["scanAccent", "--sx-accent"], ["scanNoticeBg", "--sx-notice"], ["scanBoxBg", "--sx-box"]].forEach(function (pair) {
           var attribute = "data-" + pair[1].slice(2);
           if (design[pair[0]]) { root.style.setProperty(pair[1], design[pair[0]]); root.setAttribute(attribute, ""); }
           else { root.style.removeProperty(pair[1]); root.removeAttribute(attribute); }
@@ -945,13 +945,18 @@ import { buildScanReport } from "./scan-report.js";
           scanBadge: cards.scan + ".ec-badge", scanName: cards.scan + ".ec-name", scanDesc: cards.scan + ".ec-desc", scanTime: cards.scan + ".ec-time", scanButton: cards.scan + ".btn-entry",
           quickName: cards.quick + ".ec-name", quickDesc: cards.quick + ".ec-desc", quickTime: cards.quick + ".ec-time", quickButton: cards.quick + ".btn-entry",
           deepName: cards.deep + ".ec-name", deepDesc: cards.deep + ".ec-desc", deepTime: cards.deep + ".ec-time", deepButton: cards.deep + ".btn-entry",
-          quickSubtitle: '[data-screen="quick"] .hdr-sub', deepSubtitle: '[data-screen="deep"] .hdr-sub' };
+          quickSubtitle: '[data-screen="quick"] .hdr-sub', deepSubtitle: '[data-screen="deep"] .hdr-sub',
+          scannerSubtitle: '[data-screen="scanner"] .hdr-sub', scanStepTitle: '[data-scan-step="1"] .scan-step-title', scanStepIntro: '[data-scan-step="1"] .scan-step-intro',
+          scanNotice: '[data-screen="scanner"] .cn-text', consentBio: 'label[for^="consent-bio"]', consentAge: 'label[for^="consent-age"]', consentMail: 'label[for^="consent-mail"]', scanContinue: "[data-scan-continue]" };
+        // Hiding these removes the whole block (notice box, checkbox row); the two required consents cannot be hidden.
+        var hideWhole = { scanNotice: ".consent-notice", consentMail: ".consent-row" };
+        var required = ["consentBio", "consentAge"];
         Object.keys(plain).forEach(function (key) {
           var element = q(plain[key]); if (!element) return;
-          if (hidden.indexOf(key) !== -1) { element.style.display = "none"; return; }
+          if (hidden.indexOf(key) !== -1 && required.indexOf(key) === -1) { ((hideWhole[key] && element.closest(hideWhole[key])) || element).style.display = "none"; return; }
           if (texts[key]) element.textContent = texts[key];
         });
-        ["entry", "quick", "deep"].forEach(function (screen) {
+        ["entry", "quick", "deep", "scanner"].forEach(function (screen) {
           var heading = q('[data-screen="' + screen + '"] .hdr-title'); if (!heading) return;
           var em = heading.querySelector("em"); var titleKey = screen + "Title", accentKey = screen + "Accent";
           var titleText = Array.prototype.filter.call(heading.childNodes, function (node) { return node.nodeType === 3; }).map(function (node) { return node.textContent; }).join("").trim();

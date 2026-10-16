@@ -46,14 +46,18 @@ export type StoredQuiz = {
   layout?: "three" | "single" | "scan";
   scanner?: { title: string; description: string; camera: boolean; upload: boolean };
   scanIntegration?: { provider: string; endpoint: string; documentation: string };
-  design?: { headerTop?: number; mobileHeaderTop?: number; headerGap?: number; mobileHeaderGap?: number; entryTimeSize?: number; mobileEntryTimeSize?: number; entryIconBg?: string; entryIconSize?: number; mobileEntryIconSize?: number; entryTitleColor?: string; entryTextColor?: string; entryTimeColor?: string; entryGhost?: string; brandColor?: string; titleColor?: string; subtitleColor?: string; entryBg?: string; entryBorder?: string; entryFeatured?: string; entryTitleSize?: number; mobileEntryTitleSize?: number; entryTextSize?: number; mobileEntryTextSize?: number; entryPadding?: number; mobileEntryPadding?: number; entryGap?: number; mobileEntryGap?: number; entryRadius?: number; questionGap?: number; mobileQuestionGap?: number; buttonGap?: number; mobileButtonGap?: number; headingAccent?: string; brandSize?: number; mobileBrandSize?: number; mobileSubtitleSize?: number; backBg?: string; backText?: string; backBorder?: string; answerPadding?: number; mobileAnswerPadding?: number; scanCard?: string; scanText?: string; scanHeading?: string; scanButton?: string; scanButtonText?: string; headingColor?: string; cardColor?: string; answerColor?: string; answerText?: string; selectedColor?: string; selectedText?: string; headingSize?: number; questionSize?: number; bodySize?: number; answerSize?: number; buttonSize?: number; desktopWidth?: number; desktopPadding?: number; mobileWidth?: number; mobilePadding?: number; mobileHeadingSize?: number; mobileQuestionSize?: number; mobileAnswerSize?: number; answerSpacing?: number; mobileAnswerSpacing?: number; desktopButtonWidth?: number; mobileButtonWidth?: number; desktopButtonHeight?: number; mobileButtonHeight?: number; mobileButtonSize?: number; buttonAlignment?: "left" | "center" | "right"; background: string; text: string; accent: string; buttonText: string; font: "classic" | "sans"; radius: "square" | "rounded" | "pill" };
+  design?: { scanAccent?: string; scanNoticeBg?: string; scanBoxBg?: string; scanTitleSize?: number; mobileScanTitleSize?: number; scanTextSize?: number; mobileScanTextSize?: number; headerTop?: number; mobileHeaderTop?: number; headerGap?: number; mobileHeaderGap?: number; entryTimeSize?: number; mobileEntryTimeSize?: number; entryIconBg?: string; entryIconSize?: number; mobileEntryIconSize?: number; entryTitleColor?: string; entryTextColor?: string; entryTimeColor?: string; entryGhost?: string; brandColor?: string; titleColor?: string; subtitleColor?: string; entryBg?: string; entryBorder?: string; entryFeatured?: string; entryTitleSize?: number; mobileEntryTitleSize?: number; entryTextSize?: number; mobileEntryTextSize?: number; entryPadding?: number; mobileEntryPadding?: number; entryGap?: number; mobileEntryGap?: number; entryRadius?: number; questionGap?: number; mobileQuestionGap?: number; buttonGap?: number; mobileButtonGap?: number; headingAccent?: string; brandSize?: number; mobileBrandSize?: number; mobileSubtitleSize?: number; backBg?: string; backText?: string; backBorder?: string; answerPadding?: number; mobileAnswerPadding?: number; scanCard?: string; scanText?: string; scanHeading?: string; scanButton?: string; scanButtonText?: string; headingColor?: string; cardColor?: string; answerColor?: string; answerText?: string; selectedColor?: string; selectedText?: string; headingSize?: number; questionSize?: number; bodySize?: number; answerSize?: number; buttonSize?: number; desktopWidth?: number; desktopPadding?: number; mobileWidth?: number; mobilePadding?: number; mobileHeadingSize?: number; mobileQuestionSize?: number; mobileAnswerSize?: number; answerSpacing?: number; mobileAnswerSpacing?: number; desktopButtonWidth?: number; mobileButtonWidth?: number; desktopButtonHeight?: number; mobileButtonHeight?: number; mobileButtonSize?: number; buttonAlignment?: "left" | "center" | "right"; background: string; text: string; accent: string; buttonText: string; font: "classic" | "sans"; radius: "square" | "rounded" | "pill" };
   quick: QuickQuestion[];
   deep: DeepQuestion[];
   profiles: Record<string, QuizProfile>;
   mappings: ProductMapping[];
 };
 
-export const recommendedQuizDesign: Omit<Required<NonNullable<StoredQuiz["design"]>>, "scanCard" | "scanText" | "scanHeading" | "scanButton" | "scanButtonText" | "backBg" | "backText" | "backBorder" | "headingAccent" | "entryBg" | "entryBorder" | "entryFeatured" | "brandColor" | "titleColor" | "subtitleColor" | "entryTitleColor" | "entryTextColor" | "entryTimeColor" | "entryGhost" | "entryIconBg"> = {
+export const recommendedQuizDesign: Omit<Required<NonNullable<StoredQuiz["design"]>>, "scanCard" | "scanText" | "scanHeading" | "scanButton" | "scanButtonText" | "backBg" | "backText" | "backBorder" | "headingAccent" | "entryBg" | "entryBorder" | "entryFeatured" | "brandColor" | "titleColor" | "subtitleColor" | "entryTitleColor" | "entryTextColor" | "entryTimeColor" | "entryGhost" | "entryIconBg" | "scanAccent" | "scanNoticeBg" | "scanBoxBg"> = {
+  scanTitleSize: 26,
+  mobileScanTitleSize: 22,
+  scanTextSize: 15,
+  mobileScanTextSize: 14,
   headerTop: 40,
   mobileHeaderTop: 24,
   headerGap: 40,
@@ -296,4 +300,20 @@ export const WIDGET_TEXT_GROUPS = [
     ]
   }
 ] as const;
-export const WIDGET_TEXT_KEYS: string[] = WIDGET_TEXT_GROUPS.flatMap(group => group.items.map(item => item.key));
+export const SCAN_TEXT_GROUP = {
+  title: "Skin Scan screen",
+  items: [
+    { key: "scannerTitle", label: "Title", placeholder: "Skin" },
+    { key: "scannerAccent", label: "Highlight words", placeholder: "Insights" },
+    { key: "scannerSubtitle", label: "Subtitle", placeholder: "Discover your skin insights. Not a medical diagnosis." },
+    { key: "scanStepTitle", label: "Step title", placeholder: "Ready to scan?" },
+    { key: "scanStepIntro", label: "Step text", placeholder: "Confirm below, then take or upload a photo." },
+    { key: "scanNotice", label: "Photo notice", placeholder: "Your photo is sent to our AI partner for this reading. Our app does not store it." },
+    { key: "consentBio", label: "Photo consent (required, cannot be hidden)", placeholder: "I consent to our AI partner analysing my facial photo for cosmetic skin observations.", required: true },
+    { key: "consentAge", label: "Age consent (required, cannot be hidden)", placeholder: "I am 18 or older.", required: true },
+    { key: "consentMail", label: "Optional email consent", placeholder: "Optional: Email me skincare recommendations. I can unsubscribe anytime." },
+    { key: "scanContinue", label: "Button", placeholder: "Continue to photo →" },
+  ],
+} as const;
+export const WIDGET_TEXT_KEYS: string[] = [...WIDGET_TEXT_GROUPS.flatMap(group => group.items.map(item => item.key)), ...SCAN_TEXT_GROUP.items.map(item => item.key)];
+export const REQUIRED_TEXT_KEYS: string[] = SCAN_TEXT_GROUP.items.filter(item => "required" in item).map(item => item.key);

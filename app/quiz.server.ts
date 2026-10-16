@@ -3,7 +3,7 @@ import defaultWidgetCss from "../extensions/dosha-quiz/assets/dosha-quiz.css?raw
 import scanCardIcon from "../public/images/onboarding/scan.svg?raw";
 import deepCardIcon from "../public/images/onboarding/dosha.svg?raw";
 import quickCardIcon from "../public/images/onboarding/quiz.svg?raw";
-import { recommendedQuizDesign, scoresForTag, slugTag, WIDGET_TEXT_KEYS } from "./quiz-shared";
+import { recommendedQuizDesign, scoresForTag, slugTag, WIDGET_TEXT_KEYS, REQUIRED_TEXT_KEYS } from "./quiz-shared";
 import type {
   DeepQuestion,
   ProductMapping,
@@ -369,7 +369,7 @@ export function normalizeQuiz(input: unknown, { draft = false }: { draft?: boole
   };
   if (!scanner.camera && !scanner.upload) throw new Error("Enable camera or photo upload for Skin Scan.");
   const suppliedDesign = (input as StoredQuiz)?.design;
-  const colorLabels: Record<string, string> = { entryIconBg: "Icon background color", entryTitleColor: "Card title color", entryTextColor: "Card text color", entryTimeColor: "Time line color", entryGhost: "Outline button color", brandColor: "Brand line color", titleColor: "Title color", subtitleColor: "Subtitle color", entryBg: "Card background", entryBorder: "Card border color", entryFeatured: "Featured card color", headingAccent: "Highlight word color", backBg: "Back button background", backText: "Back button text color", backBorder: "Back button border color", scanCard: "Skin Scan card background", scanText: "Skin Scan text color", scanHeading: "Skin Scan heading color", scanButton: "Skin Scan button background", scanButtonText: "Skin Scan button text", headingColor: "Question heading color", cardColor: "Question card background", answerColor: "Answer background", answerText: "Answer text color", selectedColor: "Selected answer background", selectedText: "Selected answer text", background: "Background color", text: "Body text color", accent: "Button background", buttonText: "Button text color" };
+  const colorLabels: Record<string, string> = { scanAccent: "Steps and checkbox color", scanNoticeBg: "Notice background", scanBoxBg: "Consent box background", entryIconBg: "Icon background color", entryTitleColor: "Card title color", entryTextColor: "Card text color", entryTimeColor: "Time line color", entryGhost: "Outline button color", brandColor: "Brand line color", titleColor: "Title color", subtitleColor: "Subtitle color", entryBg: "Card background", entryBorder: "Card border color", entryFeatured: "Featured card color", headingAccent: "Highlight word color", backBg: "Back button background", backText: "Back button text color", backBorder: "Back button border color", scanCard: "Skin Scan card background", scanText: "Skin Scan text color", scanHeading: "Skin Scan heading color", scanButton: "Skin Scan button background", scanButtonText: "Skin Scan button text", headingColor: "Question heading color", cardColor: "Question card background", answerColor: "Answer background", answerText: "Answer text color", selectedColor: "Selected answer background", selectedText: "Selected answer text", background: "Background color", text: "Body text color", accent: "Button background", buttonText: "Button text color" };
   // Accepts #RGB, #RRGGBB and #RRGGBBAA (alpha dropped) with stray spaces; empty values use the default.
   function color(value: unknown, fallback: string, field = "") {
     if (value === undefined || value === null || value === "") return fallback;
@@ -387,7 +387,7 @@ export function normalizeQuiz(input: unknown, { draft = false }: { draft?: boole
   }
   const design: NonNullable<StoredQuiz["design"]> = {
     // Skin Scan colours for this widget's scan screen; empty means "same as the quiz".
-    ...Object.fromEntries((["scanCard", "scanText", "scanHeading", "scanButton", "scanButtonText", "backBg", "backText", "backBorder", "headingAccent", "entryBg", "entryBorder", "entryFeatured", "brandColor", "titleColor", "subtitleColor", "entryTitleColor", "entryTextColor", "entryTimeColor", "entryGhost", "entryIconBg"] as const).flatMap(key => { const value = suppliedDesign?.[key]; return value ? [[key, color(value, "", key)]] : []; })),
+    ...Object.fromEntries((["scanCard", "scanText", "scanHeading", "scanButton", "scanButtonText", "backBg", "backText", "backBorder", "headingAccent", "entryBg", "entryBorder", "entryFeatured", "brandColor", "titleColor", "subtitleColor", "entryTitleColor", "entryTextColor", "entryTimeColor", "entryGhost", "entryIconBg", "scanAccent", "scanNoticeBg", "scanBoxBg"] as const).flatMap(key => { const value = suppliedDesign?.[key]; return value ? [[key, color(value, "", key)]] : []; })),
     headingColor: color(suppliedDesign?.headingColor, recommendedQuizDesign.headingColor, "headingColor"),
     cardColor: color(suppliedDesign?.cardColor, recommendedQuizDesign.cardColor, "cardColor"),
     answerColor: color(suppliedDesign?.answerColor, recommendedQuizDesign.answerColor, "answerColor"),
@@ -407,6 +407,10 @@ export function normalizeQuiz(input: unknown, { draft = false }: { draft?: boole
     desktopPadding: Math.min(100, Math.max(0, Number.isFinite(Number(suppliedDesign?.desktopPadding)) ? Number(suppliedDesign?.desktopPadding) : 36)),
     mobileWidth: Math.min(100, Math.max(60, Number.isFinite(Number(suppliedDesign?.mobileWidth)) ? Number(suppliedDesign?.mobileWidth) : 100)),
     mobilePadding: Math.min(48, Math.max(0, Number.isFinite(Number(suppliedDesign?.mobilePadding)) ? Number(suppliedDesign?.mobilePadding) : 24)),
+    scanTitleSize: Math.min(48, Math.max(14, Number.isFinite(Number(suppliedDesign?.scanTitleSize)) ? Number(suppliedDesign?.scanTitleSize) : 26)),
+    mobileScanTitleSize: Math.min(40, Math.max(14, Number.isFinite(Number(suppliedDesign?.mobileScanTitleSize)) ? Number(suppliedDesign?.mobileScanTitleSize) : 22)),
+    scanTextSize: Math.min(22, Math.max(10, Number.isFinite(Number(suppliedDesign?.scanTextSize)) ? Number(suppliedDesign?.scanTextSize) : 15)),
+    mobileScanTextSize: Math.min(20, Math.max(10, Number.isFinite(Number(suppliedDesign?.mobileScanTextSize)) ? Number(suppliedDesign?.mobileScanTextSize) : 14)),
     headerTop: Math.min(120, Math.max(0, Number.isFinite(Number(suppliedDesign?.headerTop)) ? Number(suppliedDesign?.headerTop) : 40)),
     mobileHeaderTop: Math.min(80, Math.max(0, Number.isFinite(Number(suppliedDesign?.mobileHeaderTop)) ? Number(suppliedDesign?.mobileHeaderTop) : 24)),
     headerGap: Math.min(120, Math.max(0, Number.isFinite(Number(suppliedDesign?.headerGap)) ? Number(suppliedDesign?.headerGap) : 40)),
@@ -459,7 +463,7 @@ export function normalizeQuiz(input: unknown, { draft = false }: { draft?: boole
   const suppliedTexts = (input as StoredQuiz)?.texts;
   const texts = Object.fromEntries(WIDGET_TEXT_KEYS.flatMap(key => { const value = suppliedTexts?.[key]; return typeof value === "string" && value.trim() ? [[key, value.trim().slice(0, 240)]] : []; }));
   const suppliedHidden = (input as StoredQuiz)?.hiddenTexts;
-  const hiddenTexts = Array.isArray(suppliedHidden) ? WIDGET_TEXT_KEYS.filter(key => suppliedHidden.includes(key)) : [];
+  const hiddenTexts = Array.isArray(suppliedHidden) ? WIDGET_TEXT_KEYS.filter(key => suppliedHidden.includes(key) && !REQUIRED_TEXT_KEYS.includes(key)) : [];
   const suppliedCss = (input as StoredQuiz)?.widgetCss;
   if (suppliedCss !== undefined && (typeof suppliedCss !== "string" || suppliedCss.length > 100000)) throw new Error("Widget CSS must be text under 100,000 characters.");
   // Widget CSS holds custom overrides only. Older saves stored a full copy of the default stylesheet,

@@ -3861,3 +3861,26 @@
 @media (max-width: 600px) {
   .prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open) [data-screen]:not([data-screen="scanner"]) > .hdr { padding-top: var(--layout-mobileHeaderTop, 24px) !important; padding-bottom: var(--layout-mobileHeaderGap, 24px) !important; }
 }
+
+/* Inline Skin Scan screen: steps/checkbox colour, notice and consent box backgrounds, title and text sizes. */
+.prana-quiz.prana-quiz:not(.scan-chat-open)[data-sx-accent] [data-screen="scanner"] .scan-steps li[aria-current="step"] span { background: var(--sx-accent) !important; border-color: var(--sx-accent) !important; color: #fff !important; }
+.prana-quiz.prana-quiz:not(.scan-chat-open)[data-sx-accent] [data-screen="scanner"] .scan-steps li[aria-current="step"] { color: var(--sx-accent) !important; }
+.prana-quiz.prana-quiz:not(.scan-chat-open)[data-sx-accent] [data-screen="scanner"] .consent-check { accent-color: var(--sx-accent) !important; }
+.prana-quiz.prana-quiz:not(.scan-chat-open)[data-sx-notice] [data-screen="scanner"] .consent-notice { background: var(--sx-notice) !important; }
+.prana-quiz.prana-quiz:not(.scan-chat-open)[data-sx-box] [data-screen="scanner"] .consent-box { background: var(--sx-box) !important; }
+.prana-quiz.prana-quiz:not(.scan-chat-open) [data-screen="scanner"] .scan-step-title { font-size: var(--layout-scanTitleSize, 26px) !important; }
+.prana-quiz.prana-quiz:not(.scan-chat-open) [data-screen="scanner"] :is(.scan-step-intro, .consent-label) { font-size: var(--layout-scanTextSize, 15px) !important; }
+@media (max-width: 600px) {
+  .prana-quiz.prana-quiz:not(.scan-chat-open) [data-screen="scanner"] .scan-step-title { font-size: var(--layout-mobileScanTitleSize, 22px) !important; }
+  .prana-quiz.prana-quiz:not(.scan-chat-open) [data-screen="scanner"] :is(.scan-step-intro, .consent-label) { font-size: var(--layout-mobileScanTextSize, 14px) !important; }
+}
+
+/* Inline Skin Scan photo step: the camera/upload choice is a modern segmented control (as in the popup),
+   not two tall uppercase boxes. Active option uses the steps colour. */
+.prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open) [data-screen="scanner"] .scanner-choice { display: flex !important; gap: 4px; max-width: 520px; margin: 0 auto 20px; padding: 4px; border: 1px solid rgba(0, 0, 0, 0.08); border-radius: 12px; background: rgba(0, 0, 0, 0.04); }
+.prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open) [data-screen="scanner"] .scanner-choice .sc-btn { flex: 1 1 0; display: flex !important; flex-direction: row !important; align-items: center; justify-content: center; gap: 8px; min-height: 44px; margin: 0; padding: 8px 12px !important; border: 0 !important; border-radius: 9px !important; background: transparent !important; box-shadow: none !important; color: var(--sx-text, var(--ink, #1a1208)); text-transform: none !important; letter-spacing: normal !important; }
+.prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open) [data-screen="scanner"] .scanner-choice .sc-btn.active { background: #fff !important; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.08) !important; color: var(--sx-accent, var(--gold, #561a24)); }
+.prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open) [data-screen="scanner"] .scanner-choice .sc-btn-icon { width: 20px !important; height: 20px !important; margin: 0 !important; padding: 0 !important; background: none !important; border-radius: 0 !important; color: currentColor; }
+.prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open) [data-screen="scanner"] .scanner-choice .sc-btn-icon svg { width: 20px; height: 20px; visibility: visible; stroke-width: 1.8; }
+.prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open) [data-screen="scanner"] .scanner-choice .sc-btn-label { margin: 0 !important; font-size: 15px !important; font-weight: 600; letter-spacing: normal !important; text-transform: none !important; color: inherit !important; }
+.prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open) [data-screen="scanner"] .scanner-choice .sc-btn-sub { display: none !important; }

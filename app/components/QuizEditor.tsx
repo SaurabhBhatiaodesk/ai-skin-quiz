@@ -7,7 +7,7 @@ import WidgetPreview from "./WidgetPreview";
 import type { WidgetPreviewAssets } from "../widget-preview.server";
 import type { MappingDraft } from "./MappingEditor";
 import { useFetcher } from "react-router";
-import { recommendedQuizDesign, scoresForTag, slugTag, WIDGET_TEXT_GROUPS } from "../quiz-shared";
+import { recommendedQuizDesign, scoresForTag, slugTag, WIDGET_TEXT_GROUPS, SCAN_TEXT_GROUP } from "../quiz-shared";
 import type { DeepQuestion, ProductMapping, QuickQuestion, ResultTag, ShopProduct, StoredQuiz } from "../quiz-shared";
 
 type SaveResult = { ok: true; quiz: StoredQuiz } | { ok: false; error: string };
@@ -382,10 +382,14 @@ export default function QuizEditor({
                 {kind === "scan" && !scanOnly ? <div style={{border:"1px solid #E1E3E1",borderRadius:12,padding:20,background:"#FFFFFF"}}><s-stack gap="base">
                   <s-heading>Skin Scan colors</s-heading>
                   <s-paragraph color="subdued">Used on this widget&apos;s Skin Scan screen. Leave a field empty to use the quiz colors. The floating popup has its own colors in Skin Scan appearance.</s-paragraph>
-                  {([["scanCard", "Card background", design.cardColor], ["scanText", "Text color", design.text], ["scanHeading", "Heading color", design.headingColor], ["scanButton", "Button background", design.accent], ["scanButtonText", "Button text color", design.buttonText]] as const).map(([key, label, fallback]) => <s-stack key={key} direction="inline" gap="small" alignItems="end">
+                  {([["scanCard", "Card background", design.cardColor], ["scanText", "Text color", design.text], ["scanHeading", "Heading color", design.headingColor], ["scanButton", "Button background", design.accent], ["scanButtonText", "Button text color", design.buttonText], ["scanAccent", "Steps and checkbox color", design.accent], ["scanNoticeBg", "Notice background", "#F7EEE2"], ["scanBoxBg", "Consent box background", "#FFFFFF"]] as const).map(([key, label, fallback]) => <s-stack key={key} direction="inline" gap="small" alignItems="end">
                     <div style={{flex:1,minWidth:0}}><s-color-field label={label} placeholder={fallback || ""} value={quiz.design?.[key] || ""} onInput={event => { const value = event.currentTarget.value; setQuiz(current => ({ ...current, design: { ...design, ...current.design, [key]: value } })); }} /></div>
                     {quiz.design?.[key] ? <s-button variant="tertiary" onClick={() => setQuiz(current => { const next = { ...design, ...current.design }; delete next[key]; return { ...current, design: next }; })}>Use quiz color</s-button> : null}
                   </s-stack>)}
+<s-number-field label="Desktop step title size" suffix="px" min={14} max={48} value={String(design.scanTitleSize ?? 26)} onInput={event => { const value = Number(event.currentTarget.value); setQuiz(current => ({ ...current, design: { ...design, ...current.design, scanTitleSize: value } })); }} />
+<s-number-field label="Mobile step title size" suffix="px" min={14} max={40} value={String(design.mobileScanTitleSize ?? 22)} onInput={event => { const value = Number(event.currentTarget.value); setQuiz(current => ({ ...current, design: { ...design, ...current.design, mobileScanTitleSize: value } })); }} />
+<s-number-field label="Desktop text size" suffix="px" min={10} max={22} value={String(design.scanTextSize ?? 15)} onInput={event => { const value = Number(event.currentTarget.value); setQuiz(current => ({ ...current, design: { ...design, ...current.design, scanTextSize: value } })); }} />
+<s-number-field label="Mobile text size" suffix="px" min={10} max={20} value={String(design.mobileScanTextSize ?? 14)} onInput={event => { const value = Number(event.currentTarget.value); setQuiz(current => ({ ...current, design: { ...design, ...current.design, mobileScanTextSize: value } })); }} />
                 </s-stack></div> : null}
                 {kind !== "scan" || scanOnly ? <>
                 <div className="quiz-design-fields" style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(300px, 1fr))",gap:16}}>
@@ -493,11 +497,11 @@ export default function QuizEditor({
                   <s-stack gap="base">
                     <s-paragraph>Change any text on the widget, or tick Hide to remove it. Leave a field empty to keep the built-in text shown as the placeholder.</s-paragraph>
                     <div className="quiz-design-fields" style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(300px, 1fr))",gap:16}}>
-                      {WIDGET_TEXT_GROUPS.filter(group => quiz.layout === "three" || !quiz.layout || !/card|Entry|Below/.test(group.title)).map(group => <div key={group.title} style={{border:"1px solid #E1E3E1",borderRadius:12,padding:16,background:"#FFFFFF"}}><s-stack gap="base">
+                      {[...WIDGET_TEXT_GROUPS.filter(group => quiz.layout === "three" || !quiz.layout || !/card|Entry|Below/.test(group.title)), ...((quiz.enabledPaths || ["quick", "deep", "scan"]).includes("scan") ? [SCAN_TEXT_GROUP] : [])].map(group => <div key={group.title} style={{border:"1px solid #E1E3E1",borderRadius:12,padding:16,background:"#FFFFFF"}}><s-stack gap="base">
                         <s-text type="strong">{group.title}</s-text>
-                        {group.items.map(item => { const hidden = (quiz.hiddenTexts || []).includes(item.key); return <s-stack key={item.key} gap="small-200">
+                        {group.items.map(item => { const required = "required" in item; const hidden = !required && (quiz.hiddenTexts || []).includes(item.key); return <s-stack key={item.key} gap="small-200">
                           <s-text-field label={item.label} placeholder={item.placeholder} disabled={hidden} value={quiz.texts?.[item.key] || ""} onInput={event => { const value = event.currentTarget.value; setQuiz(current => ({ ...current, texts: { ...(current.texts || {}), [item.key]: value } })); }} />
-                          <s-checkbox label="Hide" checked={hidden} onChange={event => { const checked = event.currentTarget.checked; setQuiz(current => { const list = (current.hiddenTexts || []).filter(key => key !== item.key); return { ...current, hiddenTexts: checked ? [...list, item.key] : list }; }); }} />
+                          {required ? null : <s-checkbox label="Hide" checked={hidden} onChange={event => { const checked = event.currentTarget.checked; setQuiz(current => { const list = (current.hiddenTexts || []).filter(key => key !== item.key); return { ...current, hiddenTexts: checked ? [...list, item.key] : list }; }); }} />}
                         </s-stack>; })}
                       </s-stack></div>)}
                     </div>
