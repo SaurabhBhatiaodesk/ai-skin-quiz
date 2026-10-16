@@ -132,6 +132,8 @@ if (!response.ok || !payload.ok) {
             <s-stack direction="inline" gap="small" alignItems="center"><s-button icon={copyStatus === "Embed code copied." ? "check" : "clipboard"} onClick={() => copyDeveloperValue(embedCode, "Embed code")}>{copyStatus === "Embed code copied." ? "Copied" : "Copy code"}</s-button>{copyTarget === "Embed code" && copyStatus ? <span role="status" style={{fontSize:12,color:copyStatus.endsWith("copied.") ? "#27633D" : "#A12D2D"}}>{copyStatus}</span> : null}</s-stack>
           </s-stack>
           <s-heading>Build your own quiz design</s-heading>
+          <s-paragraph>This API belongs to the selected block only. Build your own HTML, styling and mobile layout using its questions and answers, then submit responses to get its matched results and products. Combined Quiz, Single Quiz, Product Quiz and Skin Scan each use their own widget ID.</s-paragraph>
+          <s-text-field label="Selected widget ID" readOnly value={developerQuiz?.handle || ""} />
           <s-paragraph>Use the storefront API from your store&apos;s domain—no API key in browser code. Your custom HTML/CSS can use the saved quiz settings and design values returned by the API.</s-paragraph>
           <s-stack direction="inline" justifyContent="space-between" alignItems="center">
             <s-text type="strong">1. Load this quiz</s-text>

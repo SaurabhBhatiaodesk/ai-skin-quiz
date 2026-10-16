@@ -3667,8 +3667,8 @@
 @media(max-width:600px) { .prana-quiz :where([data-screen="quick"],[data-screen="deep"]) .q-opt { min-height:48px; padding:12px; } }
 
 /* Responsive action button sizes from this quiz's saved design. */
-.prana-quiz:not(.scan-chat-open) :is(.btn-entry,.btn-next,.btn-scan) { width:var(--layout-desktopButtonWidth,100%)!important; min-width:0; min-height:var(--layout-desktopButtonHeight,48px); margin-left:auto; margin-right:auto; }
-@media(max-width:600px) { .prana-quiz:not(.scan-chat-open) :is(.btn-entry,.btn-next,.btn-scan) { width:var(--layout-mobileButtonWidth,100%)!important; min-height:var(--layout-mobileButtonHeight,44px); font-size:var(--layout-mobileButtonSize,16px)!important; } }
+.prana-quiz:not(.scan-chat-open) :is(.btn-next,.btn-scan) { width:var(--layout-desktopButtonWidth,100%)!important; min-width:0; min-height:var(--layout-desktopButtonHeight,48px); margin-left:auto; margin-right:auto; }
+@media(max-width:600px) { .prana-quiz:not(.scan-chat-open) :is(.btn-next,.btn-scan) { width:var(--layout-mobileButtonWidth,100%)!important; min-height:var(--layout-mobileButtonHeight,44px); font-size:var(--layout-mobileButtonSize,16px)!important; } }
 
 /* Keep inline results consistent with the compact cream card design. */
 .prana-quiz:not(.scan-chat-open) [data-screen="result"] .result-wrap { max-width:var(--layout-desktopWidth,960px); }
@@ -3716,3 +3716,20 @@
  .prana-quiz :where([data-screen="quick"],[data-screen="deep"]) .q-opt-main { font-size:var(--layout-mobileAnswerSize,18px)!important; line-height:1.35; overflow-wrap:break-word; }
  .prana-quiz :where([data-screen="quick"],[data-screen="deep"]) .back-nav { padding:4px 0; border:0; background:transparent; box-shadow:none; margin-bottom:12px; }
 }
+
+/* Email capture is part of the same inline quiz card flow. */
+.prana-quiz:not(.scan-chat-open) [data-screen="email-capture"] { background:transparent; color:var(--ink); padding:0 18px 24px; }
+.prana-quiz:not(.scan-chat-open) [data-screen="email-capture"] > .q-step { width:100%; max-width:var(--layout-desktopWidth,960px); margin:0 auto; padding:var(--layout-desktopPadding,36px); background:var(--quiz-card,#f3e5cc); border:1px solid #571c29; border-radius:12px; box-shadow:0 2px 5px #0002; text-align:center; }
+.prana-quiz:not(.scan-chat-open) [data-screen="email-capture"] h2 { margin:0 0 24px; color:var(--ink); font-size:26px; font-weight:400; }
+.prana-quiz:not(.scan-chat-open) [data-capture-email] { max-width:520px; display:block; margin:0 auto 24px!important; border:1px solid #ad762d; border-radius:6px; background:#fff9ef; color:var(--ink); }
+.prana-quiz:not(.scan-chat-open) [data-capture-email]::placeholder { color:#74675c; }
+.prana-quiz:not(.scan-chat-open) [data-capture-submit] { display:block; min-width:min(100%,180px); max-width:100%; margin:0 auto; background:var(--gold,#471326); color:var(--button-text,#fff); letter-spacing:normal; text-transform:none; min-height:48px; padding:10px 20px; }
+.prana-quiz:not(.scan-chat-open) [data-capture-skip] { color:var(--ink); margin:16px auto 0; }
+.prana-quiz [data-capture-error]:empty { display:none; }
+@media(max-width:600px) {
+ .prana-quiz:not(.scan-chat-open) [data-screen="email-capture"] > .q-step { padding:var(--layout-mobilePadding,24px); }
+ .prana-quiz:not(.scan-chat-open) [data-screen="email-capture"] h2 { font-size:var(--layout-mobileQuestionSize,20px); line-height:1.3; }
+}
+
+/* Entry card actions fill their cards independently of Continue sizing. */
+.prana-quiz .entry-card .btn-entry { width:100%!important; min-width:0; min-height:48px; padding:10px 16px; white-space:nowrap; display:flex; align-items:center; justify-content:center; line-height:1.3; }
