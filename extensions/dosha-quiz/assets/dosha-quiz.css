@@ -3907,3 +3907,10 @@
 @media (max-width: 600px) {
   .prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open) [data-screen="scanner"] .upload-zone { height: var(--layout-mobileScanUploadHeight, 200px) !important; }
 }
+
+/* Inline Skin Scan notice: icon and text centred on one line, text size from settings. */
+.prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open) [data-screen="scanner"] .consent-notice { display: flex !important; align-items: center !important; gap: 12px; }
+.prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open) [data-screen="scanner"] .consent-notice .cn-text { margin: 0 !important; font-size: var(--layout-scanNoticeSize, 13px) !important; line-height: 1.5; }
+@media (max-width: 600px) {
+  .prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open) [data-screen="scanner"] .consent-notice .cn-text { font-size: var(--layout-mobileScanNoticeSize, 12px) !important; }
+}

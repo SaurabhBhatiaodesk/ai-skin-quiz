@@ -413,6 +413,8 @@ export function normalizeQuiz(input: unknown, { draft = false }: { draft?: boole
     mobileScanTextSize: Math.min(20, Math.max(10, Number.isFinite(Number(suppliedDesign?.mobileScanTextSize)) ? Number(suppliedDesign?.mobileScanTextSize) : 14)),
     scanUploadHeight: Math.min(600, Math.max(120, Number.isFinite(Number(suppliedDesign?.scanUploadHeight)) ? Number(suppliedDesign?.scanUploadHeight) : 240)),
     mobileScanUploadHeight: Math.min(500, Math.max(100, Number.isFinite(Number(suppliedDesign?.mobileScanUploadHeight)) ? Number(suppliedDesign?.mobileScanUploadHeight) : 200)),
+    scanNoticeSize: Math.min(20, Math.max(10, Number.isFinite(Number(suppliedDesign?.scanNoticeSize)) ? Number(suppliedDesign?.scanNoticeSize) : 13)),
+    mobileScanNoticeSize: Math.min(18, Math.max(10, Number.isFinite(Number(suppliedDesign?.mobileScanNoticeSize)) ? Number(suppliedDesign?.mobileScanNoticeSize) : 12)),
     headerTop: Math.min(120, Math.max(0, Number.isFinite(Number(suppliedDesign?.headerTop)) ? Number(suppliedDesign?.headerTop) : 40)),
     mobileHeaderTop: Math.min(80, Math.max(0, Number.isFinite(Number(suppliedDesign?.mobileHeaderTop)) ? Number(suppliedDesign?.mobileHeaderTop) : 24)),
     headerGap: Math.min(120, Math.max(0, Number.isFinite(Number(suppliedDesign?.headerGap)) ? Number(suppliedDesign?.headerGap) : 40)),
