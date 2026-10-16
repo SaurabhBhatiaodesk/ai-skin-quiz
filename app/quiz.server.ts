@@ -396,6 +396,7 @@ export function normalizeQuiz(input: unknown, { draft = false }: { draft?: boole
     background: color(suppliedDesign?.background, recommendedQuizDesign.background), text: color(suppliedDesign?.text, recommendedQuizDesign.text),
     accent: color(suppliedDesign?.accent, recommendedQuizDesign.accent), buttonText: color(suppliedDesign?.buttonText, recommendedQuizDesign.buttonText),
     font: suppliedDesign?.font === "sans" ? "sans" : recommendedQuizDesign.font,
+    buttonAlignment: suppliedDesign?.buttonAlignment === "left" ? "left" : suppliedDesign?.buttonAlignment === "right" ? "right" : "center",
     radius: suppliedDesign?.radius === "square" ? "square" : suppliedDesign?.radius === "pill" ? "pill" : recommendedQuizDesign.radius,
   };
   const suppliedIntegration = (input as StoredQuiz)?.scanIntegration;

@@ -44,7 +44,7 @@ export type StoredQuiz = {
   layout?: "three" | "single" | "scan";
   scanner?: { title: string; description: string; camera: boolean; upload: boolean };
   scanIntegration?: { provider: string; endpoint: string; documentation: string };
-  design?: { headingColor?: string; cardColor?: string; answerColor?: string; answerText?: string; selectedColor?: string; selectedText?: string; headingSize?: number; questionSize?: number; bodySize?: number; answerSize?: number; buttonSize?: number; background: string; text: string; accent: string; buttonText: string; font: "classic" | "sans"; radius: "square" | "rounded" | "pill" };
+  design?: { headingColor?: string; cardColor?: string; answerColor?: string; answerText?: string; selectedColor?: string; selectedText?: string; headingSize?: number; questionSize?: number; bodySize?: number; answerSize?: number; buttonSize?: number; buttonAlignment?: "left" | "center" | "right"; background: string; text: string; accent: string; buttonText: string; font: "classic" | "sans"; radius: "square" | "rounded" | "pill" };
   quick: QuickQuestion[];
   deep: DeepQuestion[];
   profiles: Record<string, QuizProfile>;
@@ -63,6 +63,7 @@ export const recommendedQuizDesign: Required<NonNullable<StoredQuiz["design"]>> 
   bodySize: 15,
   answerSize: 18,
   buttonSize: 18,
+  buttonAlignment: "center",
   background: "#f4f6f2",
   text: "#1a2921",
   accent: "#52695a",

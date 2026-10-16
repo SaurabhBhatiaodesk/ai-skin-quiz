@@ -1,4 +1,5 @@
 /* AI Dosha Quiz — storefront styles. Scoped to .prana-quiz so theme CSS is left alone. */
+.prana-quiz .quiz-progress .qp-bar { display: none; }
 .prana-quiz {
   --canvas: #faf7f2;
   --ink: #1a1208;
@@ -25,7 +26,7 @@
 }
 
 /* Let the merchant's theme section supply the entry screen background. */
-.prana-quiz:not(.scan-chat-open):has(> [data-screen="entry"].active) {
+.prana-quiz:not(.scan-chat-open) {
   background: transparent;
 }
 
@@ -3581,3 +3582,10 @@
 @keyframes anSweep { from { transform: translateY(-100%); } to { transform: translateY(360%); } }
 @keyframes anPulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 0.85; } }
 @keyframes anProgress { from { width: 4%; } to { width: 92%; } }
+
+/* Saved Continue button alignment, scoped to inline widgets. */
+.prana-quiz:not(.scan-chat-open)[data-button-alignment] .btn-next,
+.prana-quiz:not(.scan-chat-open)[data-button-alignment] .btn-scan { display:block; width:fit-content; max-width:100%; }
+.prana-quiz:not(.scan-chat-open)[data-button-alignment="left"] :is(.btn-next,.btn-scan) { margin-left:0; margin-right:auto; align-self:flex-start; }
+.prana-quiz:not(.scan-chat-open)[data-button-alignment="center"] :is(.btn-next,.btn-scan) { margin-left:auto; margin-right:auto; align-self:center; }
+.prana-quiz:not(.scan-chat-open)[data-button-alignment="right"] :is(.btn-next,.btn-scan) { margin-left:auto; margin-right:0; align-self:flex-end; }

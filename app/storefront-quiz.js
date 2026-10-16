@@ -863,13 +863,14 @@ import { buildScanReport } from "./scan-report.js";
       if (data.design) {
         var design = data.design;
         root.style.setProperty("--canvas", design.background);
+        root.dataset.buttonAlignment = ["left", "right"].includes(design.buttonAlignment) ? design.buttonAlignment : "center";
         root.style.setProperty("--ink", design.text);
         root.style.setProperty("--gold", design.accent);
         root.style.setProperty("--quiz-border", design.accent || "#52695a");
         root.style.setProperty("--quiz-selected", design.selectedColor || "#52695a");
         root.style.setProperty("--button-text", design.buttonText);
         root.style.setProperty("--button-radius", design.radius === "pill" ? "999px" : design.radius === "square" ? "0px" : "8px");
-        if (design.background !== undefined) root.querySelectorAll('[data-screen="quick"], [data-screen="deep"]').forEach(function (element) { element.style.setProperty("background", String(design.background), "important"); });
+        root.querySelectorAll('[data-screen="quick"], [data-screen="deep"]').forEach(function (element) { element.style.setProperty("background", "transparent", "important"); });
         if (design.cardColor !== undefined) root.style.setProperty('--quiz-card', design.cardColor);
         if (design.cardColor !== undefined) root.querySelectorAll('.quiz-wrap').forEach(function (element) { element.style.setProperty("background", String(design.cardColor), "important"); });
         if (design.headingColor !== undefined) root.querySelectorAll('[data-screen]:not([data-screen="scanner"]) .hdr-title, .rh-dosha').forEach(function (element) { element.style.setProperty("color", String(design.headingColor), "important"); });
