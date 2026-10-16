@@ -3,6 +3,8 @@ import UnsavedChangesBar from "./UnsavedChangesBar";
 import { useEffect, useRef, useState } from "react";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import MappingEditor from "./MappingEditor";
+import WidgetPreview from "./WidgetPreview";
+import type { WidgetPreviewAssets } from "../widget-preview.server";
 import type { MappingDraft } from "./MappingEditor";
 import { useFetcher } from "react-router";
 import { recommendedQuizDesign, scoresForTag, slugTag } from "../quiz-shared";
@@ -70,6 +72,7 @@ export default function QuizEditor({
   productsError = false,
   scanConfigured = false,
   code,
+  previewAssets,
 }: {
   initial: StoredQuiz & { name?: string };
   shop: string;
@@ -77,6 +80,7 @@ export default function QuizEditor({
   productsError?: boolean;
   scanConfigured?: boolean;
   code: string;
+  previewAssets?: WidgetPreviewAssets;
 }) {
   const fetcher = useFetcher<SaveResult>();
   const [quiz, setQuiz] = useState(initial);
@@ -87,8 +91,6 @@ export default function QuizEditor({
   const [kind, setKind] = useState<Kind>(initial.layout === "scan" ? "scan" : initial.singleFlow === "deep" || (initial.enabledPaths && !initial.enabledPaths.includes("quick")) ? "deep" : "quick");
   const [index, setIndex] = useState(0);
   const [previewMobile, setPreviewMobile] = useState(false);
-  const [previewAnswer, setPreviewAnswer] = useState<number | null>(null);
-  useEffect(() => { setPreviewAnswer(null); }, [kind, index]);
   const [questionOpen, setQuestionOpen] = useState(false);
   const [tab, setTab] = useState<Tab>("edit");
   const [resultKey, setResultKey] = useState<(typeof RESULTS)[number]>("vata");
@@ -375,7 +377,15 @@ export default function QuizEditor({
               <s-stack gap="base">
                 <s-paragraph color="subdued">{scanOnly ? "Customize this Skin Scan widget on your storefront. These settings are saved for this widget." : "Colors and font sizes are saved only for this widget and apply to its theme block and embed code."}</s-paragraph>
                 <s-paragraph color="subdued">Heading and body fonts follow your Shopify theme.</s-paragraph>
-                {!scanOnly ? <s-button onClick={() => setQuiz(current => ({ ...current, design: { ...recommendedQuizDesign } }))}>Restore recommended design</s-button> : null}
+                {kind === "scan" && !scanOnly ? <div style={{border:"1px solid #E1E3E1",borderRadius:12,padding:20,background:"#FFFFFF"}}><s-stack gap="base">
+                  <s-heading>Skin Scan colors</s-heading>
+                  <s-paragraph color="subdued">Used on this widget&apos;s Skin Scan screen. Leave a field empty to use the quiz colors. The floating popup has its own colors in Skin Scan appearance.</s-paragraph>
+                  {([["scanCard", "Card background", design.cardColor], ["scanText", "Text color", design.text], ["scanHeading", "Heading color", design.headingColor], ["scanButton", "Button background", design.accent], ["scanButtonText", "Button text color", design.buttonText]] as const).map(([key, label, fallback]) => <s-stack key={key} direction="inline" gap="small" alignItems="end">
+                    <div style={{flex:1,minWidth:0}}><s-color-field label={label} placeholder={fallback || ""} value={quiz.design?.[key] || ""} onInput={event => { const value = event.currentTarget.value; setQuiz(current => ({ ...current, design: { ...design, ...current.design, [key]: value } })); }} /></div>
+                    {quiz.design?.[key] ? <s-button variant="tertiary" onClick={() => setQuiz(current => { const next = { ...design, ...current.design }; delete next[key]; return { ...current, design: next }; })}>Use quiz color</s-button> : null}
+                  </s-stack>)}
+                </s-stack></div> : null}
+                {kind !== "scan" || scanOnly ? <>
                 <div className="quiz-design-fields" style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(300px, 1fr))",gap:16}}>
                   <div style={{border:"1px solid #E1E3E1",borderRadius:12,padding:20,background:"#FFFFFF"}}><s-stack gap="base"><s-heading>Background and body</s-heading><s-color-field label="Background color" value={design.background} onInput={event => { const value = event.currentTarget.value; setQuiz(current => ({ ...current, design: { ...design, ...current.design, background: value } })); }} /><s-color-field label="Body text color" value={design.text} onInput={event => { const value = event.currentTarget.value; setQuiz(current => ({ ...current, design: { ...design, ...current.design, text: value } })); }} /><s-number-field label="Body text size" suffix="px" min={10} max={64} value={String(design.bodySize ?? 14)} onInput={event => { const value = Number(event.currentTarget.value); setQuiz(current => ({ ...current, design: { ...design, ...current.design, bodySize: value } })); }} /></s-stack></div>
                   <div style={{border:"1px solid #E1E3E1",borderRadius:12,padding:20,background:"#FFFFFF"}}><s-stack gap="base"><s-heading>Heading</s-heading><s-color-field label="Heading color" value={design.headingColor || "#000000"} onInput={event => { const value = event.currentTarget.value; setQuiz(current => ({ ...current, design: { ...design, ...current.design, headingColor: value } })); }} /><s-number-field label="Heading size" suffix="px" min={10} max={64} value={String(design.headingSize ?? 36)} onInput={event => { const value = Number(event.currentTarget.value); setQuiz(current => ({ ...current, design: { ...design, ...current.design, headingSize: value } })); }} /></s-stack></div>
@@ -387,6 +397,7 @@ export default function QuizEditor({
 <s-number-field label="mobile Button Height" suffix="px" min={32} max={80} value={String(design.mobileButtonHeight ?? 44)} onInput={event => { const value = Number(event.currentTarget.value); setQuiz(current => ({ ...current, design: { ...design, ...current.design, mobileButtonHeight: value } })); }} />
 <s-number-field label="mobile Button Size" suffix="px" min={10} max={32} value={String(design.mobileButtonSize ?? 16)} onInput={event => { const value = Number(event.currentTarget.value); setQuiz(current => ({ ...current, design: { ...design, ...current.design, mobileButtonSize: value } })); }} /><s-select label="Continue button alignment" value={design.buttonAlignment || "center"} onChange={event => { const buttonAlignment = event.currentTarget.value === "left" ? "left" : event.currentTarget.value === "right" ? "right" : "center"; setQuiz(current => ({ ...current, design: { ...design, ...current.design, buttonAlignment } })); }}><s-option value="left">Left</s-option><s-option value="center">Center</s-option><s-option value="right">Right</s-option></s-select><s-select label="Button shape" value={design.radius} onChange={event => { const radius = event.currentTarget.value === "square" ? "square" : event.currentTarget.value === "pill" ? "pill" : "rounded"; setQuiz(current => ({ ...current, design: { ...design, radius } })); }}><s-option value="square">Square</s-option><s-option value="rounded">Rounded</s-option><s-option value="pill">Pill</s-option></s-select></s-stack></div>
                 </div>
+                </> : null}
                 <s-section heading="Desktop and mobile layout"><s-paragraph>Adjust the question card width, spacing and mobile text sizes. Width stays within the theme section.</s-paragraph><s-grid gridTemplateColumns="repeat(auto-fit, minmax(220px, 1fr))" gap="base"><s-number-field label="Desktop maximum width" suffix="px" min={320} max={1800} value={String(design.desktopWidth ?? 1120)} onInput={event => { const value = Number(event.currentTarget.value); setQuiz(current => ({ ...current, design: { ...design, ...current.design, desktopWidth: value } })); }} />
 <s-number-field label="Desktop card padding" suffix="px" min={0} max={100} value={String(design.desktopPadding ?? 48)} onInput={event => { const value = Number(event.currentTarget.value); setQuiz(current => ({ ...current, design: { ...design, ...current.design, desktopPadding: value } })); }} />
 <s-number-field label="Mobile width" suffix="%" min={60} max={100} value={String(design.mobileWidth ?? 100)} onInput={event => { const value = Number(event.currentTarget.value); setQuiz(current => ({ ...current, design: { ...design, ...current.design, mobileWidth: value } })); }} />
@@ -396,11 +407,11 @@ export default function QuizEditor({
 <s-number-field label="Mobile answer size" suffix="px" min={12} max={32} value={String(design.mobileAnswerSize ?? 18)} onInput={event => { const value = Number(event.currentTarget.value); setQuiz(current => ({ ...current, design: { ...design, ...current.design, mobileAnswerSize: value } })); }} />
 <s-number-field label="Desktop answer spacing" suffix="px" min={0} max={40} value={String(design.answerSpacing ?? 14)} onInput={event => { const value = Number(event.currentTarget.value); setQuiz(current => ({ ...current, design: { ...design, ...current.design, answerSpacing: value } })); }} />
 <s-number-field label="Mobile answer spacing" suffix="px" min={0} max={32} value={String(design.mobileAnswerSpacing ?? 10)} onInput={event => { const value = Number(event.currentTarget.value); setQuiz(current => ({ ...current, design: { ...design, ...current.design, mobileAnswerSpacing: value } })); }} /></s-grid></s-section>
-                <s-stack direction="inline" justifyContent="end"><s-button variant="primary" loading={pending} onClick={save}>Save design</s-button></s-stack>
+                <s-stack direction="inline" justifyContent="end" gap="small">{!scanOnly ? <s-button onClick={() => setQuiz(current => ({ ...current, design: { ...recommendedQuizDesign } }))}>Restore recommended design</s-button> : null}<s-button variant="primary" loading={pending} onClick={save}>Save design</s-button></s-stack>
               </s-stack>
             </s-section></div><div className="quiz-design-preview"><s-section heading={scanOnly ? "Scan design preview" : "Quiz design preview"}>
               <s-stack gap="base">
-                <s-paragraph color="subdued">Colors and button shape update as you edit. Storefront heading and body fonts follow your theme.</s-paragraph>
+                <s-paragraph color="subdued">This is your live storefront widget with your unsaved changes. On your store, heading and body fonts follow your theme.</s-paragraph>
                 <div role="group" aria-label="Preview device" style={{display:"flex",gap:6,alignItems:"center"}}>
                   {([false, true] as const).map(mobile => <button key={String(mobile)} type="button" title={mobile ? "Mobile preview (375px)" : "Desktop preview"} aria-label={mobile ? "Mobile preview" : "Desktop preview"} aria-pressed={previewMobile === mobile} onClick={() => setPreviewMobile(mobile)} style={{width:40,height:40,display:"grid",placeItems:"center",border:0,borderRadius:10,cursor:"pointer",background:previewMobile === mobile ? "#e9efff" : "#f1f1f1",color:previewMobile === mobile ? "#005bd3" : "#555"}}>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">{mobile ? <><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M10 18h4"/></> : <><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M12 17v4M7 21h10"/></>}</svg>
@@ -410,13 +421,7 @@ export default function QuizEditor({
                   {enabledPaths.map(path => <s-option key={path} value={path}>{path === "scan" ? "Skin Scan" : path === "deep" ? "Deep Quiz" : "Quick Quiz"}</s-option>)}
                 </s-select>
                 {kind !== "scan" && questions.length ? <s-select label="Preview question" value={String(safeIndex)} onChange={event => setIndex(Number(event.currentTarget.value))}>{questions.map((item, itemIndex) => <s-option key={itemIndex} value={String(itemIndex)}>{itemIndex + 1}. {item.text}</s-option>)}</s-select> : null}
-                <div style={{width:"100%",maxWidth:previewMobile ? 375 : design.desktopWidth || 960,margin:"0 auto",background:design.cardColor,color:design.text,padding:previewMobile ? design.mobilePadding ?? 16 : design.desktopPadding ?? 36,border:"1px solid #DADDD9",borderRadius:12}}>
-                  <div style={{maxWidth:"100%",margin:"0 auto",display:"grid",gap:14}}>
-                    <div style={{fontSize:previewMobile ? design.mobileQuestionSize ?? 24 : design.questionSize ?? 26,color:design.headingColor || design.text,fontWeight:400,lineHeight:1.3,textAlign:"center",marginBottom:14}}>{kind === "scan" ? scanner.title : question?.text || "No question selected"}</div>
-                    {kind === "scan" ? <><div style={{textAlign:"center",fontSize:14,lineHeight:1.6}}>{scanner.description}</div><div style={{padding:28,border:`1px dashed ${design.accent}`,borderRadius:12,textAlign:"center"}}>Camera or photo upload</div></> : (question?.options || []).map((option,i) => <button type="button" aria-pressed={previewAnswer === i} onClick={() => setPreviewAnswer(i)} key={i} style={{cursor:"pointer",fontFamily:"inherit",width:"100%",display:"flex",alignItems:"center",gap:14,minHeight:previewMobile ? 64 : 54,padding:previewMobile ? "14px 16px" : "12px 18px",border:"1px solid #ad762d",borderRadius:6,background:previewAnswer===i ? design.selectedColor || "#571c29" : design.answerColor || "#e4c3a0",color:previewAnswer===i ? design.selectedText || "#ffffff" : design.answerText || "#651d30"}}><span style={{width:18,height:18,border:`2px solid ${previewAnswer===i ? design.buttonText : design.accent}`,borderRadius:"50%",display:"none",placeItems:"center",flexShrink:0}}>{previewAnswer===i ? <span style={{width:8,height:8,borderRadius:"50%",background:design.buttonText}} /> : null}</span><span style={{flex:1,textAlign:"center",fontSize:previewMobile ? design.mobileAnswerSize ?? 16 : design.answerSize ?? 18,lineHeight:1.5}}>{option.label}</span></button>)}
-                    <div style={{justifySelf:design.buttonAlignment === "left" ? "start" : design.buttonAlignment === "right" ? "end" : "center",width:(previewMobile ? design.mobileButtonWidth ?? 60 : design.desktopButtonWidth ?? 22)+"%",minHeight:previewMobile ? design.mobileButtonHeight ?? 44 : design.desktopButtonHeight ?? 48,display:"grid",placeItems:"center",marginTop:14,maxWidth:"100%",minWidth:previewMobile ? 150 : 180,padding:"10px 16px",background:design.accent,color:design.buttonText,borderRadius:design.radius === "pill" ? 999 : design.radius === "square" ? 0 : 8,fontSize:previewMobile ? design.mobileButtonSize ?? 16 : design.buttonSize ?? 18,fontWeight:600}}>{kind === "scan" ? "Continue to photo" : "Continue"}</div>
-                  </div>
-                </div>
+                {previewAssets ? <WidgetPreview assets={previewAssets} quiz={{ ...quiz, handle: code }} kind={kind} index={safeIndex} mobile={previewMobile} /> : null}
               </s-stack>
             </s-section></div></div> : null}
             {showQuestions && kind === "scan" ? <s-section heading="AI Skin Scan settings">

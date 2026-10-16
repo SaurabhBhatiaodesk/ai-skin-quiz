@@ -5,6 +5,7 @@ import { authenticate } from "../shopify.server";
 import { ensureNumericWidgetId, loadQuiz, loadStoreProducts, saveQuiz } from "../quiz.server";
 import { providerHasKey, selectedProvider } from "../settings.server";
 import QuizEditor from "../components/QuizEditor";
+import { widgetPreviewAssets } from "../widget-preview.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session, admin, redirect } = await authenticate.admin(request);
@@ -21,7 +22,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     productsError = true;
   }
   const scanConfigured = await selectedProvider(session.shop) === "openai" && await providerHasKey(session.shop, "openai");
-  return { shop: session.shop, quiz, products, productsError, scanConfigured };
+  return { shop: session.shop, quiz, products, productsError, scanConfigured, previewAssets: widgetPreviewAssets(quiz) };
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -39,8 +40,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 export default function Index() {
-  const { shop, quiz, products, productsError, scanConfigured } = useLoaderData<typeof loader>();
-  return <QuizEditor initial={quiz} shop={shop} products={products} productsError={productsError} scanConfigured={scanConfigured} code={quiz.handle} />;
+  const { shop, quiz, products, productsError, scanConfigured, previewAssets } = useLoaderData<typeof loader>();
+  return <QuizEditor initial={quiz} shop={shop} products={products} productsError={productsError} scanConfigured={scanConfigured} code={quiz.handle} previewAssets={previewAssets} />;
 }
 
 export const headers: HeadersFunction = (headersArgs) => {

@@ -369,7 +369,7 @@ export function normalizeQuiz(input: unknown, { draft = false }: { draft?: boole
   };
   if (!scanner.camera && !scanner.upload) throw new Error("Enable camera or photo upload for Skin Scan.");
   const suppliedDesign = (input as StoredQuiz)?.design;
-  const colorLabels: Record<string, string> = { headingColor: "Heading color", cardColor: "Question card background", answerColor: "Answer background", answerText: "Answer text color", selectedColor: "Selected answer background", selectedText: "Selected answer text", background: "Background color", text: "Body text color", accent: "Button background", buttonText: "Button text color" };
+  const colorLabels: Record<string, string> = { scanCard: "Skin Scan card background", scanText: "Skin Scan text color", scanHeading: "Skin Scan heading color", scanButton: "Skin Scan button background", scanButtonText: "Skin Scan button text", headingColor: "Heading color", cardColor: "Question card background", answerColor: "Answer background", answerText: "Answer text color", selectedColor: "Selected answer background", selectedText: "Selected answer text", background: "Background color", text: "Body text color", accent: "Button background", buttonText: "Button text color" };
   // Accepts #RGB, #RRGGBB and #RRGGBBAA (alpha dropped) with stray spaces; empty values use the default.
   function color(value: unknown, fallback: string, field = "") {
     if (value === undefined || value === null || value === "") return fallback;
@@ -386,6 +386,8 @@ export function normalizeQuiz(input: unknown, { draft = false }: { draft?: boole
     return size;
   }
   const design: NonNullable<StoredQuiz["design"]> = {
+    // Skin Scan colours for this widget's scan screen; empty means "same as the quiz".
+    ...Object.fromEntries((["scanCard", "scanText", "scanHeading", "scanButton", "scanButtonText"] as const).flatMap(key => { const value = suppliedDesign?.[key]; return value ? [[key, color(value, "", key)]] : []; })),
     headingColor: color(suppliedDesign?.headingColor, recommendedQuizDesign.headingColor, "headingColor"),
     cardColor: color(suppliedDesign?.cardColor, recommendedQuizDesign.cardColor, "cardColor"),
     answerColor: color(suppliedDesign?.answerColor, recommendedQuizDesign.answerColor, "answerColor"),

@@ -3733,3 +3733,35 @@
 
 /* Entry card actions fill their cards independently of Continue sizing. */
 .prana-quiz .entry-card .btn-entry { width:100%!important; min-width:0; min-height:48px; padding:10px 16px; white-space:nowrap; display:flex; align-items:center; justify-content:center; line-height:1.3; }
+
+/* Quiz result "Your ritual" product rows: compact, no empty space inside the card. */
+.prana-quiz.prana-quiz:not(.scan-chat-open) [data-screen="result"] .product-cards { display: grid; gap: 12px; }
+.prana-quiz.prana-quiz:not(.scan-chat-open) [data-screen="result"] .product-card { min-height: 0; height: auto; margin: 0; padding: 14px 18px; gap: 18px; align-items: center; }
+.prana-quiz.prana-quiz:not(.scan-chat-open) [data-screen="result"] .pc-img { width: 72px; height: 72px; margin: 0; }
+.prana-quiz.prana-quiz:not(.scan-chat-open) [data-screen="result"] .pc-body { display: flex; flex-direction: column; gap: 4px; padding: 0; margin: 0; min-height: 0; }
+.prana-quiz.prana-quiz:not(.scan-chat-open) [data-screen="result"] :is(.pc-name, .pc-why, .pc-collection) { margin: 0; padding: 0; }
+.prana-quiz.prana-quiz:not(.scan-chat-open) [data-screen="result"] .pc-bottom { margin: 4px 0 0; padding: 0; }
+
+/* Dosha guide modal: above the theme header; a centred dialog on desktop (bottom sheet stays on phones). */
+.prana-quiz.prana-quiz .modal-overlay { z-index: 2147483000; padding: 16px; box-sizing: border-box; }
+@media (min-width: 601px) {
+  .prana-quiz.prana-quiz .modal-overlay { align-items: center; padding: 24px; }
+  .prana-quiz.prana-quiz .dosha-modal { border-radius: 24px; max-height: min(85vh, 760px); }
+  .prana-quiz.prana-quiz .dosha-modal .modal-handle { display: none; }
+}
+@media (max-width: 600px) {
+  .prana-quiz.prana-quiz .modal-overlay { padding: 0; }
+}
+
+/* Per-widget Skin Scan colours (Quiz design > Preview flow: Skin Scan). Inline widget only. */
+.prana-quiz.prana-quiz:not(.scan-chat-open)[data-sx-card] [data-screen="scanner"] .scanner-wrap { background: var(--sx-card) !important; }
+.prana-quiz.prana-quiz:not(.scan-chat-open)[data-sx-text] [data-screen="scanner"] .scanner-wrap,
+.prana-quiz.prana-quiz:not(.scan-chat-open)[data-sx-text] [data-screen="scanner"] .scanner-wrap :is(.scan-step-intro, .consent-label, .consent-notice, .cn-text, .scan-status, .sc-btn-label, .sc-btn-sub, .scan-steps li, .back-nav) { color: var(--sx-text) !important; }
+.prana-quiz.prana-quiz:not(.scan-chat-open)[data-sx-heading] [data-screen="scanner"] :is(.hdr-title, .hdr-title em, .scan-step-title) { color: var(--sx-heading) !important; -webkit-text-fill-color: var(--sx-heading); }
+.prana-quiz.prana-quiz:not(.scan-chat-open)[data-sx-button] [data-screen="scanner"] .btn-scan { background: var(--sx-button) !important; border-color: var(--sx-button) !important; }
+.prana-quiz.prana-quiz:not(.scan-chat-open)[data-sx-button-text] [data-screen="scanner"] .btn-scan { color: var(--sx-button-text) !important; }
+
+/* Scan buttons keep their label on one line ("Continue to photo →"). */
+.prana-quiz.prana-quiz:not(.scan-chat-open) [data-screen="scanner"] .btn-scan { white-space: nowrap; width: auto; min-width: 200px; max-width: 100%; }
+/* Any theme wrapper directly around the inline widget fills the section too (not only .shopify-app-block). */
+:where(*):has(> .prana-quiz:not(.scan-chat-open)[data-prana-quiz]) { width: 100%; max-width: 100%; flex: 1 1 100%; align-self: stretch; min-width: 0; }
