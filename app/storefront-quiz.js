@@ -472,7 +472,7 @@ import { buildScanReport } from "./scan-report.js";
     // The camera turns on only after the shopper accepts the required consents.
     function selectMode(mode) {
       var scanButton = q("[data-scan]");
-      if (scanButton) scanButton.textContent = "Analyse My Skin →";
+      if (scanButton) scanButton.textContent = (quiz && quiz.texts && quiz.texts.analyseButton) || "Analyse My Skin →";
       if (quiz && quiz.scanner) {
         if (mode === "camera" && !quiz.scanner.camera) mode = "upload";
         if (mode === "upload" && !quiz.scanner.upload) mode = "camera";
@@ -870,7 +870,7 @@ import { buildScanReport } from "./scan-report.js";
       if (data.design) {
         var design = data.design;
         root.style.setProperty("--canvas", design.background);
-        ["desktopButtonWidth","mobileButtonWidth","desktopButtonHeight","mobileButtonHeight","mobileButtonSize","desktopWidth","desktopPadding","mobileWidth","mobilePadding","mobileHeadingSize","mobileQuestionSize","mobileAnswerSize","answerSpacing","mobileAnswerSpacing","answerPadding","mobileAnswerPadding","headingSize","bodySize","brandSize","mobileBrandSize","mobileSubtitleSize","questionGap","mobileQuestionGap","buttonGap","mobileButtonGap","entryTitleSize","mobileEntryTitleSize","entryTextSize","mobileEntryTextSize","entryPadding","mobileEntryPadding","entryGap","mobileEntryGap","entryRadius","entryIconSize","mobileEntryIconSize","entryTimeSize","mobileEntryTimeSize","headerTop","mobileHeaderTop","headerGap","mobileHeaderGap","scanTitleSize","mobileScanTitleSize","scanTextSize","mobileScanTextSize"].forEach(function(key) { if (Number.isFinite(Number(design[key]))) root.style.setProperty('--layout-' + key, Number(design[key]) + (['mobileWidth','desktopButtonWidth','mobileButtonWidth'].includes(key) ? '%' : 'px')); });
+        ["desktopButtonWidth","mobileButtonWidth","desktopButtonHeight","mobileButtonHeight","mobileButtonSize","desktopWidth","desktopPadding","mobileWidth","mobilePadding","mobileHeadingSize","mobileQuestionSize","mobileAnswerSize","answerSpacing","mobileAnswerSpacing","answerPadding","mobileAnswerPadding","headingSize","bodySize","brandSize","mobileBrandSize","mobileSubtitleSize","questionGap","mobileQuestionGap","buttonGap","mobileButtonGap","entryTitleSize","mobileEntryTitleSize","entryTextSize","mobileEntryTextSize","entryPadding","mobileEntryPadding","entryGap","mobileEntryGap","entryRadius","entryIconSize","mobileEntryIconSize","entryTimeSize","mobileEntryTimeSize","headerTop","mobileHeaderTop","headerGap","mobileHeaderGap","scanTitleSize","mobileScanTitleSize","scanTextSize","mobileScanTextSize","scanUploadHeight","mobileScanUploadHeight"].forEach(function(key) { if (Number.isFinite(Number(design[key]))) root.style.setProperty('--layout-' + key, Number(design[key]) + (['mobileWidth','desktopButtonWidth','mobileButtonWidth'].includes(key) ? '%' : 'px')); });
         root.dataset.buttonAlignment = ["left", "right"].includes(design.buttonAlignment) ? design.buttonAlignment : "center";
         root.style.setProperty("--ink", design.text);
         root.style.setProperty("--gold", design.accent);
@@ -880,7 +880,7 @@ import { buildScanReport } from "./scan-report.js";
         root.style.setProperty("--button-radius", design.radius === "pill" ? "999px" : design.radius === "square" ? "0px" : "8px");
         root.querySelectorAll('[data-screen="quick"], [data-screen="deep"]').forEach(function (element) { element.style.setProperty("background", "transparent", "important"); });
         // Skin Scan colours of this widget (inline scan screen only; the floating popup has its own appearance).
-        [["scanCard", "--sx-card"], ["scanText", "--sx-text"], ["scanHeading", "--sx-heading"], ["scanButton", "--sx-button"], ["scanButtonText", "--sx-button-text"], ["backBg", "--back-bg"], ["backText", "--back-text"], ["backBorder", "--back-border"], ["headingAccent", "--heading-accent"], ["entryBg", "--entry-bg"], ["entryBorder", "--entry-border"], ["entryFeatured", "--entry-featured"], ["brandColor", "--brand-color"], ["subtitleColor", "--subtitle-color"], ["entryTitleColor", "--entry-title"], ["entryTextColor", "--entry-text"], ["entryTimeColor", "--entry-time"], ["entryGhost", "--entry-ghost"], ["entryIconBg", "--entry-icon-bg"], ["scanAccent", "--sx-accent"], ["scanNoticeBg", "--sx-notice"], ["scanBoxBg", "--sx-box"], ["scanStepIdle", "--sx-step-idle"], ["scanDivider", "--sx-divider"], ["scanNoticeText", "--sx-notice-text"], ["scanBoxBorder", "--sx-box-border"], ["scanLabel", "--sx-label"]].forEach(function (pair) {
+        [["scanCard", "--sx-card"], ["scanText", "--sx-text"], ["scanHeading", "--sx-heading"], ["scanButton", "--sx-button"], ["scanButtonText", "--sx-button-text"], ["backBg", "--back-bg"], ["backText", "--back-text"], ["backBorder", "--back-border"], ["headingAccent", "--heading-accent"], ["entryBg", "--entry-bg"], ["entryBorder", "--entry-border"], ["entryFeatured", "--entry-featured"], ["brandColor", "--brand-color"], ["subtitleColor", "--subtitle-color"], ["entryTitleColor", "--entry-title"], ["entryTextColor", "--entry-text"], ["entryTimeColor", "--entry-time"], ["entryGhost", "--entry-ghost"], ["entryIconBg", "--entry-icon-bg"], ["scanAccent", "--sx-accent"], ["scanNoticeBg", "--sx-notice"], ["scanBoxBg", "--sx-box"], ["scanToggleBg", "--sx-toggle"], ["scanToggleActive", "--sx-toggle-active"], ["scanUploadBg", "--sx-upload"], ["scanUploadBorder", "--sx-upload-border"], ["scanHint", "--sx-hint"], ["scanStepIdle", "--sx-step-idle"], ["scanDivider", "--sx-divider"], ["scanNoticeText", "--sx-notice-text"], ["scanBoxBorder", "--sx-box-border"], ["scanLabel", "--sx-label"]].forEach(function (pair) {
           var attribute = "data-" + pair[1].slice(2);
           if (design[pair[0]]) { root.style.setProperty(pair[1], design[pair[0]]); root.setAttribute(attribute, ""); }
           else { root.style.removeProperty(pair[1]); root.removeAttribute(attribute); }
@@ -947,7 +947,9 @@ import { buildScanReport } from "./scan-report.js";
           deepName: cards.deep + ".ec-name", deepDesc: cards.deep + ".ec-desc", deepTime: cards.deep + ".ec-time", deepButton: cards.deep + ".btn-entry",
           quickSubtitle: '[data-screen="quick"] .hdr-sub', deepSubtitle: '[data-screen="deep"] .hdr-sub',
           scannerSubtitle: '[data-screen="scanner"] .hdr-sub', scanStepTitle: '[data-scan-step="1"] .scan-step-title', scanStepIntro: '[data-scan-step="1"] .scan-step-intro',
-          scanNotice: '[data-screen="scanner"] .cn-text', consentBio: 'label[for^="consent-bio"]', consentAge: 'label[for^="consent-age"]', consentMail: 'label[for^="consent-mail"]', scanContinue: "[data-scan-continue]" };
+          scanNotice: '[data-screen="scanner"] .cn-text', consentBio: 'label[for^="consent-bio"]', consentAge: 'label[for^="consent-age"]', consentMail: 'label[for^="consent-mail"]', scanContinue: "[data-scan-continue]",
+          reviewConsent: "[data-scan-back]", photoTitle: '[data-scan-step="2"] .scan-step-title', photoIntro: '[data-scan-step="2"] .scan-step-intro',
+          cameraLabel: '[data-mode="camera"] .sc-btn-label', uploadLabel: '[data-mode="upload"] .sc-btn-label', uploadTitle: ".upload-label", uploadSub: ".upload-sub", analyseButton: "[data-scan]" };
         // Hiding these removes the whole block (notice box, checkbox row); the two required consents cannot be hidden.
         var hideWhole = { scanNotice: ".consent-notice", consentMail: ".consent-row" };
         var required = ["consentBio", "consentAge"];

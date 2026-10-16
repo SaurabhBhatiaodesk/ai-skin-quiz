@@ -3896,3 +3896,14 @@
 .prana-quiz.prana-quiz.prana-quiz.scan-chat-open :is(.hdr-title, .hdr-title em, .scan-step-title, .sr-title, .sr-section-title, .face-map-title, h1, h2, h3) { font-family: var(--sr-font, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif) !important; font-style: normal !important; }
 .prana-quiz.prana-quiz.prana-quiz.scan-chat-open [data-screen="scanner"] .hdr-title { font-weight: 700 !important; letter-spacing: -0.02em; }
 .prana-quiz.prana-quiz.prana-quiz.scan-chat-open [data-screen="scanner"] .scan-step-title { font-weight: 650 !important; }
+
+/* Inline Skin Scan photo step: toggle and upload box colours, upload box height (desktop/mobile), hint colour. */
+.prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open)[data-sx-toggle] [data-screen="scanner"] .scanner-choice { background: var(--sx-toggle) !important; }
+.prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open)[data-sx-toggle-active] [data-screen="scanner"] .scanner-choice .sc-btn.active { background: var(--sx-toggle-active) !important; }
+.prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open) [data-screen="scanner"] .upload-zone:not(.hidden) { box-sizing: border-box; aspect-ratio: auto !important; height: var(--layout-scanUploadHeight, 240px) !important; min-height: 0 !important; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; }
+.prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open)[data-sx-upload] [data-screen="scanner"] .upload-zone { background: var(--sx-upload) !important; }
+.prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open)[data-sx-upload-border] [data-screen="scanner"] .upload-zone { border-color: var(--sx-upload-border) !important; }
+.prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open)[data-sx-hint] [data-screen="scanner"] .scan-status { color: var(--sx-hint) !important; }
+@media (max-width: 600px) {
+  .prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open) [data-screen="scanner"] .upload-zone { height: var(--layout-mobileScanUploadHeight, 200px) !important; }
+}
