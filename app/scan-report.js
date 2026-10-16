@@ -22,11 +22,11 @@ function productHref(product) {
 // Returns { report, end }: report goes at the top of the result, end after the email box.
 export function buildScanReport(result) {
   const areas = mappableAreas(result.scanAreas);
-  const report = el("section", "scan-report");
+  const report = el("div", "scan-report");
   report.setAttribute("data-scan-report", "");
   report.setAttribute("aria-label", "Your skin report");
 
-  const head = el("header", "sr-head");
+  const head = el("div", "sr-head");
   const status = el("p", "sr-status");
   const check = el("span", "sr-status-icon"); check.setAttribute("aria-hidden", "true"); check.textContent = "✓";
   const date = new Date().toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
@@ -65,7 +65,7 @@ export function buildScanReport(result) {
 
   const products = Array.isArray(result.products) ? result.products : [];
   if (products.length) {
-    const section = el("section", "sr-section");
+    const section = el("div", "sr-section");
     section.append(el("h3", "sr-section-title", "Recommended for you"), el("p", "sr-section-sub", "Matched to what we observed in your photo."));
     const list = el("ul", "sr-products");
     products.forEach((product) => {

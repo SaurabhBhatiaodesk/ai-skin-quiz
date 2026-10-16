@@ -964,15 +964,15 @@ import { buildScanReport } from "./scan-report.js";
         launcher.style[appearance.position === "left" ? "left" : "right"] = (appearance.offset == null ? 24 : appearance.offset) + "px";
         launcher.style[appearance.position === "left" ? "right" : "left"] = "auto";
         root.style.setProperty("--scan-offset", (appearance.offset == null ? 24 : appearance.offset) + "px");
-        root.style.setProperty("--scan-panel", appearance.panelColor || "#000a30");
+        root.style.setProperty("--scan-panel", appearance.panelColor || "#450333");
         // On a dark popup background, text placed directly on the panel switches to light colours.
-        if (isDarkColor(appearance.panelColor || "#000a30")) root.setAttribute("data-scan-dark", "");
+        if (isDarkColor(appearance.panelColor || "#450333")) root.setAttribute("data-scan-dark", "");
         else root.removeAttribute("data-scan-dark");
         root.style.setProperty("--scan-text", appearance.textColor || "#1a1208");
         root.style.setProperty("--scan-accent", appearance.accentColor || "#52695a");
         root.style.setProperty("--scan-heading", appearance.headingColor || "#1a1208");
         root.style.setProperty("--scan-button-text", appearance.modalButtonTextColor || "#ffffff");
-        root.style.setProperty("--scan-button", appearance.modalButtonColor || "#303030");
+        root.style.setProperty("--scan-button", appearance.modalButtonColor || "#000000");
         root.style.setProperty("--scan-font-size", (appearance.modalFontSize || 14) + "px");
         root.style.setProperty("--scan-width", (appearance.modalWidth || 520) + "px");
         root.style.setProperty("--scan-radius", (appearance.modalRadius == null ? 24 : appearance.modalRadius) + "px");

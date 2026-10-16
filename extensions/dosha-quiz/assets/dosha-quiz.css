@@ -3165,7 +3165,7 @@
 .prana-quiz {
   --sr-accent: var(--scan-accent, var(--gold, #8f6330));
   /* Buttons use the merchant's "Modal buttons" colour (chocolate by default). */
-  --sr-button: var(--scan-button, #303030);
+  --sr-button: var(--scan-button, #000000);
   --sr-ink: var(--scan-heading, var(--ink, #1a1208));
   --sr-text: var(--scan-text, var(--ink, #1a1208));
   --sr-muted: color-mix(in srgb, var(--sr-text) 58%, transparent);
@@ -3187,7 +3187,7 @@
 }
 /* Desktop: the panel is only as tall as its content (it no longer leaves a gap under short steps). */
 @media (min-width: 601px) {
-  .prana-quiz.scan-chat-open.scan-chat-open { height: auto; max-height: min(calc(100dvh - 32px), 820px); }
+  .prana-quiz.scan-chat-open.scan-chat-open { height: auto; max-height: min(calc(100dvh - var(--scan-offset, 24px) - 92px), 820px); }
 }
 .prana-quiz.scan-chat-open.scan-chat-open .screen { background: transparent; }
 .prana-quiz.scan-chat-open.scan-chat-open .scan-chat-close {
@@ -3445,14 +3445,10 @@
 .prana-quiz.scan-chat-open.scan-chat-open .upload-zone { border-radius: 12px; border: 1.5px dashed #c9c9c9; background: #fff; }
 .prana-quiz.prana-quiz.prana-quiz [data-screen="scanner"] .camera-zone.camera-zone { border-radius: 16px; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08), 0 8px 24px -12px rgba(0, 0, 0, 0.35); }
 
-/* Popup primary actions use a solid black background. */
+/* Popup primary actions: solid "Modal buttons" colour from settings (default black), no gradient. */
 .prana-quiz.scan-chat-open.scan-chat-open .btn-scan {
   min-height: 46px; border-radius: 10px; font-size: 14.5px; font-weight: 600;
-  background: #000;
-  color: #fff;
-  box-shadow: none;
 }
-.prana-quiz.scan-chat-open.scan-chat-open .btn-scan:hover { background: #000; color: #fff; }
 
 /* ---- Report ---- */
 .prana-quiz .sr-status { color: var(--sr-muted); font-weight: 550; }
@@ -3589,3 +3585,32 @@
 .prana-quiz:not(.scan-chat-open)[data-button-alignment="left"] :is(.btn-next,.btn-scan) { margin-left:0; margin-right:auto; align-self:flex-start; }
 .prana-quiz:not(.scan-chat-open)[data-button-alignment="center"] :is(.btn-next,.btn-scan) { margin-left:auto; margin-right:auto; align-self:center; }
 .prana-quiz:not(.scan-chat-open)[data-button-alignment="right"] :is(.btn-next,.btn-scan) { margin-left:auto; margin-right:0; align-self:flex-end; }
+
+/* Theme CSS must not leak into the scan report blocks (sticky headers, section padding, backgrounds). */
+.prana-quiz.prana-quiz .scan-report,
+.prana-quiz.prana-quiz .scan-report .sr-head,
+.prana-quiz.prana-quiz .scan-report .sr-section { position: static; inset: auto; z-index: auto; width: auto; max-width: none; min-height: 0; height: auto; background: none; box-shadow: none; transform: none; backdrop-filter: none; }
+
+/* Popup buttons are one flat colour from settings: no gradient, bevel or glow. */
+.prana-quiz.prana-quiz.prana-quiz.prana-quiz.scan-chat-open .btn-scan,
+.prana-quiz.prana-quiz.prana-quiz.prana-quiz.scan-chat-open .btn-scan:hover,
+.prana-quiz.prana-quiz.prana-quiz.prana-quiz.scan-chat-open[data-scan-result] .result-wrap .btn-eb,
+.prana-quiz.prana-quiz.prana-quiz.prana-quiz.scan-chat-open .sr-view {
+  background: var(--sr-button) !important; background-image: none !important; box-shadow: none !important; color: var(--scan-button-text, #fff);
+}
+.prana-quiz.prana-quiz.prana-quiz.prana-quiz.scan-chat-open .btn-scan:hover,
+.prana-quiz.prana-quiz.prana-quiz.prana-quiz.scan-chat-open[data-scan-result] .result-wrap .btn-eb:hover { opacity: 0.88; }
+
+/* Theme button styles (uppercase, tracking) must not reach the popup. */
+.prana-quiz.scan-chat-open.scan-chat-open :is(button, a, label, input) { text-transform: none; letter-spacing: normal; }
+/* Camera frame fits the popup height on desktop, so the guidance and button stay in view. */
+.prana-quiz.prana-quiz.prana-quiz.scan-chat-open [data-screen="scanner"] .camera-zone.camera-zone { width: auto; max-width: 100%; height: min(400px, 48vh); min-height: 260px; aspect-ratio: 4 / 5; }
+
+/* Camera starting: a quiet spinner instead of the old gold rings. */
+.prana-quiz.prana-quiz [data-screen="scanner"] .camera-zone .scan-ring,
+.prana-quiz.prana-quiz [data-screen="scanner"] .camera-zone .scan-line { display: none; }
+.prana-quiz.prana-quiz [data-screen="scanner"] .camera-zone .scan-overlay { display: grid; place-items: center; align-content: center; gap: 12px; background: #111; }
+.prana-quiz.prana-quiz [data-screen="scanner"] .camera-zone .scan-overlay::before { content: ""; width: 34px; height: 34px; border-radius: 50%; border: 3px solid rgba(255, 255, 255, 0.18); border-top-color: #fff; animation: pranaCamSpin 0.9s linear infinite; }
+.prana-quiz.prana-quiz [data-screen="scanner"] .camera-zone .scan-overlay::after { content: "Starting camera…"; color: rgba(255, 255, 255, 0.78); font: 500 13px/1.4 var(--sr-font, system-ui, sans-serif); }
+.prana-quiz.prana-quiz [data-screen="scanner"] .camera-zone:has(.face-tracking-canvas) .scan-overlay { display: none; }
+@keyframes pranaCamSpin { to { transform: rotate(360deg); } }
