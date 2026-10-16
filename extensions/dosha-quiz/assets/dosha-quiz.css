@@ -3855,3 +3855,9 @@
 @media (max-width: 600px) {
   .prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open) .entry-card .ec-time { font-size: var(--layout-mobileEntryTimeSize, 10px); }
 }
+/* Space above the widget header and between the header and the cards / question card (one value each). */
+.prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open) [data-screen]:not([data-screen="scanner"]) > .hdr { padding-top: var(--layout-headerTop, 40px) !important; padding-bottom: var(--layout-headerGap, 40px) !important; }
+.prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open) .entry-cards { padding-top: 0 !important; }
+@media (max-width: 600px) {
+  .prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open) [data-screen]:not([data-screen="scanner"]) > .hdr { padding-top: var(--layout-mobileHeaderTop, 24px) !important; padding-bottom: var(--layout-mobileHeaderGap, 24px) !important; }
+}
