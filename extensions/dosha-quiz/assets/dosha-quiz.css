@@ -3638,3 +3638,9 @@
 .prana-quiz.prana-quiz.prana-quiz [data-email-confirm].show { display: block; margin-top: 10px; padding: 9px 12px; border-radius: 10px; background: #e8f6ee; color: #12633a; font-size: 13.5px; font-weight: 600; line-height: 1.4; }
 .prana-quiz.prana-quiz.prana-quiz [data-email-confirm][data-delivery="failed"].show { background: #fdf1e6; color: #8a4b0f; }
 .prana-quiz.prana-quiz.prana-quiz [data-email-confirm][data-delivery="error"].show { background: #fdecec; color: #a3242a; }
+
+/* Inline widget always fills its theme section. Flex-based sections (e.g. Horizon) otherwise shrink the
+   app block to its content width, which made the entry cards narrow and off-centre. */
+.shopify-app-block:has(> .prana-quiz:not(.scan-chat-open)),
+.shopify-app-block:has(> * > .prana-quiz:not(.scan-chat-open)) { width: 100%; max-width: 100%; flex: 1 1 100%; align-self: stretch; min-width: 0; }
+.prana-quiz:not(.scan-chat-open) { width: 100%; max-width: 100%; flex: 1 1 100%; align-self: stretch; min-width: 0; box-sizing: border-box; }
