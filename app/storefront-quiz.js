@@ -936,6 +936,33 @@ import { buildScanReport } from "./scan-report.js";
       if (cameraButton) cameraButton.style.display = scanner.camera ? "" : "none";
       if (uploadButton) uploadButton.style.display = scanner.upload ? "" : "none";
 
+      // Merchant texts (Quiz design > Texts): a set value replaces the built-in text, a hidden one is removed.
+      (function applyTexts(texts, hidden) {
+        try {
+        texts = texts || {}; hidden = hidden || [];
+        var cards = { scan: '.entry-card[data-goto="scanner"] ', quick: '.entry-card[data-goto="quick"] ', deep: '.entry-card[data-goto="deep"] ' };
+        var plain = { entryBrand: '[data-screen="entry"] .hdr-logo', entrySubtitle: '[data-screen="entry"] .hdr-sub', entryNote: ".entry-note",
+          scanBadge: cards.scan + ".ec-badge", scanName: cards.scan + ".ec-name", scanDesc: cards.scan + ".ec-desc", scanTime: cards.scan + ".ec-time", scanButton: cards.scan + ".btn-entry",
+          quickName: cards.quick + ".ec-name", quickDesc: cards.quick + ".ec-desc", quickTime: cards.quick + ".ec-time", quickButton: cards.quick + ".btn-entry",
+          deepName: cards.deep + ".ec-name", deepDesc: cards.deep + ".ec-desc", deepTime: cards.deep + ".ec-time", deepButton: cards.deep + ".btn-entry",
+          quickSubtitle: '[data-screen="quick"] .hdr-sub', deepSubtitle: '[data-screen="deep"] .hdr-sub' };
+        Object.keys(plain).forEach(function (key) {
+          var element = q(plain[key]); if (!element) return;
+          if (hidden.indexOf(key) !== -1) { element.style.display = "none"; return; }
+          if (texts[key]) element.textContent = texts[key];
+        });
+        ["entry", "quick", "deep"].forEach(function (screen) {
+          var heading = q('[data-screen="' + screen + '"] .hdr-title'); if (!heading) return;
+          var em = heading.querySelector("em"); var titleKey = screen + "Title", accentKey = screen + "Accent";
+          var titleText = Array.prototype.filter.call(heading.childNodes, function (node) { return node.nodeType === 3; }).map(function (node) { return node.textContent; }).join("").trim();
+          var title = hidden.indexOf(titleKey) !== -1 ? "" : (texts[titleKey] || titleText);
+          var accent = hidden.indexOf(accentKey) !== -1 ? "" : (texts[accentKey] || (em ? em.textContent : ""));
+          if (!title && !accent) { heading.style.display = "none"; return; }
+          heading.textContent = title ? title + (accent ? " " : "") : "";
+          if (accent) { var mark = document.createElement("em"); mark.textContent = accent; heading.appendChild(mark); }
+        });
+        } catch (error) { /* custom texts are cosmetic; never block the widget */ }
+      })(data.texts, data.hiddenTexts);
       scanMode = scanner.camera ? "camera" : "upload";
       var enabledPaths = (data.enabledPaths || (data.layout === "scan" ? ["scan"] : data.layout === "single" ? [data.singleFlow || "quick"] : ["quick", "deep", "scan"]));
       var pathNames = { quick: "quick", deep: "deep", scan: "scanner" };

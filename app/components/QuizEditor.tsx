@@ -7,7 +7,7 @@ import WidgetPreview from "./WidgetPreview";
 import type { WidgetPreviewAssets } from "../widget-preview.server";
 import type { MappingDraft } from "./MappingEditor";
 import { useFetcher } from "react-router";
-import { recommendedQuizDesign, scoresForTag, slugTag } from "../quiz-shared";
+import { recommendedQuizDesign, scoresForTag, slugTag, WIDGET_TEXT_GROUPS } from "../quiz-shared";
 import type { DeepQuestion, ProductMapping, QuickQuestion, ResultTag, ShopProduct, StoredQuiz } from "../quiz-shared";
 
 type SaveResult = { ok: true; quiz: StoredQuiz } | { ok: false; error: string };
@@ -489,6 +489,20 @@ export default function QuizEditor({
 {([["backBg", "Back button background", "#F3E8DA"], ["backText", "Back button text color", "#651D30"], ["backBorder", "Back button border color", "#D4BDA8"]] as const).map(([key, label, fallback]) => <s-color-field key={key} label={label} placeholder={fallback} value={quiz.design?.[key] || ""} onInput={event => { const value = event.currentTarget.value; setQuiz(current => ({ ...current, design: { ...design, ...current.design, [key]: value } })); }} />)}
 </s-stack></div>
                 </div>
+                <s-section heading="8. Texts">
+                  <s-stack gap="base">
+                    <s-paragraph>Change any text on the widget, or tick Hide to remove it. Leave a field empty to keep the built-in text shown as the placeholder.</s-paragraph>
+                    <div className="quiz-design-fields" style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(300px, 1fr))",gap:16}}>
+                      {WIDGET_TEXT_GROUPS.filter(group => quiz.layout === "three" || !quiz.layout || !/card|Entry|Below/.test(group.title)).map(group => <div key={group.title} style={{border:"1px solid #E1E3E1",borderRadius:12,padding:16,background:"#FFFFFF"}}><s-stack gap="base">
+                        <s-text type="strong">{group.title}</s-text>
+                        {group.items.map(item => { const hidden = (quiz.hiddenTexts || []).includes(item.key); return <s-stack key={item.key} gap="small-200">
+                          <s-text-field label={item.label} placeholder={item.placeholder} disabled={hidden} value={quiz.texts?.[item.key] || ""} onInput={event => { const value = event.currentTarget.value; setQuiz(current => ({ ...current, texts: { ...(current.texts || {}), [item.key]: value } })); }} />
+                          <s-checkbox label="Hide" checked={hidden} onChange={event => { const checked = event.currentTarget.checked; setQuiz(current => { const list = (current.hiddenTexts || []).filter(key => key !== item.key); return { ...current, hiddenTexts: checked ? [...list, item.key] : list }; }); }} />
+                        </s-stack>; })}
+                      </s-stack></div>)}
+                    </div>
+                  </s-stack>
+                </s-section>
                 </> : null}
                 <s-stack direction="inline" justifyContent="end" gap="small">{!scanOnly ? <><s-button commandFor="restore-design-modal" command="--show">Restore recommended design</s-button>
                   <s-modal id="restore-design-modal" heading="Restore recommended design?">

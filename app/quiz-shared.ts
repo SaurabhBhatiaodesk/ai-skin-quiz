@@ -36,6 +36,8 @@ export type StoredQuiz = {
   resultMode?: "personalized" | "products";
   emailCapture?: { enabled: boolean; heading: string; button: string; allowSkip: boolean };
   widgetCss?: string;
+  texts?: Record<string, string>;
+  hiddenTexts?: string[];
   enabledPaths?: Array<"quick" | "deep" | "scan">;
   singleFlow?: "quick" | "deep";
   cardIcons?: Partial<Record<"scan" | "quick" | "deep", string>>;
@@ -135,3 +137,163 @@ export function scoresForTag(tag: string, layer = 1) {
 }
 
 export const LAYOUT_NAMES: Record<string, string> = { three: "Combined Quiz", single: "Single Quiz", scan: "AI Skin Scan" };
+
+// Editable widget texts (Quiz design > Texts). An unset key keeps the built-in text; a hidden key is not shown.
+export const WIDGET_TEXT_GROUPS = [
+  {
+    "title": "Entry header",
+    "items": [
+      {
+        "key": "entryBrand",
+        "label": "Brand line",
+        "placeholder": "PRANA Beauty & Wellness"
+      },
+      {
+        "key": "entryTitle",
+        "label": "Title",
+        "placeholder": "Find Your"
+      },
+      {
+        "key": "entryAccent",
+        "label": "Highlight words",
+        "placeholder": "Skin Ritual"
+      },
+      {
+        "key": "entrySubtitle",
+        "label": "Subtitle",
+        "placeholder": "Three paths. One result. Your personal Ayurvedic ritual."
+      }
+    ]
+  },
+  {
+    "title": "Skin Insights card",
+    "items": [
+      {
+        "key": "scanBadge",
+        "label": "Badge",
+        "placeholder": "Photo analysis"
+      },
+      {
+        "key": "scanName",
+        "label": "Card title",
+        "placeholder": "Skin Insights"
+      },
+      {
+        "key": "scanDesc",
+        "label": "Card text",
+        "placeholder": "Use a camera or upload a photo for cosmetic skin observations."
+      },
+      {
+        "key": "scanTime",
+        "label": "Time line",
+        "placeholder": "✦ 30 seconds"
+      },
+      {
+        "key": "scanButton",
+        "label": "Button",
+        "placeholder": "Start Scan"
+      }
+    ]
+  },
+  {
+    "title": "Quick Quiz card",
+    "items": [
+      {
+        "key": "quickName",
+        "label": "Card title",
+        "placeholder": "Quick Quiz"
+      },
+      {
+        "key": "quickDesc",
+        "label": "Card text",
+        "placeholder": "3 questions about your skin. Instant ritual match — no camera needed."
+      },
+      {
+        "key": "quickTime",
+        "label": "Time line",
+        "placeholder": "About 1 min"
+      },
+      {
+        "key": "quickButton",
+        "label": "Button",
+        "placeholder": "Take Quiz"
+      }
+    ]
+  },
+  {
+    "title": "Deep Dosha card",
+    "items": [
+      {
+        "key": "deepName",
+        "label": "Card title",
+        "placeholder": "Deep Dosha"
+      },
+      {
+        "key": "deepDesc",
+        "label": "Card text",
+        "placeholder": "18 questions across constitution, current state, and environment. The full Ayurvedic reading."
+      },
+      {
+        "key": "deepTime",
+        "label": "Time line",
+        "placeholder": "About 5 min"
+      },
+      {
+        "key": "deepButton",
+        "label": "Button",
+        "placeholder": "Begin Reading"
+      }
+    ]
+  },
+  {
+    "title": "Below the cards",
+    "items": [
+      {
+        "key": "entryNote",
+        "label": "Note",
+        "placeholder": "Find your personalized ritual · Free · No account required"
+      }
+    ]
+  },
+  {
+    "title": "Quick Quiz header",
+    "items": [
+      {
+        "key": "quickTitle",
+        "label": "Title",
+        "placeholder": "Quick"
+      },
+      {
+        "key": "quickAccent",
+        "label": "Highlight words",
+        "placeholder": "Ritual Match"
+      },
+      {
+        "key": "quickSubtitle",
+        "label": "Subtitle",
+        "placeholder": "3 questions. Your personal ritual."
+      }
+    ]
+  },
+  {
+    "title": "Deep Quiz header",
+    "items": [
+      {
+        "key": "deepTitle",
+        "label": "Title",
+        "placeholder": "Dosha"
+      },
+      {
+        "key": "deepAccent",
+        "label": "Highlight words",
+        "placeholder": "Diagnostic"
+      },
+      {
+        "key": "deepSubtitle",
+        "label": "Subtitle",
+        "placeholder": "Three layers · Constitution · Current state · Environment"
+      }
+    ]
+  }
+] as const;
+export const WIDGET_TEXT_KEYS: string[] = WIDGET_TEXT_GROUPS.flatMap(group => group.items.map(item => item.key));

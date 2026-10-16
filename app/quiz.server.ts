@@ -3,7 +3,7 @@ import defaultWidgetCss from "../extensions/dosha-quiz/assets/dosha-quiz.css?raw
 import scanCardIcon from "../public/images/onboarding/scan.svg?raw";
 import deepCardIcon from "../public/images/onboarding/dosha.svg?raw";
 import quickCardIcon from "../public/images/onboarding/quiz.svg?raw";
-import { recommendedQuizDesign, scoresForTag, slugTag } from "./quiz-shared";
+import { recommendedQuizDesign, scoresForTag, slugTag, WIDGET_TEXT_KEYS } from "./quiz-shared";
 import type {
   DeepQuestion,
   ProductMapping,
@@ -456,6 +456,10 @@ export function normalizeQuiz(input: unknown, { draft = false }: { draft?: boole
       if (url.protocol !== "https:" || url.username || url.password) throw new Error("Use HTTPS URLs without embedded credentials.");
     }
   }
+  const suppliedTexts = (input as StoredQuiz)?.texts;
+  const texts = Object.fromEntries(WIDGET_TEXT_KEYS.flatMap(key => { const value = suppliedTexts?.[key]; return typeof value === "string" && value.trim() ? [[key, value.trim().slice(0, 240)]] : []; }));
+  const suppliedHidden = (input as StoredQuiz)?.hiddenTexts;
+  const hiddenTexts = Array.isArray(suppliedHidden) ? WIDGET_TEXT_KEYS.filter(key => suppliedHidden.includes(key)) : [];
   const suppliedCss = (input as StoredQuiz)?.widgetCss;
   if (suppliedCss !== undefined && (typeof suppliedCss !== "string" || suppliedCss.length > 100000)) throw new Error("Widget CSS must be text under 100,000 characters.");
   // Widget CSS holds custom overrides only. Older saves stored a full copy of the default stylesheet,
@@ -463,7 +467,7 @@ export function normalizeQuiz(input: unknown, { draft = false }: { draft?: boole
   const widgetCss = typeof suppliedCss === "string" && !DEFAULT_CSS_MARKER.test(suppliedCss.trimStart()) ? suppliedCss : undefined;
   const email = (input as StoredQuiz)?.emailCapture;
   const emailCapture = { enabled: email?.enabled === true, heading: clip(email?.heading, 120) || "Where should we send your ritual?", button: clip(email?.button, 40) || "See my ritual", allowSkip: email?.allowSkip !== false };
-  return { resultMode: (input as StoredQuiz)?.resultMode === "products" ? "products" : "personalized", cardIcons, emailCapture, enabledPaths, singleFlow, coverImage, profileImage, widgetCss, layout, scanner, design, scanIntegration, quick: enabledPaths.includes("quick") ? quick : [], deep: enabledPaths.includes("deep") ? deep : [], profiles: normalizeProfiles(source.profiles), mappings: normalizeMappings(source.mappings) };
+  return { texts, hiddenTexts, resultMode: (input as StoredQuiz)?.resultMode === "products" ? "products" : "personalized", cardIcons, emailCapture, enabledPaths, singleFlow, coverImage, profileImage, widgetCss, layout, scanner, design, scanIntegration, quick: enabledPaths.includes("quick") ? quick : [], deep: enabledPaths.includes("deep") ? deep : [], profiles: normalizeProfiles(source.profiles), mappings: normalizeMappings(source.mappings) };
 }
 
 function normalizeMappings(value: unknown): ProductMapping[] {
@@ -704,6 +708,8 @@ export async function publicQuiz(shop: string, code?: unknown) {
     scanReady: scanAnalysisReady(),
     design: quiz.design,
     widgetCss: quiz.widgetCss,
+    texts: quiz.texts || {},
+    hiddenTexts: quiz.hiddenTexts || [],
     defaultCss: defaultWidgetCss,
     apiVersion: 1,
     endpoints: { result: "/apps/dosha-quiz/result" },

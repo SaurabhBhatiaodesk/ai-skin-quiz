@@ -20,6 +20,8 @@ export function previewDocument(assets: WidgetPreviewAssets, quiz: StoredQuiz & 
     scanReady: true,
     design: quiz.design,
     widgetCss: quiz.widgetCss,
+    texts: quiz.texts || {},
+    hiddenTexts: quiz.hiddenTexts || [],
     defaultCss: "",
     apiVersion: 1,
     endpoints: { result: "#" },
