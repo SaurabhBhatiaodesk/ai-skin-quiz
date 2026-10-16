@@ -3788,3 +3788,11 @@
 .prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open)[data-back-text] .back-nav,
 .prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open)[data-back-text] .back-nav * { color: var(--back-text) !important; }
 .prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open)[data-back-border] .back-nav { border: 1px solid var(--back-border) !important; }
+
+/* Mobile popup: a sheet only as tall as its content, with tighter top and bottom spacing. */
+.prana-quiz.scan-chat-open .hdr-logo:empty { display: none; }
+@media (max-width: 600px) {
+  .prana-quiz.prana-quiz.scan-chat-open { top: auto !important; height: auto !important; max-height: 100dvh !important; padding-bottom: max(8px, env(safe-area-inset-bottom, 0px)) !important; border-radius: 20px 20px 0 0 !important; }
+  .prana-quiz.prana-quiz.scan-chat-open [data-screen="scanner"] .hdr { padding-top: 14px; padding-bottom: 2px; }
+  .prana-quiz.prana-quiz.scan-chat-open [data-screen="scanner"] .scanner-wrap { padding-bottom: 12px; }
+}
