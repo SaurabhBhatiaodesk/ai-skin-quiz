@@ -108,13 +108,15 @@ export default function ScanAppearanceSettings() {
         </s-stack>
       </s-section>
       <s-section heading="Button preview">
+        <div style={{ display: "grid", gap: 20 }}>
         <div style={{ display: "flex", justifyContent: value.position === "left" ? "flex-start" : "flex-end", padding: 12, background: value.panelColor, borderRadius: 8 }}>
           <div role="img" style={{ background: value.buttonColor, color: value.buttonTextColor, borderRadius: value.shape === "circle" ? "50%" : value.radius, width: value.shape === "circle" ? 64 : undefined, height: value.shape === "circle" ? 64 : undefined, display: "inline-flex", alignItems: "center", justifyContent: "center", border: 0, padding: value.shape === "circle" ? 0 : "18px 24px", font: "600 16px system-ui" }} aria-label={value.label || "Skin Scan"}>{value.iconImage ? <img src={value.iconImage} alt="" style={{width:value.shape === "circle" ? "100%" : 28,height:value.shape === "circle" ? "100%" : 28,objectFit:"cover",borderRadius:"50%",marginRight:value.shape === "circle" ? 0 : 8}} /> : null}{value.shape === "circle" ? value.iconImage ? null : <img src={defaultScanIcon} alt="" style={{width:52,height:52,objectFit:"contain",display:"block"}} /> : value.label || "Skin Scan"}</div>
         </div>
-        <s-stack direction="inline" gap="base" alignItems="center">
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "12px 20px", alignItems: "center" }}>
           <s-button disabled={JSON.stringify(value) === JSON.stringify(recommendedAppearance)} onClick={() => { setValue({ ...recommendedAppearance }); setIconError(""); }}>Restore recommended defaults</s-button>
           <s-text color="subdued">Changes apply after you save.</s-text>
-        </s-stack>
+        </div>
+        </div>
       </s-section>
       <s-stack direction="inline"><s-button variant="primary" loading={fetcher.state !== "idle"} onClick={save}>Save appearance</s-button></s-stack>
     </s-stack>

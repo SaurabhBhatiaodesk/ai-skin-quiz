@@ -870,7 +870,7 @@ import { buildScanReport } from "./scan-report.js";
       if (data.design) {
         var design = data.design;
         root.style.setProperty("--canvas", design.background);
-        ["desktopWidth","desktopPadding","mobileWidth","mobilePadding","mobileHeadingSize","mobileQuestionSize","mobileAnswerSize","answerSpacing","mobileAnswerSpacing"].forEach(function(key) { if (Number.isFinite(Number(design[key]))) root.style.setProperty('--layout-' + key, Number(design[key]) + (key === 'mobileWidth' ? '%' : 'px')); });
+        ["desktopButtonWidth","mobileButtonWidth","desktopButtonHeight","mobileButtonHeight","mobileButtonSize","desktopWidth","desktopPadding","mobileWidth","mobilePadding","mobileHeadingSize","mobileQuestionSize","mobileAnswerSize","answerSpacing","mobileAnswerSpacing"].forEach(function(key) { if (Number.isFinite(Number(design[key]))) root.style.setProperty('--layout-' + key, Number(design[key]) + (['mobileWidth','desktopButtonWidth','mobileButtonWidth'].includes(key) ? '%' : 'px')); });
         root.dataset.buttonAlignment = ["left", "right"].includes(design.buttonAlignment) ? design.buttonAlignment : "center";
         root.style.setProperty("--ink", design.text);
         root.style.setProperty("--gold", design.accent);
@@ -883,15 +883,15 @@ import { buildScanReport } from "./scan-report.js";
         if (design.cardColor !== undefined) root.querySelectorAll('.quiz-wrap').forEach(function (element) { element.style.setProperty("background", String(design.cardColor), "important"); });
         if (design.headingColor !== undefined) root.querySelectorAll('[data-screen]:not([data-screen="scanner"]) .hdr-title, .rh-dosha').forEach(function (element) { element.style.setProperty("color", String(design.headingColor), "important"); });
         if (design.headingSize !== undefined) root.querySelectorAll('[data-screen]:not([data-screen="scanner"]) .hdr-title, .rh-dosha').forEach(function (element) { element.style.setProperty("font-size", String(design.headingSize) + "px", "important"); });
-        if (design.questionSize !== undefined) root.querySelectorAll('.q-text').forEach(function (element) { element.style.setProperty("font-size", String(design.questionSize) + "px", "important"); });
+        if (design.questionSize !== undefined) root.querySelectorAll('.q-text').forEach(function (element) { element.style.setProperty("font-size", String(design.questionSize) + "px"); });
         if (design.headingColor !== undefined) root.querySelectorAll('.q-text').forEach(function (element) { element.style.setProperty("color", String(design.headingColor), "important"); });
         if (design.answerColor !== undefined) root.querySelectorAll('.q-opt:not(.selected)').forEach(function (element) { element.style.setProperty("background", String(design.answerColor), "important"); });
         if (design.answerText !== undefined) root.querySelectorAll('.q-opt:not(.selected) .q-opt-main').forEach(function (element) { element.style.setProperty("color", String(design.answerText), "important"); });
         if (design.selectedColor !== undefined) root.querySelectorAll('.q-opt.selected').forEach(function (element) { element.style.setProperty("background", String(design.selectedColor), "important"); });
         if (design.selectedText !== undefined) root.querySelectorAll('.q-opt.selected .q-opt-main').forEach(function (element) { element.style.setProperty("color", String(design.selectedText), "important"); });
-        if (design.answerSize !== undefined) root.querySelectorAll('.q-opt-main').forEach(function (element) { element.style.setProperty("font-size", String(design.answerSize) + "px", "important"); });
+        if (design.answerSize !== undefined) root.querySelectorAll('.q-opt-main').forEach(function (element) { element.style.setProperty("font-size", String(design.answerSize) + "px"); });
         if (design.accent !== undefined) root.querySelectorAll('.btn-next, .btn-eb, .btn-upgrade').forEach(function (element) { element.style.setProperty("background", String(design.accent), "important"); });
-        if (design.buttonSize !== undefined) root.querySelectorAll('.btn-next, .btn-upgrade').forEach(function (element) { element.style.setProperty("font-size", String(design.buttonSize) + "px", "important"); });
+        if (design.buttonSize !== undefined) root.querySelectorAll('.btn-next, .btn-upgrade').forEach(function (element) { element.style.setProperty("font-size", String(design.buttonSize) + "px"); });
         if (design.bodySize !== undefined) root.querySelectorAll('.q-sub, .insight-text, .hdr-sub').forEach(function (element) { element.style.setProperty("font-size", String(design.bodySize) + "px", "important"); });
         if (design.font === "sans") root.setAttribute("data-font", "sans");
       }

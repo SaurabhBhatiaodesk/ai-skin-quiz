@@ -44,7 +44,7 @@ export type StoredQuiz = {
   layout?: "three" | "single" | "scan";
   scanner?: { title: string; description: string; camera: boolean; upload: boolean };
   scanIntegration?: { provider: string; endpoint: string; documentation: string };
-  design?: { headingColor?: string; cardColor?: string; answerColor?: string; answerText?: string; selectedColor?: string; selectedText?: string; headingSize?: number; questionSize?: number; bodySize?: number; answerSize?: number; buttonSize?: number; desktopWidth?: number; desktopPadding?: number; mobileWidth?: number; mobilePadding?: number; mobileHeadingSize?: number; mobileQuestionSize?: number; mobileAnswerSize?: number; answerSpacing?: number; mobileAnswerSpacing?: number; buttonAlignment?: "left" | "center" | "right"; background: string; text: string; accent: string; buttonText: string; font: "classic" | "sans"; radius: "square" | "rounded" | "pill" };
+  design?: { headingColor?: string; cardColor?: string; answerColor?: string; answerText?: string; selectedColor?: string; selectedText?: string; headingSize?: number; questionSize?: number; bodySize?: number; answerSize?: number; buttonSize?: number; desktopWidth?: number; desktopPadding?: number; mobileWidth?: number; mobilePadding?: number; mobileHeadingSize?: number; mobileQuestionSize?: number; mobileAnswerSize?: number; answerSpacing?: number; mobileAnswerSpacing?: number; desktopButtonWidth?: number; mobileButtonWidth?: number; desktopButtonHeight?: number; mobileButtonHeight?: number; mobileButtonSize?: number; buttonAlignment?: "left" | "center" | "right"; background: string; text: string; accent: string; buttonText: string; font: "classic" | "sans"; radius: "square" | "rounded" | "pill" };
   quick: QuickQuestion[];
   deep: DeepQuestion[];
   profiles: Record<string, QuizProfile>;
@@ -52,30 +52,35 @@ export type StoredQuiz = {
 };
 
 export const recommendedQuizDesign: Required<NonNullable<StoredQuiz["design"]>> = {
-  headingColor: "#1c3328",
-  cardColor: "#fffdfa",
-  answerColor: "#eff4ef",
-  answerText: "#30473a",
-  selectedColor: "#52695a",
+  headingColor: "#000000",
+  cardColor: "#f3e5cc",
+  answerColor: "#e4c3a0",
+  answerText: "#471326",
+  selectedColor: "#571c29",
   selectedText: "#ffffff",
   headingSize: 36,
-  questionSize: 30,
+  questionSize: 26,
   bodySize: 15,
   answerSize: 18,
   buttonSize: 18,
-  desktopWidth: 1120,
-  desktopPadding: 48,
+  desktopWidth: 960,
+  desktopPadding: 36,
   mobileWidth: 100,
-  mobilePadding: 16,
+  mobilePadding: 24,
   mobileHeadingSize: 28,
-  mobileQuestionSize: 24,
-  mobileAnswerSize: 16,
+  mobileQuestionSize: 20,
+  mobileAnswerSize: 18,
   answerSpacing: 14,
-  mobileAnswerSpacing: 10,
+  mobileAnswerSpacing: 14,
+  desktopButtonWidth: 22,
+  mobileButtonWidth: 60,
+  desktopButtonHeight: 48,
+  mobileButtonHeight: 44,
+  mobileButtonSize: 16,
   buttonAlignment: "center",
   background: "#f4f6f2",
-  text: "#1a2921",
-  accent: "#52695a",
+  text: "#471326",
+  accent: "#471326",
   buttonText: "#ffffff",
   font: "classic",
   radius: "rounded",

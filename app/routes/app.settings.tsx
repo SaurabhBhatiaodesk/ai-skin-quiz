@@ -1,11 +1,16 @@
 import UnsavedChangesBar from "../components/UnsavedChangesBar";
 import { asProvider, PROVIDER_NAMES } from "../ai-shared";
 import { useEffect, useRef, useState } from "react";
-import { useFetcher, useLoaderData } from "react-router";
+import { useFetcher, useLoaderData, useRouteError } from "react-router";
 import type { ActionFunctionArgs, HeadersFunction, LoaderFunctionArgs } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
 import { getAIKey, providerHasKey, saveAIProvider, selectedProvider } from "../settings.server";
+
+// Keep Shopify authentication recovery responses inside the settings route.
+export function ErrorBoundary() {
+  return boundary.error(useRouteError());
+}
 export async function loader({ request }: LoaderFunctionArgs) {
   const { session } = await authenticate.admin(request);
   const provider = await selectedProvider(session.shop);
