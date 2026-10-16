@@ -3620,3 +3620,7 @@
 .prana-quiz.prana-quiz.prana-quiz.scan-chat-open [data-screen="scanner"] .scanner-choice .sc-btn-icon svg { visibility: visible; width: 20px; height: 20px; stroke-width: 1.8; }
 /* Disabled popup button keeps its colour (no grey fade). */
 .prana-quiz.prana-quiz.prana-quiz.prana-quiz.scan-chat-open .btn-scan:disabled { opacity: 1; cursor: not-allowed; }
+
+/* Dark popup: the whole "Skin Insights" title is plain white (no gradient on the highlighted word). */
+.prana-quiz.prana-quiz.prana-quiz.prana-quiz.scan-chat-open[data-scan-dark] [data-screen="scanner"] .hdr-title,
+.prana-quiz.prana-quiz.prana-quiz.prana-quiz.scan-chat-open[data-scan-dark] [data-screen="scanner"] .hdr-title em { color: #fff; -webkit-text-fill-color: #fff; background: none; }
