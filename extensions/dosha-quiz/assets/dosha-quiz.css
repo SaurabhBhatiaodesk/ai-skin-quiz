@@ -3624,3 +3624,13 @@
 /* Dark popup: the whole "Skin Insights" title is plain white (no gradient on the highlighted word). */
 .prana-quiz.prana-quiz.prana-quiz.prana-quiz.scan-chat-open[data-scan-dark] [data-screen="scanner"] .hdr-title,
 .prana-quiz.prana-quiz.prana-quiz.prana-quiz.scan-chat-open[data-scan-dark] [data-screen="scanner"] .hdr-title em { color: #fff; -webkit-text-fill-color: #fff; background: none; }
+
+/* Dark popup report: header text in white, area count as a highlighted pill, clear dividers between sections. */
+.prana-quiz.prana-quiz.prana-quiz.scan-chat-open[data-scan-dark] .sr-status,
+.prana-quiz.prana-quiz.prana-quiz.scan-chat-open[data-scan-dark] .sr-summary { color: #fff; }
+.prana-quiz.prana-quiz.prana-quiz.scan-chat-open[data-scan-dark][data-scan-result] .scan-report .face-map-subtitle { display: inline-flex; align-items: center; margin: 0; padding: 5px 11px; border-radius: 999px; background: rgba(255, 255, 255, 0.16); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22); color: #fff; font-size: 12.5px; font-weight: 600; line-height: 1.2; white-space: nowrap; }
+.prana-quiz.prana-quiz.prana-quiz.scan-chat-open[data-scan-dark] .scan-report > * + *,
+.prana-quiz.prana-quiz.prana-quiz.scan-chat-open[data-scan-dark] .sr-end { border-top: 1px solid rgba(255, 255, 255, 0.24); }
+.prana-quiz.prana-quiz.prana-quiz.scan-chat-open[data-scan-result] .scan-report > .sr-section { margin-top: 8px; padding-top: 24px; }
+/* More breathing room above the report header in the popup. */
+.prana-quiz.prana-quiz.prana-quiz.scan-chat-open[data-scan-result] .scan-report .sr-head { padding-top: 22px; }

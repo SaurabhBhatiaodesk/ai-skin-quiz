@@ -10,6 +10,11 @@ export const CONCERN_STYLES = {
   texture: { label: "Texture", color: "#8b6fd6" },
   fine_lines: { label: "Fine lines", color: "#4d92dc" },
   dullness: { label: "Dullness", color: "#c2a35a" },
+  dark_circles: { label: "Dark circles", color: "#6b7bd6" },
+  dark_spots: { label: "Dark spots", color: "#8a5a3c" },
+  acne: { label: "Blemishes", color: "#d9534f" },
+  pores: { label: "Visible pores", color: "#3fa7a0" },
+  oiliness: { label: "Oiliness", color: "#d4b13a" },
 };
 
 export const REGION_LABELS = {

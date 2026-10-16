@@ -732,7 +732,8 @@ import { buildScanReport } from "./scan-report.js";
       return new Promise(function (resolve, reject) {
         var image = new Image();
         image.onload = function () {
-          var scale = Math.min(1, 640 / Math.max(image.naturalWidth, image.naturalHeight));
+          // 1280px keeps fine detail (under-eye tone, spots, pores) readable for the analysis.
+          var scale = Math.min(1, 1280 / Math.max(image.naturalWidth, image.naturalHeight));
           var canvas = document.createElement("canvas");
           canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
           canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));

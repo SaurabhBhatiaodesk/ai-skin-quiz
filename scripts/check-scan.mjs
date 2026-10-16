@@ -12,7 +12,7 @@ assert.deepEqual(recommendScanProducts(['dullness'],[{tags:['normal_or_balanced'
 assert.deepEqual(recommendScanProducts(['fine_lines'],[],catalog).map(p=>p.handle),['bakuchiol-night-restorative-serum']);
 assert.equal(recommendScanProducts([],[],catalog).length,0);
 let calls=0;
-globalThis.fetch=async(url,options)=>{calls++; assert.equal(JSON.parse(options.body).store,false); assert.equal(JSON.parse(options.body).max_output_tokens,550); return {ok:true,json:async()=>({output:[{content:[{type:'output_text',text:JSON.stringify({usable:true,summary:'Visible uneven tone.',concerns:[{concern:'pigmentation',observation:'Uneven tone.',regions:['cheeks','cheeks'],intensity:'moderate'},{concern:'pigmentation',observation:'Duplicate.',regions:['nose'],intensity:'mild'}]})}]}]})};};
+globalThis.fetch=async(url,options)=>{calls++; assert.equal(JSON.parse(options.body).store,false); assert.equal(JSON.parse(options.body).max_output_tokens,700); return {ok:true,json:async()=>({output:[{content:[{type:'output_text',text:JSON.stringify({usable:true,summary:'Visible uneven tone.',concerns:[{concern:'pigmentation',observation:'Uneven tone.',regions:['cheeks','cheeks'],intensity:'moderate'},{concern:'pigmentation',observation:'Duplicate.',regions:['nose'],intensity:'mild'}]})}]}]})};};
 const mapped = await analysePhoto('data:image/jpeg;base64,YWJj','dummy');
 assert.equal(mapped.concerns[0].concern,'pigmentation');
 // Duplicate concerns and repeated regions are collapsed.
