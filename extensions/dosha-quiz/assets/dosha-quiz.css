@@ -3817,3 +3817,20 @@
   .prana-quiz.prana-quiz:not(.scan-chat-open) :where([data-screen="quick"],[data-screen="deep"]) .q-text { margin-bottom: var(--layout-mobileQuestionGap, 20px) !important; }
   .prana-quiz.prana-quiz:not(.scan-chat-open) :where([data-screen="quick"],[data-screen="deep"]) .btn-next { margin-top: var(--layout-mobileButtonGap, 24px) !important; }
 }
+
+/* Entry cards from Quiz design (sizes for desktop and mobile; colours only when set). */
+.prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open) .entry-cards { gap: var(--layout-entryGap, 26px); }
+.prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open) .entry-card { padding: var(--layout-entryPadding, 30px); border-radius: var(--layout-entryRadius, 24px); }
+.prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open) .entry-card .ec-name { font-size: var(--layout-entryTitleSize, 26px); }
+.prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open) .entry-card .ec-desc { font-size: var(--layout-entryTextSize, 14px); }
+.prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open)[data-entry-bg] .entry-card { background: var(--entry-bg) !important; }
+.prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open)[data-entry-border] .entry-card:not(.featured) { border-color: var(--entry-border) !important; }
+.prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open)[data-entry-featured] .entry-card.featured { border-color: var(--entry-featured) !important; }
+.prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open)[data-entry-featured] .entry-card.featured .ec-badge,
+.prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open)[data-entry-featured] .entry-card.featured .btn-entry { background: var(--entry-featured) !important; border-color: var(--entry-featured) !important; }
+@media (max-width: 600px) {
+  .prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open) .entry-cards { gap: var(--layout-mobileEntryGap, 16px); }
+  .prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open) .entry-card { padding: var(--layout-mobileEntryPadding, 22px); }
+  .prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open) .entry-card .ec-name { font-size: var(--layout-mobileEntryTitleSize, 24px); }
+  .prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open) .entry-card .ec-desc { font-size: var(--layout-mobileEntryTextSize, 14px); }
+}
