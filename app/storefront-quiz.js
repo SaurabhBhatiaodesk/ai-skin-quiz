@@ -1,5 +1,5 @@
 import { defaultScanIcon } from "./default-scan-icon.js";
-import { createFaceScan } from "./face-scan.js";
+import { checkPhoto, createFaceScan } from "./face-scan.js";
 import { buildFaceMap } from "./face-map.js";
 import { buildScanReport } from "./scan-report.js";
 (function () {
@@ -761,7 +761,13 @@ import { buildScanReport } from "./scan-report.js";
       scanMirrored = scanMode === "camera";
       var overlay = q("[data-analyzing]");
       if (overlay) showAnalyzing(overlay);
-      Promise.all((Array.isArray(images) ? images : [images]).map(compactScanPhoto)).then(function (photos) {
+      // Uploaded photos get the same check as camera photos (one face, no hand over it, facing the camera).
+      var photoCheck = scanMode === "upload" ? Promise.race([checkPhoto(scanPhoto), new Promise(function (resolve) { setTimeout(resolve, 9000, null); })]) : Promise.resolve(null);
+      photoCheck.then(function (verdict) {
+        if (verdict && verdict.problem) throw new Error(verdict.problem);
+        if (verdict && verdict.points) scanLandmarks = verdict.points;
+        return Promise.all((Array.isArray(images) ? images : [images]).map(compactScanPhoto));
+      }).then(function (photos) {
         return submit({ path: "scan", images: photos, consent: true, adult: true });
       }).catch(function (error) {
         q("[data-scan-status]").textContent = error.message || "Could not prepare your photo. Please try again.";

@@ -82,6 +82,55 @@ export async function detectImageLandmarks(src) {
   }
 }
 
+const HAND_MODEL_URL = "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task";
+
+// Why a captured photo cannot be analysed, or null when it is fine. Points are normalised (0-1);
+// a hand covers the face when several of its landmarks fall inside the (slightly padded) face box.
+export function photoProblem({ faces, points, hands }) {
+  if (!faces) return "We could not find your face in the photo. Face the camera in good light and try again.";
+  if (faces > 1) return "Only one face should be in the photo. Try again on your own.";
+  const xs = points.map((point) => point.x), ys = points.map((point) => point.y);
+  const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
+  const padX = (maxX - minX) * 0.05, padY = (maxY - minY) * 0.05;
+  const covering = (hands || []).some((hand) => hand.filter((point) => point.x > minX - padX && point.x < maxX + padX && point.y > minY - padY && point.y < maxY + padY).length >= 4);
+  if (covering) return "Keep your hands away from your face, then try again.";
+  const pose = landmarkPose(points);
+  if (pose && Math.abs(pose.yaw) > 0.45) return "Look straight at the camera, then try again.";
+  return null;
+}
+
+// Checks the photo that will be analysed: finds the face on that exact image (so the skin map lines up with it)
+// and rejects photos with a hand over the face, several faces or a turned head. Returns null if the check
+// itself cannot run (offline model), so the scan is not blocked by it.
+// The photo-check detectors are created once and kept; the camera warms them up while the shopper frames
+// their face, so the check after the flash takes a moment instead of a model download.
+let photoDetectors = null;
+export function preparePhotoCheck() {
+  photoDetectors ||= loadVision().then(async ({ module, files }) => {
+    const face = await module.FaceLandmarker.createFromOptions(files, { baseOptions: { modelAssetPath: MODEL_URL, delegate: "CPU" }, runningMode: "IMAGE", numFaces: 2 });
+    const hand = await module.HandLandmarker.createFromOptions(files, { baseOptions: { modelAssetPath: HAND_MODEL_URL, delegate: "CPU" }, runningMode: "IMAGE", numHands: 2 }).catch(() => null);
+    return { face, hand };
+  });
+  photoDetectors.catch(() => { photoDetectors = null; });
+  return photoDetectors;
+}
+
+export async function checkPhoto(src) {
+  try {
+    const { face, hand } = await preparePhotoCheck();
+    const image = new Image();
+    image.src = src;
+    await image.decode();
+    const faces = face.detect(image).faceLandmarks;
+    let hands = [];
+    try { hands = hand ? hand.detect(image).landmarks : []; } catch { hands = []; }
+    const points = faces.length ? faces[0].map((point) => ({ x: point.x, y: point.y })) : null;
+    return { points, problem: photoProblem({ faces: faces.length, points, hands }) };
+  } catch {
+    return null;
+  }
+}
+
 // Mesh lines drawn over the face for the scan look (face outline, eyes, lips, nose).
 export const FACE_CONTOURS = [
   [10,338,297,332,284,251,389,356,454,323,361,288,397,365,379,378,400,377,152,148,176,149,150,136,172,58,132,93,234,127,162,21,54,103,67,109,10],
@@ -117,6 +166,8 @@ export function regionCircles(points, width, height, region) {
 export async function createFaceScan(video, zone, onStatus) {
   const { module, files } = await loadVision();
   const detector = await module.FaceLandmarker.createFromOptions(files, { baseOptions: { modelAssetPath: MODEL_URL, delegate: "CPU" }, runningMode: "VIDEO", numFaces: 2, minFaceDetectionConfidence: 0.5, minFacePresenceConfidence: 0.5, minTrackingConfidence: 0.5, outputFacialTransformationMatrixes: false });
+  // Warm up the photo check (face + hand models) once live tracking is running.
+  preparePhotoCheck().catch(() => {});
 
   const overlay = document.createElement("canvas"); overlay.className = "face-tracking-canvas"; overlay.setAttribute("aria-hidden", "true"); zone.appendChild(overlay);
   const guide = document.createElement("div"); guide.className = "face-scan-guidance";
@@ -297,6 +348,16 @@ export async function createFaceScan(video, zone, onStatus) {
     if (trackingFailed) throw new Error("Face tracking stopped. Switch to Upload, or reopen the camera.");
   }
   function freshFace() { return lastCheck.ok && performance.now() - checkedAt < 600 && !document.hidden && !video.paused && !video.ended; }
+  // The photo itself is checked before it is sent: a hand over the face or a turned head stops the scan
+  // (the camera keeps running for another try), and the landmarks found on the photo replace the live ones.
+  async function verified(images) {
+    instruction.textContent = "Checking your photo…";
+    onStatus(instruction.textContent);
+    const verdict = await Promise.race([checkPhoto(images[0]), wait(9000).then(() => null)]);
+    if (verdict && verdict.problem) { readySince = 0; instruction.textContent = verdict.problem; throw new Error(verdict.problem); }
+    if (verdict && verdict.points) images.landmarks = verdict.points;
+    return images;
+  }
   async function capture() {
     // Hold-to-scan: the ring around the oval fills while the face stays steady, then the photo is taken.
     const deadline = performance.now() + 20000;
@@ -317,7 +378,7 @@ export async function createFaceScan(video, zone, onStatus) {
       if (still) {
         const images = [still.toDataURL("image/jpeg", 0.9)];
         images.landmarks = facePoints ? facePoints.map((point) => ({ x: point.x, y: point.y })) : null;
-        return images;
+        return await verified(images);
       }
       const frames = [];
       for (let i = 0; i < 5; i++) {
@@ -330,11 +391,12 @@ export async function createFaceScan(video, zone, onStatus) {
       frames.sort((a, b) => b.score - a.score);
       const images = [frames[0].canvas.toDataURL("image/jpeg", 0.88)];
       images.landmarks = frames[0].points;
-      return images;
+      return await verified(images);
     } finally {
       await flash(false);
     }
   }
+
 
   tick();
   return {

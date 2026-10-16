@@ -34,7 +34,7 @@ globalThis.fetch=async()=>({ok:false,status:401,json:async()=>({error:{code:"inv
 await assert.rejects(()=>analysePhoto('data:image/jpeg;base64,YWJj','dummy'),/invalid/);
 console.log('Passed: scan recommendations, consent validation, structured response parsing and API errors. External calls mocked.');
 
-const { landmarkPose, frameCheck, guideOval, sharpness } = await import('../app/face-scan.js');
+const { landmarkPose, frameCheck, guideOval, sharpness, photoProblem } = await import('../app/face-scan.js');
 const points = Array.from({length: 264},()=>({x:0.5,y:0.5}));
 points[33]={x:0.4,y:0.4}; points[263]={x:0.6,y:0.4}; points[1]={x:0.5,y:0.5};
 assert.ok(Math.abs(landmarkPose(points).yaw) < 0.01);
@@ -52,6 +52,17 @@ assert.match(frame({ yaw: 0.8 }).message, /straight/);
 assert.match(frame({ box: { minX: 300, maxX: 340, minY: 200, maxY: 250 } }).message, /closer/);
 assert.match(frame({ box: { minX: 0, maxX: 640, minY: 0, maxY: 480 } }).message, /back/);
 assert.match(frame({ box: { ...centred, minX: centred.minX - 150, maxX: centred.maxX - 150 } }).message, /centre/);
+// The captured photo is rejected when a hand covers the face, there is no face or several, or the head is turned.
+const facePts = Array.from({ length: 468 }, (_, i) => ({ x: 0.4 + (i % 20) * 0.01, y: 0.3 + Math.floor(i / 20) * 0.017 }));
+facePts[33] = { x: 0.45, y: 0.4 }; facePts[263] = { x: 0.55, y: 0.4 }; facePts[1] = { x: 0.5, y: 0.5 };
+const handOn = Array.from({ length: 21 }, (_, i) => ({ x: 0.42 + i * 0.005, y: 0.5 }));
+const handAway = Array.from({ length: 21 }, (_, i) => ({ x: 0.05 + i * 0.005, y: 0.9 }));
+assert.equal(photoProblem({ faces: 1, points: facePts, hands: [handAway] }), null);
+assert.match(photoProblem({ faces: 1, points: facePts, hands: [handOn] }), /hands/);
+assert.match(photoProblem({ faces: 0, points: null, hands: [] }), /could not find/);
+assert.match(photoProblem({ faces: 2, points: facePts, hands: [] }), /one face/);
+const turned = facePts.slice(); turned[1] = { x: 0.6, y: 0.5 };
+assert.match(photoProblem({ faces: 1, points: turned, hands: [] }), /straight/);
 // Sharpness prefers a detailed frame over a flat (blurred) one.
 const flat = new Uint8ClampedArray(16 * 16 * 4).fill(128);
 const edges = new Uint8ClampedArray(16 * 16 * 4).map((_, i) => ((Math.floor(i / 4) % 2) ? 255 : 0));
