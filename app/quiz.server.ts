@@ -3,7 +3,7 @@ import defaultWidgetCss from "../extensions/dosha-quiz/assets/dosha-quiz.css?raw
 import scanCardIcon from "../public/images/onboarding/scan.svg?raw";
 import deepCardIcon from "../public/images/onboarding/dosha.svg?raw";
 import quickCardIcon from "../public/images/onboarding/quiz.svg?raw";
-import { recommendedQuizDesign, scoresForTag, slugTag, WIDGET_TEXT_KEYS, REQUIRED_TEXT_KEYS } from "./quiz-shared";
+import { recommendedQuizDesign, scoresForTag, slugTag, WIDGET_TEXT_KEYS, REQUIRED_TEXT_KEYS, DEFAULT_QUIZ_COLORS, DEFAULT_SCAN_COLORS } from "./quiz-shared";
 import type {
   DeepQuestion,
   ProductMapping,
@@ -368,7 +368,8 @@ export function normalizeQuiz(input: unknown, { draft = false }: { draft?: boole
     upload: scan?.upload !== false,
   };
   if (!scanner.camera && !scanner.upload) throw new Error("Enable camera or photo upload for Skin Scan.");
-  const suppliedDesign = (input as StoredQuiz)?.design;
+  // A widget without any saved design (new install, new quiz) starts with the default colours as well.
+  const suppliedDesign: StoredQuiz["design"] = (input as StoredQuiz)?.design ?? ((input as StoredQuiz)?.layout === "scan" ? DEFAULT_SCAN_COLORS : DEFAULT_QUIZ_COLORS) as StoredQuiz["design"];
   const colorLabels: Record<string, string> = { scanToggleBg: "Camera/upload toggle background", scanToggleActive: "Toggle selected background", scanUploadBg: "Upload box background", scanUploadBorder: "Upload box border color", scanHint: "Hint line color (below the photo)", scanStepIdle: "Inactive steps color", scanDivider: "Divider line color", scanNoticeText: "Notice text color", scanBoxBorder: "Consent box border color", scanLabel: "Consent text color", scanAccent: "Steps and checkbox color", scanNoticeBg: "Notice background", scanBoxBg: "Consent box background", entryIconBg: "Icon background color", entryTitleColor: "Card title color", entryTextColor: "Card text color", entryTimeColor: "Time line color", entryGhost: "Outline button color", brandColor: "Brand line color", titleColor: "Title color", subtitleColor: "Subtitle color", entryBg: "Card background", entryBorder: "Card border color", entryFeatured: "Featured card color", headingAccent: "Highlight word color", backBg: "Back button background", backText: "Back button text color", backBorder: "Back button border color", scanCard: "Skin Scan card background", scanText: "Skin Scan text color", scanHeading: "Skin Scan heading color", scanButton: "Skin Scan button background", scanButtonText: "Skin Scan button text", headingColor: "Question heading color", cardColor: "Question card background", answerColor: "Answer background", answerText: "Answer text color", selectedColor: "Selected answer background", selectedText: "Selected answer text", background: "Background color", text: "Body text color", accent: "Button background", buttonText: "Button text color" };
   // Accepts #RGB, #RRGGBB and #RRGGBBAA (alpha dropped) with stray spaces; empty values use the default.
   function color(value: unknown, fallback: string, field = "") {
@@ -421,17 +422,17 @@ export function normalizeQuiz(input: unknown, { draft = false }: { draft?: boole
     mobileHeaderGap: Math.min(80, Math.max(0, Number.isFinite(Number(suppliedDesign?.mobileHeaderGap)) ? Number(suppliedDesign?.mobileHeaderGap) : 24)),
     entryTimeSize: Math.min(20, Math.max(8, Number.isFinite(Number(suppliedDesign?.entryTimeSize)) ? Number(suppliedDesign?.entryTimeSize) : 11)),
     mobileEntryTimeSize: Math.min(18, Math.max(8, Number.isFinite(Number(suppliedDesign?.mobileEntryTimeSize)) ? Number(suppliedDesign?.mobileEntryTimeSize) : 10)),
-    entryIconSize: Math.min(180, Math.max(40, Number.isFinite(Number(suppliedDesign?.entryIconSize)) ? Number(suppliedDesign?.entryIconSize) : 116)),
-    mobileEntryIconSize: Math.min(160, Math.max(40, Number.isFinite(Number(suppliedDesign?.mobileEntryIconSize)) ? Number(suppliedDesign?.mobileEntryIconSize) : 104)),
-    entryTitleSize: Math.min(48, Math.max(14, Number.isFinite(Number(suppliedDesign?.entryTitleSize)) ? Number(suppliedDesign?.entryTitleSize) : 26)),
+    entryIconSize: Math.min(180, Math.max(40, Number.isFinite(Number(suppliedDesign?.entryIconSize)) ? Number(suppliedDesign?.entryIconSize) : 109)),
+    mobileEntryIconSize: Math.min(160, Math.max(40, Number.isFinite(Number(suppliedDesign?.mobileEntryIconSize)) ? Number(suppliedDesign?.mobileEntryIconSize) : 80)),
+    entryTitleSize: Math.min(48, Math.max(14, Number.isFinite(Number(suppliedDesign?.entryTitleSize)) ? Number(suppliedDesign?.entryTitleSize) : 24)),
     mobileEntryTitleSize: Math.min(40, Math.max(14, Number.isFinite(Number(suppliedDesign?.mobileEntryTitleSize)) ? Number(suppliedDesign?.mobileEntryTitleSize) : 24)),
-    entryTextSize: Math.min(24, Math.max(10, Number.isFinite(Number(suppliedDesign?.entryTextSize)) ? Number(suppliedDesign?.entryTextSize) : 14)),
+    entryTextSize: Math.min(24, Math.max(10, Number.isFinite(Number(suppliedDesign?.entryTextSize)) ? Number(suppliedDesign?.entryTextSize) : 16)),
     mobileEntryTextSize: Math.min(22, Math.max(10, Number.isFinite(Number(suppliedDesign?.mobileEntryTextSize)) ? Number(suppliedDesign?.mobileEntryTextSize) : 14)),
     entryPadding: Math.min(64, Math.max(8, Number.isFinite(Number(suppliedDesign?.entryPadding)) ? Number(suppliedDesign?.entryPadding) : 30)),
     mobileEntryPadding: Math.min(48, Math.max(8, Number.isFinite(Number(suppliedDesign?.mobileEntryPadding)) ? Number(suppliedDesign?.mobileEntryPadding) : 22)),
     entryGap: Math.min(60, Math.max(0, Number.isFinite(Number(suppliedDesign?.entryGap)) ? Number(suppliedDesign?.entryGap) : 26)),
     mobileEntryGap: Math.min(40, Math.max(0, Number.isFinite(Number(suppliedDesign?.mobileEntryGap)) ? Number(suppliedDesign?.mobileEntryGap) : 16)),
-    entryRadius: Math.min(48, Math.max(0, Number.isFinite(Number(suppliedDesign?.entryRadius)) ? Number(suppliedDesign?.entryRadius) : 24)),
+    entryRadius: Math.min(48, Math.max(0, Number.isFinite(Number(suppliedDesign?.entryRadius)) ? Number(suppliedDesign?.entryRadius) : 14)),
     questionGap: Math.min(80, Math.max(0, Number.isFinite(Number(suppliedDesign?.questionGap)) ? Number(suppliedDesign?.questionGap) : 28)),
     mobileQuestionGap: Math.min(60, Math.max(0, Number.isFinite(Number(suppliedDesign?.mobileQuestionGap)) ? Number(suppliedDesign?.mobileQuestionGap) : 20)),
     buttonGap: Math.min(80, Math.max(0, Number.isFinite(Number(suppliedDesign?.buttonGap)) ? Number(suppliedDesign?.buttonGap) : 28)),
@@ -441,7 +442,7 @@ export function normalizeQuiz(input: unknown, { draft = false }: { draft?: boole
     mobileSubtitleSize: Math.min(24, Math.max(10, Number.isFinite(Number(suppliedDesign?.mobileSubtitleSize)) ? Number(suppliedDesign?.mobileSubtitleSize) : 13)),
     mobileHeadingSize: Math.min(48, Math.max(14, Number.isFinite(Number(suppliedDesign?.mobileHeadingSize)) ? Number(suppliedDesign?.mobileHeadingSize) : 28)),
     mobileQuestionSize: Math.min(48, Math.max(14, Number.isFinite(Number(suppliedDesign?.mobileQuestionSize)) ? Number(suppliedDesign?.mobileQuestionSize) : 20)),
-    mobileAnswerSize: Math.min(32, Math.max(12, Number.isFinite(Number(suppliedDesign?.mobileAnswerSize)) ? Number(suppliedDesign?.mobileAnswerSize) : 18)),
+    mobileAnswerSize: Math.min(32, Math.max(12, Number.isFinite(Number(suppliedDesign?.mobileAnswerSize)) ? Number(suppliedDesign?.mobileAnswerSize) : 14)),
     answerSpacing: Math.min(40, Math.max(0, Number.isFinite(Number(suppliedDesign?.answerSpacing)) ? Number(suppliedDesign?.answerSpacing) : 14)),
     // Top/bottom padding inside each answer (no fixed minimum height).
     answerPadding: Math.min(40, Math.max(0, Number.isFinite(Number(suppliedDesign?.answerPadding)) ? Number(suppliedDesign?.answerPadding) : 12)),

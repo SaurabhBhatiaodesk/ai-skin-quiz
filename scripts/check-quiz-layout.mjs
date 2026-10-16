@@ -56,10 +56,10 @@ console.log("Passed: default scan initialization, concurrent opens, existing sca
 assert.equal(api.quizCode(1791540340856), "1791540340856");
 assert.equal(api.quizCode("[dosha-quiz:1791540340856]"), "1791540340856");
 const legacy = api.normalizeQuiz({ quick: api.QUICK_QUESTIONS, deep: api.DEEP_QUESTIONS });
-assert.equal(legacy.design.background, "#f4f6f2");
-assert.equal(legacy.design.cardColor, "#f3e5cc");
-assert.equal(legacy.design.answerColor, "#e4c3a0");
-assert.equal(legacy.design.selectedColor, "#571c29");
+assert.equal(legacy.design.background, "#E3C39F");
+assert.equal(legacy.design.cardColor, "#f3e4cd");
+assert.equal(legacy.design.answerColor, "#E3C39F");
+assert.equal(legacy.design.selectedColor, "#561A24");
 assert.equal(api.normalizeQuiz({ quick: api.QUICK_QUESTIONS, deep: api.DEEP_QUESTIONS, design: { ...legacy.design, answerColor: "#123456" } }).design.answerColor, "#123456");
 assert.equal(legacy.layout, "three");
 assert.ok(legacy.deep.length);

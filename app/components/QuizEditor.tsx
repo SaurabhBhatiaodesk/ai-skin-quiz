@@ -7,7 +7,7 @@ import WidgetPreview from "./WidgetPreview";
 import type { WidgetPreviewAssets } from "../widget-preview.server";
 import type { MappingDraft } from "./MappingEditor";
 import { useFetcher } from "react-router";
-import { recommendedQuizDesign, scoresForTag, slugTag, WIDGET_TEXT_GROUPS, SCAN_TEXT_GROUP } from "../quiz-shared";
+import { recommendedQuizDesign, scoresForTag, slugTag, WIDGET_TEXT_GROUPS, SCAN_TEXT_GROUP, DEFAULT_QUIZ_COLORS, DEFAULT_SCAN_COLORS } from "../quiz-shared";
 import type { DeepQuestion, ProductMapping, QuickQuestion, ResultTag, ShopProduct, StoredQuiz } from "../quiz-shared";
 
 type SaveResult = { ok: true; quiz: StoredQuiz } | { ok: false; error: string };
@@ -518,7 +518,7 @@ export default function QuizEditor({
                   <s-modal id="restore-design-modal" heading="Restore recommended design?">
                     <s-paragraph>All colors, font sizes, button and layout settings in Quiz design go back to the recommended design. Your questions, products and other settings stay as they are.</s-paragraph>
                     <s-paragraph color="subdued">Nothing is saved until you click Save design, so you can still discard it.</s-paragraph>
-                    <s-button slot="primary-action" variant="primary" commandFor="restore-design-modal" command="--hide" onClick={() => setQuiz(current => ({ ...current, design: { ...recommendedQuizDesign } }))}>Restore design</s-button>
+                    <s-button slot="primary-action" variant="primary" commandFor="restore-design-modal" command="--hide" onClick={() => setQuiz(current => ({ ...current, design: { ...recommendedQuizDesign, ...(current.layout === "scan" ? DEFAULT_SCAN_COLORS : DEFAULT_QUIZ_COLORS) } }))}>Restore design</s-button>
                     <s-button slot="secondary-actions" commandFor="restore-design-modal" command="--hide">Cancel</s-button>
                   </s-modal></> : null}<s-button variant="primary" loading={pending} onClick={save}>Save design</s-button></s-stack>
               </s-stack>
