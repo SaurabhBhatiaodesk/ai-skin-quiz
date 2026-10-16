@@ -111,6 +111,8 @@ export default function QuizEditor({
   const saveResult = fetcher.data;
   useEffect(() => {
     if (saveResult?.ok) { setSavedQuiz(submittedQuiz.current); shopify.toast.show("Quiz saved"); }
+    // The error banner sits at the top of the page; a toast makes a failed save visible wherever the merchant is.
+    else if (saveResult && !saveResult.ok) shopify.toast.show(saveResult.error || "Could not save the quiz.", { isError: true, duration: 8000 });
   }, [saveResult, shopify]);
   const enabledPaths = quiz.enabledPaths || (quiz.layout === "scan" ? ["scan"] : quiz.layout === "single" ? [quiz.singleFlow || "quick"] : ["quick", "deep", "scan"]);
   const questions = kind === "scan" ? [] : kind === "quick" ? quiz.quick : quiz.deep;
