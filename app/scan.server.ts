@@ -67,7 +67,10 @@ export async function scanResult(submission: {code?: unknown; image?: unknown; i
   const insight = `<p>${escape(result.summary)}</p>` + result.concerns.map(item => `<p><strong>${escape(item.concern.replaceAll("_", " "))}</strong> (${escape(regionText(item))}, ${escape(item.intensity)}): ${escape(item.observation)}</p>`).join("") + "<p>Photo-based cosmetic observations, not a medical diagnosis. Dosha and internal skin health cannot be measured from a photo.</p>";
   return { dosha: "not_assessed", source: "AI Skin Scan", scanAreas: result.concerns, showUpgrade: false, markers: null, insight,
     profile: { name: "Your skin observations", sub: "Based on your photo", essence: result.summary, insight, heroClass: "rh-balanced", modal: "balanced", products: matching.map(product => product.title) },
-    products: matching.slice(0, 6).map(product => ({ title: product.title, handle: product.handle, price: product.price, image: product.image, why: result.concerns.filter(item => recommendScanProducts([item.concern], quiz.mappings, catalog).some(match => match.handle === product.handle)).map(item => `${regionText(item)}: ${item.observation} Matched for ${item.concern.replaceAll("_", " ")}.`).join(" ") + " Follow the product label for application; avoid eyes and lips." })),
+    products: matching.slice(0, 6).map(product => {
+      const matched = result.concerns.filter(item => recommendScanProducts([item.concern], quiz.mappings, catalog).some(match => match.handle === product.handle));
+      return { title: product.title, handle: product.handle, price: product.price, image: product.image, concerns: matched.map(item => item.concern), why: matched.length ? `For ${matched.map(item => `${item.concern.replaceAll("_", " ")} (${regionText(item).toLowerCase()})`).join(", ")}` : "Matched to your skin observations" };
+    }),
   };
 }
 

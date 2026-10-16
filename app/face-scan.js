@@ -49,6 +49,13 @@ export function sharpness(pixels, width, height) {
 }
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+// How long the face must stay steady in the oval before the photo is taken.
+export const HOLD_MS = 1400;
+
+// Progress (0-1) of the hold-to-scan ring.
+export function holdProgress(readySince, now) {
+  return readySince ? Math.min(1, Math.max(0, (now - readySince) / HOLD_MS)) : 0;
+}
 
 const VISION_URL = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.21";
 const MODEL_URL = "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task";
@@ -116,7 +123,7 @@ export async function createFaceScan(video, zone, onStatus) {
   const hint = document.createElement("span"); hint.className = "face-scan-hint";
   const quality = document.createElement("span"); quality.className = "face-scan-quality";
   quality.hidden = true;
-  guide.append(instruction, hint, quality); zone.after(guide);
+  guide.append(instruction, hint, quality); zone.appendChild(guide);
   const countdown = document.createElement("div"); countdown.className = "face-scan-countdown"; countdown.setAttribute("aria-hidden", "true"); zone.appendChild(countdown);
   const context = overlay.getContext("2d");
   const sample = document.createElement("canvas"); sample.width = 64; sample.height = 64;
@@ -138,31 +145,41 @@ export async function createFaceScan(video, zone, onStatus) {
     return presentedFrames !== processedFrames || now - processedAt > 400;
   }
 
+  // Viewfinder: the room is dimmed, the oval is ringed by short ticks (like Face ID setup) that light up while
+  // the face holds steady, and a soft scan line moves inside the oval while scanning.
   function draw(points, ok) {
     overlay.width = video.videoWidth; overlay.height = video.videoHeight;
-    const w = overlay.width, h = overlay.height, oval = guideOval(w, h);
-    context.fillStyle = "#00000066";
+    const w = overlay.width, h = overlay.height, oval = guideOval(w, h), now = performance.now();
+    context.clearRect(0, 0, w, h);
+    context.fillStyle = "rgba(8, 7, 6, 0.5)";
     context.beginPath(); context.rect(0, 0, w, h); context.ellipse(oval.centerX, oval.centerY, oval.radiusX, oval.radiusY, 0, 0, Math.PI * 2, true); context.fill("evenodd");
-    context.strokeStyle = ok ? "#8DC8A4" : "#E4EDE7"; context.lineWidth = Math.max(3, w / 220);
-    context.beginPath(); context.ellipse(oval.centerX, oval.centerY, oval.radiusX, oval.radiusY, 0, 0, Math.PI * 2); context.stroke();
-    if (!points || !ok) return;
-    context.save(); context.beginPath(); context.ellipse(oval.centerX, oval.centerY, oval.radiusX, oval.radiusY, 0, 0, Math.PI * 2); context.clip();
-    // These contours follow the detected landmarks; they are never drawn for a missing or invalid face.
-    const contours = [
-      [10,338,297,332,284,251,389,356,454,323,361,288,397,365,379,378,400,377,152,148,176,149,150,136,172,58,132,93,234,127,162,21,54,103,67,109,10],
-      [33,160,158,133,153,144,33], [263,387,385,362,380,373,263],
-      [61,40,37,0,267,270,291,321,314,17,84,91,61], [168,6,197,195,5,4,1],
-      [50,101,205,187,147,123,50], [280,330,425,411,376,352,280]
-    ];
-    context.strokeStyle = "#A8D6BA65"; context.lineWidth = Math.max(1, w/800);
-    for (const contour of contours) {
+    const progress = ok && scanning ? holdProgress(readySince, now) : 0;
+    const ticks = 72, unit = Math.min(w, h) / 100;
+    context.lineCap = "round";
+    context.lineWidth = Math.max(2, unit * 0.55);
+    for (let i = 0; i < ticks; i++) {
+      const angle = (i / ticks) * Math.PI * 2 - Math.PI / 2;
+      const cos = Math.cos(angle), sin = Math.sin(angle);
+      const lit = i / ticks < progress;
+      const inner = 1.06, outer = lit ? 1.15 : 1.12;
+      context.strokeStyle = lit ? "#7fe0a6" : ok ? "rgba(255, 255, 255, 0.75)" : "rgba(255, 255, 255, 0.4)";
       context.beginPath();
-      contour.forEach((index, i) => { const point = points[index]; if (!point) return; if (i === 0) context.moveTo(point.x*w,point.y*h); else context.lineTo(point.x*w,point.y*h); });
+      context.moveTo(oval.centerX + cos * oval.radiusX * inner, oval.centerY + sin * oval.radiusY * inner);
+      context.lineTo(oval.centerX + cos * oval.radiusX * outer, oval.centerY + sin * oval.radiusY * outer);
       context.stroke();
     }
-    context.fillStyle = "#CEEBD8A0";
-    for (let i = 0; i < points.length; i += 9) { context.beginPath(); context.arc(points[i].x * w, points[i].y * h, Math.max(1,w/650), 0, Math.PI * 2); context.fill(); }
-    context.restore();
+    if (ok && scanning) {
+      // Soft scan line sweeping top to bottom inside the oval.
+      const phase = (now % 1600) / 1600;
+      const y = oval.centerY - oval.radiusY + phase * oval.radiusY * 2;
+      context.save();
+      context.beginPath(); context.ellipse(oval.centerX, oval.centerY, oval.radiusX, oval.radiusY, 0, 0, Math.PI * 2); context.clip();
+      const band = context.createLinearGradient(0, y - unit * 8, 0, y + unit * 1);
+      band.addColorStop(0, "rgba(127, 224, 166, 0)"); band.addColorStop(1, "rgba(127, 224, 166, 0.35)");
+      context.fillStyle = band; context.fillRect(0, y - unit * 8, w, unit * 9);
+      context.fillStyle = "rgba(200, 255, 225, 0.85)"; context.fillRect(0, y, w, Math.max(1, unit * 0.3));
+      context.restore();
+    }
   }
 
   function tick() {
@@ -203,8 +220,8 @@ export async function createFaceScan(video, zone, onStatus) {
       quality.textContent = [faces === 1 ? "Face detected" : "Face needed", light >= 30 ? "Lighting ready" : "More light needed", lastCheck.ok ? "Position ready" : "Adjust position"].join("  \u00b7  ");
       readySince = lastCheck.ok ? readySince || performance.now() : 0;
       if (!scanning) {
-        instruction.textContent = lastCheck.ok ? "Ready when you are." : lastCheck.message;
-        hint.textContent = "Tap Analyse My Skin to take your photo.";
+        instruction.textContent = lastCheck.ok ? "Face found" : lastCheck.message;
+        hint.textContent = "";
       }
       guide.classList.toggle("is-ready", lastCheck.ok);
       draw(points, lastCheck.ok);
@@ -256,26 +273,14 @@ export async function createFaceScan(video, zone, onStatus) {
   }
   function freshFace() { return lastCheck.ok && performance.now() - checkedAt < 600 && !document.hidden && !video.paused && !video.ended; }
   async function capture() {
+    // Hold-to-scan: the ring around the oval fills while the face stays steady, then the photo is taken.
     const deadline = performance.now() + 20000;
-    let countdownDone = false;
-    while (!countdownDone) {
+    while (!(freshFace() && readySince && performance.now() - readySince >= HOLD_MS)) {
       assertActive();
-      if (performance.now() > deadline) throw new Error("We could not capture a steady face. Improve the lighting and retry, or upload a photo.");
-      while (!(freshFace() && readySince && performance.now() - readySince > 400)) {
-        assertActive();
-        if (performance.now() > deadline) throw new Error("We could not see your face clearly. Try better light, or upload a photo.");
-        instruction.textContent = lastCheck.message; hint.textContent = "Keep your face in the circle.";
-        onStatus(lastCheck.message); await wait(100);
-      }
-      countdownDone = true;
-      for (const count of [3, 2, 1]) {
-        assertActive();
-        if (!freshFace()) { countdown.textContent = ""; countdownDone = false; break; }
-        countdown.textContent = String(count);
-        instruction.textContent = "Face aligned"; hint.textContent = "Keep still ? " + count;
-        onStatus("Hold still. Capturing in " + count); await wait(550);
-      }
-      if (!freshFace()) countdownDone = false;
+      if (performance.now() > deadline) throw new Error("We could not see your face clearly. Try better light, or upload a photo.");
+      instruction.textContent = freshFace() ? "Hold still — scanning" : lastCheck.message;
+      onStatus(instruction.textContent);
+      await wait(60);
     }
     countdown.textContent = "";
     onStatus("Capturing...");
@@ -305,7 +310,7 @@ export async function createFaceScan(video, zone, onStatus) {
       if (disposed) return Promise.reject(new Error("Camera closed. Please reopen it."));
       if (scanning) return Promise.reject(new Error("A scan is already running."));
       scanning = true;
-      return capture().then((images) => { onStatus("Photo captured. Analysing visible skin details?"); return images; }).finally(() => { scanning = false; countdown.textContent = ""; });
+      return capture().then((images) => { onStatus("Photo captured. Analysing visible skin details…"); return images; }).finally(() => { scanning = false; countdown.textContent = ""; });
     },
     close() {
       disposed = true; clearTimeout(timer); flash(false); detector.close();

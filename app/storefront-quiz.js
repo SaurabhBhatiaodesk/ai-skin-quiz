@@ -1,6 +1,7 @@
 import { defaultScanIcon } from "./default-scan-icon.js";
 import { createFaceScan } from "./face-scan.js";
 import { buildFaceMap } from "./face-map.js";
+import { buildScanReport } from "./scan-report.js";
 (function () {
   var PROXY = "/apps/dosha-quiz";
 
@@ -125,17 +126,26 @@ import { buildFaceMap } from "./face-map.js";
       if (reading) reading.style.display = q("[data-insight]").textContent.trim() ? "" : "none";
       var oldMap = q("[data-face-map]");
       if (oldMap) oldMap.remove();
+      root.querySelectorAll("[data-scan-report], [data-scan-report-end]").forEach(function (node) { node.remove(); });
       var mapToken = ++faceMapToken;
-      if (source === "AI Skin Scan" && scanPhoto) {
-        var insightBox = q("[data-insight]");
-        buildFaceMap({ photo: scanPhoto, areas: result.scanAreas, landmarks: scanLandmarks, mirrored: scanMirrored }).then(function (map) {
-          // Ignore a map that finishes after a newer result was painted.
-          if (!map || mapToken !== faceMapToken || !insightBox) return;
-          var stale = q("[data-face-map]");
-          if (stale) stale.remove();
-          insightBox.before(map);
-          if (reading) reading.style.display = "";
-        }).catch(function () { /* the written observations still show without the map */ });
+      if (isScanResult) {
+        // Scan results use the premium report layout; the quiz hero, reading card and ritual list are hidden by CSS.
+        var built = buildScanReport(result);
+        var wrap = q('[data-screen="result"] .result-wrap');
+        if (wrap) wrap.insertBefore(built.report, wrap.querySelector(".result-hero"));
+        var emailBlock = q(".email-box");
+        if (emailBlock) emailBlock.after(built.end);
+        else if (wrap) wrap.appendChild(built.end);
+        if (built.mapSlot && scanPhoto) {
+          var slot = built.mapSlot;
+          buildFaceMap({ photo: scanPhoto, areas: result.scanAreas, landmarks: scanLandmarks, mirrored: scanMirrored }).then(function (map) {
+            // Ignore a map that finishes after a newer result was painted.
+            if (mapToken !== faceMapToken) return;
+            if (!map) { slot.remove(); return; }
+            slot.textContent = "";
+            slot.appendChild(map);
+          }).catch(function () { if (mapToken === faceMapToken) slot.remove(); });
+        } else if (built.mapSlot) built.mapSlot.remove();
       }
       if (source !== "AI Skin Scan") scanPhoto = null;
       var learn = q("[data-open-modal]");
@@ -180,8 +190,8 @@ import { buildFaceMap } from "./face-map.js";
       var emailBox = q(".email-box");
       if (emailBox) {
         emailBox.style.display = productsOnly ? "none" : "";
-        emailBox.querySelector(".eb-title").textContent = reportLocked ? "Unlock your full Prakriti analysis" : "Email your ritual guide";
-        emailBox.querySelector(".eb-sub").textContent = reportLocked ? "Enter your email to view the detailed guide and recommended ritual." : "Optional: link this result to your email.";
+        emailBox.querySelector(".eb-title").textContent = reportLocked ? "Unlock your full Prakriti analysis" : isScanResult ? "Save your skin report" : "Email your ritual guide";
+        emailBox.querySelector(".eb-sub").textContent = reportLocked ? "Enter your email to view the detailed guide and recommended ritual." : isScanResult ? "Get this report and your product picks in your inbox." : "Optional: link this result to your email.";
       }
       var breakdown = q("[data-percentage-breakdown]");
       if (!breakdown) { breakdown = document.createElement("div"); breakdown.setAttribute("data-percentage-breakdown", ""); q("[data-dosha-source]").parentNode.appendChild(breakdown); }
@@ -208,6 +218,16 @@ import { buildFaceMap } from "./face-map.js";
         }).join("");
         if (!result.products || !result.products.length) box.textContent = "No matching products are available for this result yet.";
       }
+      // The quiz design paints result buttons inline; the scan report uses the scan accent instead.
+      var sendButton = q("[data-save-email]");
+      if (sendButton) {
+        if (sendButton.getAttribute("data-quiz-style") === null) sendButton.setAttribute("data-quiz-style", sendButton.style.cssText);
+        if (isScanResult) { sendButton.style.setProperty("background", "var(--sr-accent)", "important"); sendButton.style.setProperty("font-size", "15px", "important"); }
+        else sendButton.style.cssText = sendButton.getAttribute("data-quiz-style");
+      }
+      // Without a brand name the footer would start with a stray separator.
+      var footer = q(".result-footer");
+      if (footer) footer.textContent = footer.textContent.replace(/^\s*·\s*/, "");
       var resultScreen = q('[data-screen="result"]');
       if (!resultScreen || !resultScreen.classList.contains("active")) go("result", true);
     }
@@ -266,6 +286,17 @@ import { buildFaceMap } from "./face-map.js";
         if (payload.path === "scan" && status) { status.textContent = error.message; showError(error.message || "Skin analysis failed. Please try again.", "scan"); }
         else showError(error.message || "Something went wrong. Please try again.", payload.path);
       }).finally(function () { clearTimeout(requestTimer); setSubmitting(false); });
+    }
+
+    // Combined quizzes have a start screen to return to from the first question; single quizzes do not.
+    function hasStartScreen() {
+      return Boolean(quiz) && quiz.layout !== "single" && quiz.layout !== "scan";
+    }
+
+    // Editor placeholders such as "New question" are not shown to shoppers.
+    function phaseLabel(phase) {
+      var text = String(phase || "").trim();
+      return /^(new question|question)$/i.test(text) ? "" : text;
     }
 
     function esc(value) {
@@ -339,11 +370,11 @@ import { buildFaceMap } from "./face-map.js";
       var total = quiz.quick.length;
       setProgress(q("[data-quick-fill]"), quickStep + 1, total);
       if (q("[data-quick-count]")) q("[data-quick-count]").textContent = (quickStep + 1) + " of " + total;
-      if (q("[data-quick-phase]")) q("[data-quick-phase]").textContent = question.phase || "";
+      if (q("[data-quick-phase]")) q("[data-quick-phase]").textContent = phaseLabel(question.phase);
       area.innerHTML = questionHtml(question, quickAnswers[quickStep], "data-quick-opt", root.id + "-quick-q");
       setNext(q("[data-quick-next]"), quickAnswers[quickStep] !== undefined, question.continueLabel || (quickStep === total - 1 ? "See my result" : "Continue"));
       var back = q("[data-quick-back]");
-      if (back) back.style.display = quickStep === 0 ? "none" : "inline-flex";
+      if (back) back.style.display = quickStep === 0 && !hasStartScreen() ? "none" : "inline-flex";
     }
 
     function renderDeep() {
@@ -361,7 +392,7 @@ import { buildFaceMap } from "./face-map.js";
       area.innerHTML = questionHtml(question, deepAnswers[deepStep], "data-deep-opt", root.id + "-deep-q");
       setNext(q("[data-deep-next]"), deepAnswers[deepStep] !== undefined, question.continueLabel || (deepStep === quiz.deep.length - 1 ? "See my result" : "Continue"));
       var back = q("[data-deep-back]");
-      if (back) back.style.display = deepStep === 0 ? "none" : "inline-flex";
+      if (back) back.style.display = deepStep === 0 && !hasStartScreen() ? "none" : "inline-flex";
     }
 
     function resetDeep() {
@@ -391,6 +422,8 @@ import { buildFaceMap } from "./face-map.js";
 
     // The camera turns on only after the shopper accepts the required consents.
     function selectMode(mode) {
+      var scanButton = q("[data-scan]");
+      if (scanButton) scanButton.textContent = "Analyse My Skin →";
       if (quiz && quiz.scanner) {
         if (mode === "camera" && !quiz.scanner.camera) mode = "upload";
         if (mode === "upload" && !quiz.scanner.upload) mode = "camera";
@@ -448,9 +481,13 @@ import { buildFaceMap } from "./face-map.js";
           feed.srcObject = stream;
           feed.play().catch(function () { if (generation === cameraGeneration) q("[data-scan-status]").textContent = "Tap Live Camera to resume playback."; });
           q("[data-scan-status]").textContent = "";
-          createFaceScan(feed, q("[data-camera-zone]"), function (text) { q("[data-scan-status]").textContent = text; }).then(function (tracker) {
+          // Live guidance is shown inside the camera frame; the status line below is kept for errors only.
+          createFaceScan(feed, q("[data-camera-zone]"), function () {}).then(function (tracker) {
             if (generation !== cameraGeneration) { tracker.close(); return; }
             faceScan = tracker;
+            q("[data-scan-status]").textContent = "";
+            // Modern hold-to-scan: start right away; the photo is taken once the face holds steady in the oval.
+            if (consentGiven()) runScan();
           }).catch(function () { if (generation === cameraGeneration) { stopCamera(); q("[data-scan-status]").textContent = "Face tracking could not load. Check your connection, retry the camera, or upload a photo."; } });
         }
       }).catch(function (error) {
@@ -506,7 +543,7 @@ import { buildFaceMap } from "./face-map.js";
         return;
       }
       if (origin.closest("[data-quick-back]")) {
-        if (quickStep === 0) return;
+        if (quickStep === 0) { if (hasStartScreen()) go("entry", true); return; }
         quickStep--;
         renderQuick();
         return;
@@ -530,7 +567,7 @@ import { buildFaceMap } from "./face-map.js";
         return;
       }
       if (origin.closest("[data-deep-back]")) {
-        if (deepStep === 0) return;
+        if (deepStep === 0) { if (hasStartScreen()) go("entry", true); return; }
         deepStep--;
         renderDeep();
         return;
@@ -621,10 +658,21 @@ import { buildFaceMap } from "./face-map.js";
       if (scanMode === "camera") {
         if (!faceScan) { q("[data-scan-status]").textContent = "Wait for face tracking to load, or retry the camera."; return; }
         scanCapturing = true;
+        // While the hold-to-scan runs there is nothing to tap; the button returns as "Try again" if it stops.
+        root.setAttribute("data-auto-scan", "");
         faceScan.start().then(function (images) {
           scanCapturing = false;
+          root.removeAttribute("data-auto-scan");
           finishScan(images);
-        }).catch(function (error) { scanCapturing = false; q("[data-scan-status]").textContent = error.message; });
+        }).catch(function (error) {
+          scanCapturing = false;
+          root.removeAttribute("data-auto-scan");
+          var retry = q("[data-scan]");
+          if (retry) retry.textContent = "Try again";
+          // Switching to upload or closing the camera cancels the scan; that is not an error for the shopper.
+          if (scanMode !== "camera" || !faceScan) return;
+          q("[data-scan-status]").textContent = error.message;
+        });
         return;
       }
       finishScan(captured);
@@ -784,8 +832,8 @@ import { buildFaceMap } from "./face-map.js";
         if (design.selectedColor !== undefined) root.querySelectorAll('.q-opt.selected').forEach(function (element) { element.style.setProperty("background", String(design.selectedColor), "important"); });
         if (design.selectedText !== undefined) root.querySelectorAll('.q-opt.selected .q-opt-main').forEach(function (element) { element.style.setProperty("color", String(design.selectedText), "important"); });
         if (design.answerSize !== undefined) root.querySelectorAll('.q-opt-main').forEach(function (element) { element.style.setProperty("font-size", String(design.answerSize) + "px", "important"); });
-        if (design.accent !== undefined) root.querySelectorAll('.btn-next, .btn-eb, .btn-retake, .btn-upgrade').forEach(function (element) { element.style.setProperty("background", String(design.accent), "important"); });
-        if (design.buttonSize !== undefined) root.querySelectorAll('.btn-next, .btn-eb, .btn-retake, .btn-upgrade').forEach(function (element) { element.style.setProperty("font-size", String(design.buttonSize) + "px", "important"); });
+        if (design.accent !== undefined) root.querySelectorAll('.btn-next, .btn-eb, .btn-upgrade').forEach(function (element) { element.style.setProperty("background", String(design.accent), "important"); });
+        if (design.buttonSize !== undefined) root.querySelectorAll('.btn-next, .btn-upgrade').forEach(function (element) { element.style.setProperty("font-size", String(design.buttonSize) + "px", "important"); });
         if (design.bodySize !== undefined) root.querySelectorAll('.q-sub, .insight-text, .hdr-sub').forEach(function (element) { element.style.setProperty("font-size", String(design.bodySize) + "px", "important"); });
         if (design.font === "sans") root.setAttribute("data-font", "sans");
       }

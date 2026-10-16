@@ -39,6 +39,8 @@ export type QuizProduct = {
   image: string;
   handle: string;
   why: string;
+  // Scan results: which observed concerns this product was matched to.
+  concerns?: string[];
 };
 export type QuizResult = {
   resultMode?: "personalized" | "products";

@@ -11,7 +11,7 @@ const pending = [];
 const env = {cameraStream: {getTracks:()=>[]}, cameraOpening:false, cameraGeneration:0, faceScan:null,
  q: selector => selector === "[data-camera-feed]" ? feed : status,
  navigator: {mediaDevices:{getUserMedia:()=>new Promise((resolve,reject)=>pending.push({resolve,reject}))}},
- createFaceScan: async()=>({close(){}}), scanMode:"camera"};
+ createFaceScan: async()=>({close(){}}), scanMode:"camera", consentGiven:()=>false, runScan:()=>{}};
 const api = new Function("env", "with(env) {"+functions+"; return {startCamera,stopCamera};}")(env);
 api.startCamera(); assert.equal(resumes,1,"Existing stream resumes playback");
 api.stopCamera(); api.startCamera(); assert.equal(env.cameraOpening,true);
