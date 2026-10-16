@@ -38,44 +38,6 @@ if (!response.ok) throw new Error(quiz.error || "Could not load quiz");
 // to build your own question flow and markup.
 // Use quiz.design for the merchant's saved style choices.
 // quiz.defaultCss and quiz.widgetCss are optional stylesheet starting points.`;
-  const designExample = `const design = quiz.design || {};
-const quizRoot = document.querySelector("#my-quiz");
-if (!quizRoot) throw new Error("Add an element with id=my-quiz first.");
-
-const tokens = {
-  "--quiz-background": design.background || "#faf7f2",
-  "--quiz-text": design.text || "#1a1208",
-  "--quiz-heading": design.headingColor || design.text || "#1a1208",
-  "--quiz-card": design.cardColor || "#fff9ee",
-  "--quiz-answer": design.answerColor || "#e4c3a0",
-  "--quiz-answer-text": design.answerText || "#651d30",
-  "--quiz-selected": design.selectedColor || "#571c29",
-  "--quiz-selected-text": design.selectedText || "#ffffff",
-  "--quiz-accent": design.accent || "#8f6330",
-  "--quiz-button-text": design.buttonText || "#ffffff",
-  "--quiz-heading-size": (design.headingSize || 36) + "px",
-  "--quiz-question-size": (design.questionSize || 26) + "px",
-  "--quiz-body-size": (design.bodySize || 14) + "px",
-  "--quiz-answer-size": (design.answerSize || 18) + "px",
-  "--quiz-button-size": (design.buttonSize || 20) + "px",
-  "--quiz-radius": design.radius === "pill" ? "999px" : design.radius === "square" ? "0" : "8px",
-  "--quiz-font": design.font === "sans" ? "system-ui, sans-serif" : "Georgia, serif"
-};
-Object.entries(tokens).forEach(([name, value]) => quizRoot.style.setProperty(name, String(value)));
-
-// Use quiz.quick / quiz.deep for your own HTML.
-// Apply quiz.cardIcons, quiz.widgetCss and quiz.defaultCss if needed.`;
-  const designCssExample = `#my-quiz {
-  background: var(--quiz-background);
-  color: var(--quiz-text);
-  font-family: var(--quiz-font);
-}
-#my-quiz .heading { color: var(--quiz-heading); font-size: var(--quiz-heading-size); }
-#my-quiz .question { background: var(--quiz-card); font-size: var(--quiz-question-size); }
-#my-quiz .answer { background: var(--quiz-answer); color: var(--quiz-answer-text); font-size: var(--quiz-answer-size); }
-#my-quiz .answer[aria-pressed="true"] { background: var(--quiz-selected); color: var(--quiz-selected-text); }
-#my-quiz .continue { background: var(--quiz-accent); color: var(--quiz-button-text); border-radius: var(--quiz-radius); font-size: var(--quiz-button-size); }
-#my-quiz .description { font-size: var(--quiz-body-size); }`;
   const resultExample = `const response = await fetch("/apps/dosha-quiz/result", {
   method: "POST",
   headers: { "Content-Type": "application/json", Accept: "application/json" },
@@ -182,22 +144,15 @@ if (!response.ok || !payload.ok) {
           </s-stack>
           <s-text-area label="JavaScript: load saved quiz" readOnly rows={7} value={fetchExample} />
           <s-paragraph>Every quiz has its own ID. The response includes questions, available paths, product mappings and saved design values. The data endpoint is read-only; merchants change saved settings in the app, then your custom storefront reads the latest saved values.</s-paragraph>
-          <s-stack direction="inline" justifyContent="space-between" alignItems="center">
-            <s-text type="strong">2. Apply the saved design</s-text>
-            <s-button variant="secondary" onClick={() => copyDeveloperValue(designExample, "Design example")}>{copyStatus === "Design example copied." ? "Copied" : "Copy design example"}</s-button>
-          </s-stack>
-          <s-text-area label="JavaScript: map design values to CSS tokens" readOnly rows={13} value={designExample} />
-          <s-text-area label="CSS: style your own markup" readOnly rows={10} value={designCssExample} />
-          <s-paragraph>Design values include background, text, heading, question card, answer and selected-answer colors; font sizes; button color, text and shape; and font style. Keep your markup scoped to your quiz container so store theme styles remain unaffected.</s-paragraph>
           {developerQuiz?.layout !== "scan" ? <>
             <s-stack direction="inline" justifyContent="space-between" alignItems="center">
-              <s-text type="strong">3. Submit quiz answers</s-text>
+              <s-text type="strong">2. Submit quiz answers</s-text>
               <s-button variant="secondary" onClick={() => copyDeveloperValue(resultExample, "Result example")}>{copyStatus === "Result example copied." ? "Copied" : "Copy example"}</s-button>
             </s-stack>
             <s-text-area label="JavaScript: submit answers" readOnly rows={9} value={resultExample} />
           </> : null}
           <s-stack direction="inline" justifyContent="space-between" alignItems="center">
-            <s-text type="strong">{developerQuiz?.layout === "scan" ? "3. Submit a consented Skin Scan" : "4. Optional: submit a Skin Scan"}</s-text>
+            <s-text type="strong">{developerQuiz?.layout === "scan" ? "2. Submit a consented Skin Scan" : "3. Optional: submit a Skin Scan"}</s-text>
             <s-button variant="secondary" onClick={() => copyDeveloperValue(scanExample, "Skin Scan example")}>{copyStatus === "Skin Scan example copied." ? "Copied" : "Copy example"}</s-button>
           </s-stack>
           <s-text-area label="JavaScript: submit a photo for cosmetic observations" readOnly rows={13} value={scanExample} />

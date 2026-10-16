@@ -24,6 +24,11 @@
   position: relative;
 }
 
+/* Let the merchant's theme section supply the entry screen background. */
+.prana-quiz:not(.scan-chat-open):has(> [data-screen="entry"].active) {
+  background: transparent;
+}
+
 .prana-quiz *,
 .prana-quiz *::before,
 .prana-quiz *::after {
@@ -210,8 +215,10 @@
   border: 1px solid var(--gold);
 }
 
-.prana-quiz .btn-entry.ghost:hover {
-  background: rgba(176, 125, 58, 0.08);
+.prana-quiz .btn-entry.ghost:hover,
+.prana-quiz .btn-entry.ghost:focus-visible {
+  background: var(--gold);
+  color: #fff;
 }
 
 .prana-quiz .entry-note {
@@ -3235,18 +3242,18 @@
 .prana-quiz.scan-chat-open.scan-chat-open .upload-sub { font-size: 12.5px; color: var(--sr-muted); }
 
 /* Camera viewfinder: portrait frame with the guidance as a glass pill inside it */
-.prana-quiz.scan-chat-open.scan-chat-open [data-screen="scanner"] .camera-zone.camera-zone { width: 100%; max-width: 400px; aspect-ratio: 4 / 5; height: auto; margin: 0 auto 14px; border: 0; border-radius: 24px; background: #151210; box-shadow: var(--sr-shadow); overflow: hidden; }
-.prana-quiz.scan-chat-open.scan-chat-open [data-screen="scanner"] .camera-zone .face-scan-guidance { position: absolute; left: 50%; right: auto; bottom: 14px; top: auto; transform: translateX(-50%); display: flex; align-items: center; gap: 8px; width: max-content; max-width: calc(100% - 28px); margin: 0; padding: 9px 14px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.16); background: rgba(16, 13, 10, 0.6); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); box-shadow: none; color: #fff; text-align: center; }
-.prana-quiz.scan-chat-open.scan-chat-open [data-screen="scanner"] .camera-zone .face-scan-guidance::before { content: ""; flex: none; width: 8px; height: 8px; border-radius: 50%; background: #f3b54d; box-shadow: 0 0 0 3px rgba(243, 181, 77, 0.25); }
-.prana-quiz.scan-chat-open.scan-chat-open [data-screen="scanner"] .camera-zone .face-scan-guidance.is-ready::before { background: #7fe0a6; box-shadow: 0 0 0 3px rgba(127, 224, 166, 0.28); }
-.prana-quiz.scan-chat-open.scan-chat-open [data-screen="scanner"] .camera-zone .face-scan-guidance strong { margin: 0; color: #fff; font: 600 13.5px/1.35 var(--scan-theme-font, system-ui, sans-serif); }
-.prana-quiz.scan-chat-open.scan-chat-open [data-screen="scanner"] .camera-zone .face-scan-hint,
-.prana-quiz.scan-chat-open.scan-chat-open [data-screen="scanner"] .camera-zone .face-scan-quality { display: none !important; }
+.prana-quiz.prana-quiz.prana-quiz [data-screen="scanner"] .camera-zone.camera-zone { width: 100%; max-width: 400px; aspect-ratio: 4 / 5; height: auto; margin: 0 auto 14px; border: 0; border-radius: 24px; background: #151210; box-shadow: var(--sr-shadow); overflow: hidden; }
+.prana-quiz.prana-quiz.prana-quiz [data-screen="scanner"] .camera-zone .face-scan-guidance { position: absolute; left: 50%; right: auto; bottom: 14px; top: auto; transform: translateX(-50%); display: flex; align-items: center; gap: 8px; width: max-content; max-width: calc(100% - 28px); margin: 0; padding: 9px 14px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.16); background: rgba(16, 13, 10, 0.6); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); box-shadow: none; color: #fff; text-align: center; }
+.prana-quiz.prana-quiz.prana-quiz [data-screen="scanner"] .camera-zone .face-scan-guidance::before { content: ""; flex: none; width: 8px; height: 8px; border-radius: 50%; background: #f3b54d; box-shadow: 0 0 0 3px rgba(243, 181, 77, 0.25); }
+.prana-quiz.prana-quiz.prana-quiz [data-screen="scanner"] .camera-zone .face-scan-guidance.is-ready::before { background: #7fe0a6; box-shadow: 0 0 0 3px rgba(127, 224, 166, 0.28); }
+.prana-quiz.prana-quiz.prana-quiz [data-screen="scanner"] .camera-zone .face-scan-guidance strong { margin: 0; color: #fff; font: 600 13.5px/1.35 var(--scan-theme-font, system-ui, sans-serif); }
+.prana-quiz.prana-quiz.prana-quiz [data-screen="scanner"] .camera-zone .face-scan-hint,
+.prana-quiz.prana-quiz.prana-quiz [data-screen="scanner"] .camera-zone .face-scan-quality { display: none !important; }
 .prana-quiz.scan-chat-open.scan-chat-open .scan-status:empty { display: none; }
 .prana-quiz.scan-chat-open.scan-chat-open .scan-status { margin: 4px 0 14px; font-size: 13px; line-height: 1.5; text-align: center; color: var(--sr-muted); }
 
 /* Hold-to-scan needs no tap: hide the camera button while it runs. */
-.prana-quiz.scan-chat-open[data-auto-scan] [data-screen="scanner"] [data-scan] { display: none; }
+.prana-quiz[data-auto-scan] [data-screen="scanner"] [data-scan] { display: none; }
 
 /* Primary button */
 .prana-quiz.scan-chat-open.scan-chat-open .btn-scan {
@@ -3435,15 +3442,16 @@
 .prana-quiz.scan-chat-open.scan-chat-open [data-screen="scanner"] .scanner-choice .sc-btn.active { background: #fff; color: var(--sr-ink); box-shadow: 0 1px 0 rgba(26, 26, 26, 0.07), 0 1px 3px rgba(26, 26, 26, 0.12); }
 .prana-quiz.scan-chat-open.scan-chat-open [data-screen="scanner"] .scanner-choice .sc-btn-label { font-size: 13.5px; font-weight: 550; }
 .prana-quiz.scan-chat-open.scan-chat-open .upload-zone { border-radius: 12px; border: 1.5px dashed #c9c9c9; background: #fff; }
-.prana-quiz.scan-chat-open.scan-chat-open [data-screen="scanner"] .camera-zone.camera-zone { border-radius: 16px; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08), 0 8px 24px -12px rgba(0, 0, 0, 0.35); }
+.prana-quiz.prana-quiz.prana-quiz [data-screen="scanner"] .camera-zone.camera-zone { border-radius: 16px; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08), 0 8px 24px -12px rgba(0, 0, 0, 0.35); }
 
-/* Primary button: bevelled like native admin buttons, in the "Modal buttons" colour */
+/* Popup primary actions use a solid black background. */
 .prana-quiz.scan-chat-open.scan-chat-open .btn-scan {
   min-height: 46px; border-radius: 10px; font-size: 14.5px; font-weight: 600;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0) 60%), var(--sr-button);
-  box-shadow: inset 0 -1px 0 1px rgba(0, 0, 0, 0.35), inset 0 0 0 1px var(--sr-button), inset 0 1px 0 1.5px rgba(255, 255, 255, 0.22), 0 1px 2px rgba(0, 0, 0, 0.15);
+  background: #000;
+  color: #fff;
+  box-shadow: none;
 }
-.prana-quiz.scan-chat-open.scan-chat-open .btn-scan:hover { background: linear-gradient(180deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 60%), color-mix(in srgb, var(--sr-button) 88%, #000); }
+.prana-quiz.scan-chat-open.scan-chat-open .btn-scan:hover { background: #000; color: #fff; }
 
 /* ---- Report ---- */
 .prana-quiz .sr-status { color: var(--sr-muted); font-weight: 550; }
@@ -3553,9 +3561,9 @@
 .prana-quiz.prana-quiz.prana-quiz.scan-chat-open[data-scan-dark] .scan-steps li[aria-current="step"] span { background: var(--sr-button); color: var(--scan-button-text, #fff); }
 
 /* ---- Analysing screen: photo with a live scan, step text and progress ---- */
-.prana-quiz.scan-chat-open .analyzing-overlay.analyzing-overlay { position: fixed; inset: 0; z-index: 10001; display: none; place-items: center; padding: 24px; background: rgba(18, 16, 14, 0.42); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+.prana-quiz .analyzing-overlay.analyzing-overlay { position: fixed; inset: 0; z-index: 10001; display: none; place-items: center; padding: 24px; background: rgba(18, 16, 14, 0.42); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
 .prana-quiz.scan-chat-open .analyzing-overlay.analyzing-overlay { position: absolute; border-radius: inherit; }
-.prana-quiz.scan-chat-open .analyzing-overlay.analyzing-overlay.active { display: grid; animation: pranaMapFade 0.25s ease both; }
+.prana-quiz .analyzing-overlay.analyzing-overlay.active { display: grid; animation: pranaMapFade 0.25s ease both; }
 .prana-quiz .an-card { width: min(320px, 100%); padding: 18px 18px 20px; border-radius: 20px; background: #fff; box-shadow: 0 24px 60px -20px rgba(0, 0, 0, 0.45); text-align: center; font-family: var(--sr-font); }
 .prana-quiz .an-photo { position: relative; aspect-ratio: 4 / 5; margin: 0 0 16px; border-radius: 14px; overflow: hidden; background: #1a1714; }
 .prana-quiz .an-photo img { width: 100%; height: 100%; object-fit: cover; display: block; filter: saturate(0.9); }

@@ -536,7 +536,7 @@ import { buildScanReport } from "./scan-report.js";
             faceScan = tracker;
             q("[data-scan-status]").textContent = "";
             // Modern hold-to-scan: start right away; the photo is taken once the face holds steady in the oval.
-            if (consentGiven() && root.classList.contains("scan-chat-open")) runScan();
+            if (consentGiven()) runScan();
           }).catch(function () { if (generation === cameraGeneration) { stopCamera(); q("[data-scan-status]").textContent = "Face tracking could not load. Check your connection, retry the camera, or upload a photo."; } });
         }
       }).catch(function (error) {
@@ -708,7 +708,7 @@ import { buildScanReport } from "./scan-report.js";
         if (!faceScan) { q("[data-scan-status]").textContent = "Wait for face tracking to load, or retry the camera."; return; }
         scanCapturing = true;
         // While the hold-to-scan runs there is nothing to tap; the button returns as "Try again" if it stops.
-        if (root.classList.contains("scan-chat-open")) root.setAttribute("data-auto-scan", "");
+        root.setAttribute("data-auto-scan", "");
         faceScan.start().then(function (images) {
           scanCapturing = false;
           root.removeAttribute("data-auto-scan");
@@ -760,8 +760,7 @@ import { buildScanReport } from "./scan-report.js";
       scanLandmarks = Array.isArray(images) && images.landmarks ? images.landmarks : null;
       scanMirrored = scanMode === "camera";
       var overlay = q("[data-analyzing]");
-      if (overlay && root.classList.contains("scan-chat-open")) showAnalyzing(overlay);
-      else if (overlay) overlay.classList.add("active");
+      if (overlay) showAnalyzing(overlay);
       Promise.all((Array.isArray(images) ? images : [images]).map(compactScanPhoto)).then(function (photos) {
         return submit({ path: "scan", images: photos, consent: true, adult: true });
       }).catch(function (error) {
