@@ -1,5 +1,5 @@
 import prisma from "./db.server";
-export const scanAppearanceDefaults = { enabled: true, iconImage: "", shape: "circle", label: "Skin Scan", position: "right", buttonColor: "#e8f0eb", buttonTextColor: "#284c37", panelColor: "#faf7f2", textColor: "#1a1208", accentColor: "#52695a", radius: 32, offset: 24, headingColor: "#1a1208", modalButtonTextColor: "#ffffff", modalFontSize: 14, modalWidth: 520, modalRadius: 24 };
+export const scanAppearanceDefaults = { enabled: true, iconImage: "", shape: "circle", label: "Skin Scan", position: "right", buttonColor: "#e8f0eb", buttonTextColor: "#284c37", panelColor: "#faf7f2", textColor: "#1a1208", accentColor: "#52695a", radius: 32, offset: 24, headingColor: "#1a1208", modalButtonColor: "#303030", modalButtonTextColor: "#ffffff", modalFontSize: 14, modalWidth: 520, modalRadius: 24 };
 export type ScanAppearance = typeof scanAppearanceDefaults;
 async function prepare() { await prisma.$executeRawUnsafe("CREATE TABLE IF NOT EXISTS ScanAppearance (shop TEXT PRIMARY KEY, payload TEXT NOT NULL)"); }
 export function normalizeAppearance(value: unknown): ScanAppearance {
@@ -13,10 +13,12 @@ export function normalizeAppearance(value: unknown): ScanAppearance {
   result.shape = input?.shape === "rounded" ? "rounded" : "circle";
   result.label = String(input?.label || "Skin Scan").trim().slice(0, 40) || "Skin Scan";
   result.position = input?.position === "left" ? "left" : "right";
-  for (const key of ["buttonColor", "buttonTextColor", "panelColor", "textColor", "accentColor", "headingColor", "modalButtonTextColor"] as const) {
+  for (const key of ["buttonColor", "buttonTextColor", "panelColor", "textColor", "accentColor", "headingColor", "modalButtonColor", "modalButtonTextColor"] as const) {
     if (input?.[key] !== undefined && !/^#[0-9a-f]{6}$/i.test(input[key]!)) throw new Error("Choose a valid color.");
     result[key] = input?.[key] || result[key];
   }
+  // "#4a2c21" was the previous built-in default for modal buttons, not a merchant choice.
+  if (result.modalButtonColor.toLowerCase() === "#4a2c21") result.modalButtonColor = scanAppearanceDefaults.modalButtonColor;
   for (const key of ["radius", "offset"] as const) {
     const number = Number(input?.[key] ?? result[key]);
     if (!Number.isFinite(number) || number < 0 || number > 64) throw new Error("Spacing and corners must be between 0 and 64 pixels.");

@@ -1,0 +1,1 @@
+{ "version": "0.0.1", "configurations": [ { "name": "widget-preview", "runtimeExecutable": "node", "runtimeArgs": ["C:/Users/b2b/AppData/Local/Temp/claude/C--Users-b2b-Desktop-ai-skin-quiz/b2fd60cf-6df4-4a4d-8cd2-6f8f59c2da0b/scratchpad/serve.mjs"], "port": 4789 } ] }

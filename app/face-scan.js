@@ -253,8 +253,30 @@ export async function createFaceScan(video, zone, onStatus) {
     return setTorch(on);
   }
 
+  // Still photo through the ImageCapture API (Chrome on Android and desktop). Only used when it has the same
+  // framing as the preview, so the face landmarks still line up; otherwise the caller falls back to video frames.
+  async function takeStill() {
+    const track = video.srcObject && video.srcObject.getVideoTracks ? video.srcObject.getVideoTracks()[0] : null;
+    if (!track || typeof ImageCapture === "undefined") return null;
+    try {
+      const blob = await Promise.race([new ImageCapture(track).takePhoto(), wait(2500).then(() => null)]);
+      if (!blob) return null;
+      const bitmap = await createImageBitmap(blob);
+      const sameFraming = Math.abs(bitmap.width / bitmap.height - video.videoWidth / video.videoHeight) < 0.03;
+      if (!sameFraming || bitmap.width <= video.videoWidth) { bitmap.close(); return null; }
+      const scale = Math.min(1, 1600 / Math.max(bitmap.width, bitmap.height));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(bitmap.width * scale); canvas.height = Math.round(bitmap.height * scale);
+      canvas.getContext("2d").drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+      bitmap.close();
+      return canvas;
+    } catch {
+      return null;
+    }
+  }
+
   function grabFrame() {
-    const scale = Math.min(1, 1024 / Math.max(video.videoWidth, video.videoHeight));
+    const scale = Math.min(1, 1600 / Math.max(video.videoWidth, video.videoHeight));
     const canvas = document.createElement("canvas");
     canvas.width = Math.round(video.videoWidth * scale); canvas.height = Math.round(video.videoHeight * scale);
     canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
@@ -287,12 +309,19 @@ export async function createFaceScan(video, zone, onStatus) {
     await flash(true);
     try {
       await wait(450); // let the camera adjust its exposure to the flash
+      // A full-resolution still from the camera is much sharper than a video frame; use it when available.
+      const still = await takeStill();
+      if (still) {
+        const images = [still.toDataURL("image/jpeg", 0.9)];
+        images.landmarks = facePoints ? facePoints.map((point) => ({ x: point.x, y: point.y })) : null;
+        return images;
+      }
       const frames = [];
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < 5; i++) {
         if (disposed) throw new Error("Scan cancelled. You can start again.");
         assertActive();
         if (!freshFace()) throw new Error("Your face moved during capture. Position your face and retry.");
-        frames.push(grabFrame()); await wait(90);
+        frames.push(grabFrame()); await wait(70);
       }
       if (disposed) throw new Error("Scan cancelled. You can start again.");
       frames.sort((a, b) => b.score - a.score);

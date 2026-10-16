@@ -222,7 +222,7 @@ import { buildScanReport } from "./scan-report.js";
       var sendButton = q("[data-save-email]");
       if (sendButton) {
         if (sendButton.getAttribute("data-quiz-style") === null) sendButton.setAttribute("data-quiz-style", sendButton.style.cssText);
-        if (isScanResult) { sendButton.style.setProperty("background", "var(--sr-accent)", "important"); sendButton.style.setProperty("font-size", "15px", "important"); }
+        if (isScanResult) { sendButton.style.removeProperty("background"); sendButton.style.setProperty("font-size", "15px", "important"); }
         else sendButton.style.cssText = sendButton.getAttribute("data-quiz-style");
       }
       // Without a brand name the footer would start with a stray separator.
@@ -286,6 +286,13 @@ import { buildScanReport } from "./scan-report.js";
         if (payload.path === "scan" && status) { status.textContent = error.message; showError(error.message || "Skin analysis failed. Please try again.", "scan"); }
         else showError(error.message || "Something went wrong. Please try again.", payload.path);
       }).finally(function () { clearTimeout(requestTimer); setSubmitting(false); });
+    }
+
+    function isDarkColor(hex) {
+      var match = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(String(hex || ""));
+      if (!match) return false;
+      var luminance = (0.2126 * parseInt(match[1], 16) + 0.7152 * parseInt(match[2], 16) + 0.0722 * parseInt(match[3], 16)) / 255;
+      return luminance < 0.5;
     }
 
     // Combined quizzes have a start screen to return to from the first question; single quizzes do not.
@@ -467,7 +474,7 @@ import { buildScanReport } from "./scan-report.js";
       cameraOpening = true;
       var generation = ++cameraGeneration;
       // Prefer an HD front camera, but fall back to any camera when a device cannot meet that.
-      navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 960 } }, audio: false }).catch(function (error) {
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: { ideal: 1920 }, height: { ideal: 1440 } }, audio: false }).catch(function (error) {
         if (error && (error.name === "OverconstrainedError" || error.name === "NotReadableError" || error.name === "AbortError" || error.name === "NotFoundError")) {
           return navigator.mediaDevices.getUserMedia({ video: true, audio: false });
         }
@@ -915,10 +922,14 @@ import { buildScanReport } from "./scan-report.js";
         launcher.style[appearance.position === "left" ? "right" : "left"] = "auto";
         root.style.setProperty("--scan-offset", (appearance.offset == null ? 24 : appearance.offset) + "px");
         root.style.setProperty("--scan-panel", appearance.panelColor || "#faf7f2");
+        // On a dark popup background, text placed directly on the panel switches to light colours.
+        if (isDarkColor(appearance.panelColor || "#faf7f2")) root.setAttribute("data-scan-dark", "");
+        else root.removeAttribute("data-scan-dark");
         root.style.setProperty("--scan-text", appearance.textColor || "#1a1208");
         root.style.setProperty("--scan-accent", appearance.accentColor || "#52695a");
         root.style.setProperty("--scan-heading", appearance.headingColor || "#1a1208");
         root.style.setProperty("--scan-button-text", appearance.modalButtonTextColor || "#ffffff");
+        root.style.setProperty("--scan-button", appearance.modalButtonColor || "#303030");
         root.style.setProperty("--scan-font-size", (appearance.modalFontSize || 14) + "px");
         root.style.setProperty("--scan-width", (appearance.modalWidth || 520) + "px");
         root.style.setProperty("--scan-radius", (appearance.modalRadius == null ? 24 : appearance.modalRadius) + "px");

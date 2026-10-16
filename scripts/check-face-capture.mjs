@@ -6,7 +6,7 @@ const end = source.indexOf('\n\n  tick();',start);
 const capture = source.slice(start,end).trim();
 function scenario(visible) {
  let now=0, closed=false;
- const env={HOLD_MS:1400,performance:{now:()=>now},readySince:1,lastCheck:{message:'Position your face'},instruction:{},hint:{},countdown:{},onStatus:()=>{},disposed:false,
+ const env={HOLD_MS:1400,takeStill:async()=>null,facePoints:null,performance:{now:()=>now},readySince:1,lastCheck:{message:'Position your face'},instruction:{},hint:{},countdown:{},onStatus:()=>{},disposed:false,
   assertActive(){if(closed)throw new Error('cancelled');},freshFace:()=>visible && now<900,
   wait:async(ms)=>{now+=ms;},flash:async()=>{},grabFrame:()=>({score:1,canvas:{toDataURL:()=> 'image'}})};
  return {run:()=>new Function('env', 'with(env) { return ('+capture+')(); }')(env), close:()=>{closed=true;},time:()=>now};
