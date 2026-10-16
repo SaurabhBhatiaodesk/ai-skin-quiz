@@ -50,8 +50,8 @@ export function faceCrop(points, width, height, faceAt = 0.5) {
   for (const point of points) { if (point.x < minX) minX = point.x; if (point.x > maxX) maxX = point.x; if (point.y < minY) minY = point.y; if (point.y > maxY) maxY = point.y; }
   const faceW = (maxX - minX) * width, faceH = (maxY - minY) * height;
   const top = minY * height - faceH * 0.3, bottom = maxY * height + faceH * 0.14;
-  // Wide enough that the face fills about half the frame, leaving the other side for the loupes.
-  let h = Math.max(bottom - top, faceW * 2.3), w = h * 0.86;
+  // Wide enough that the face fills the middle of the frame, leaving room for a loupe column on each side.
+  let h = Math.max(bottom - top, faceW * 2.6), w = h * 0.86;
   if (w > width) { w = width; h = Math.min(height, w / 0.86); }
   if (h > height) { h = height; w = Math.min(width, h * 0.86); }
   const centerX = (minX + maxX) / 2 * width, centerY = (top + bottom) / 2;
@@ -127,51 +127,65 @@ function drawOverlay(stage, shown, points, width, height, marked, uid) {
   for (const [x, y, dx, dy] of corners) brackets.appendChild(svg("path", { d: "M" + x + " " + (y + dy * arm) + "V" + (y + dy * bend) + "Q" + x + " " + y + " " + (x + dx * bend) + " " + y + "H" + (x + dx * arm) }));
   overlay.appendChild(brackets);
 
-  // Loupes: magnified skin from each observed spot, in a column beside the face.
-  const radius = Math.min(width * (marked.length <= 3 ? 0.16 : 0.13), height / (marked.length * 2.5));
-  // Light sharpening keeps skin texture crisp inside the magnified circles.
+  // Loupes: magnified skin from each observed spot, in columns on both sides of the face.
+  const counts = { left: 0, right: 0 };
+  const placed = marked.map((area, index) => {
+    const circles = area.regions.flatMap((region) => regionCircles(points, width, height, region));
+    if (!circles.length) return null;
+    const left = circles.filter((c) => c.x < nose.x - unit * 4), right = circles.filter((c) => c.x > nose.x + unit * 4);
+    // One-sided areas go to their own side; centred or two-sided areas balance the columns.
+    const side = left.length && !right.length ? "left" : right.length && !left.length ? "right" : counts.left <= counts.right ? "left" : "right";
+    const pool = side === "left" ? (left.length ? left : circles) : (right.length ? right : circles);
+    const spot = pool.sort((a, b) => (side === "left" ? a.x - b.x : b.x - a.x))[0];
+    counts[side]++;
+    return { index, side, spot: { x: spot.x, y: spot.y } };
+  }).filter(Boolean);
+  // Two areas on the same spot would share one marker; move the later one a little down the face.
+  placed.forEach((item, at) => {
+    for (const other of placed.slice(0, at)) {
+      if (Math.hypot(item.spot.x - other.spot.x, item.spot.y - other.spot.y) < unit * 9) item.spot.y = other.spot.y + unit * 12;
+    }
+  });
+  const perSide = Math.max(counts.left, counts.right, 1);
+  const radius = Math.min(width * 0.13, height / (perSide * 2.5));
   const sharpen = svg("filter", { id: uid + "-sharp", x: "0", y: "0", width: "100%", height: "100%" });
   sharpen.appendChild(svg("feConvolveMatrix", { order: "3", kernelMatrix: "0 -0.6 0 -0.6 3.4 -0.6 0 -0.6 0", preserveAlpha: "true" }));
   defs.appendChild(sharpen);
-  const columnX = width - radius - unit * 7;
-  const slots = loupeSlots(marked.length, (minY + maxY) / 2, radius, height);
-  // For areas on both sides (cheeks, under the eyes), point at the side nearer the loupes.
-  const spots = marked.map((area) => area.regions.flatMap((region) => regionCircles(points, width, height, region)).sort((a, b) => b.x - a.x)[0] || null);
-  // Two areas on the same spot would share one marker; move the later one a little down the face.
-  spots.forEach((spot, index) => {
-    if (!spot) return;
-    for (const other of spots.slice(0, index)) {
-      if (other && Math.hypot(spot.x - other.x, spot.y - other.y) < unit * 9) spots[index] = { ...spot, y: other.y + unit * 12 };
-    }
-  });
-  // Stack the loupes in the same top-to-bottom order as their spots, so connector lines never cross.
-  const order = marked.map((_, index) => index).sort((a, b) => (spots[a] ? spots[a].y : 0) - (spots[b] ? spots[b].y : 0));
-  marked.forEach((area, index) => {
-    const spot = spots[index];
-    if (!spot) return;
-    const color = CONCERN_STYLES[area.concern].color;
-    const cy = slots[order.indexOf(index)], edgeX = columnX - radius;
-    const group = svg("g", { class: "face-map-loupe", style: "--delay:" + (0.4 + index * 0.25) + "s" });
-    group.appendChild(svg("path", { d: "M" + spot.x.toFixed(1) + " " + spot.y.toFixed(1) + "L" + edgeX.toFixed(1) + " " + cy.toFixed(1), stroke: "#ffffff", "stroke-width": unit * 0.9, "stroke-opacity": 0.9, fill: "none" }));
-    group.appendChild(svg("circle", { cx: spot.x, cy: spot.y, r: unit * 3.2, fill: "#ffffff", "fill-opacity": 0.35 }));
-    group.appendChild(svg("circle", { cx: spot.x, cy: spot.y, r: unit * 1.7, fill: "#ffffff" }));
-    group.appendChild(svg("circle", { cx: edgeX, cy, r: unit * 1.5, fill: "#ffffff" }));
-    const clip = svg("clipPath", { id: uid + "-loupe-" + index });
-    clip.appendChild(svg("circle", { cx: columnX, cy, r: radius }));
-    defs.appendChild(clip);
-    group.appendChild(svg("circle", { cx: columnX, cy, r: radius + unit * 3, fill: "#000000", "fill-opacity": 0.18 }));
-    group.appendChild(svg("image", { href: shown, x: columnX - spot.x * ZOOM, y: cy - spot.y * ZOOM, width: width * ZOOM, height: height * ZOOM, preserveAspectRatio: "none", "clip-path": "url(#" + uid + "-loupe-" + index + ")", filter: "url(#" + uid + "-sharp)" }));
-    group.appendChild(svg("circle", { cx: columnX, cy, r: radius, fill: "none", stroke: "#ffffff", "stroke-width": unit * 2.4 }));
-    // Thin ring in the concern colour ties the loupe to its row in the list.
-    group.appendChild(svg("circle", { cx: columnX, cy, r: radius + unit * 2.6, fill: "none", stroke: color, "stroke-width": unit * 1.1, "stroke-opacity": 0.9 }));
-    // Number badge linking the loupe to the list below.
-    const bx = columnX - radius * 0.72, by = cy - radius * 0.72;
-    group.appendChild(svg("circle", { cx: bx, cy: by, r: unit * 6.5, fill: color, stroke: "#ffffff", "stroke-width": unit * 1.4 }));
-    const text = svg("text", { x: bx, y: by, "text-anchor": "middle", "dominant-baseline": "central", "font-size": unit * 7.5, "font-weight": 700, fill: "#ffffff", "font-family": "system-ui, sans-serif" });
-    text.textContent = String(index + 1);
-    group.appendChild(text);
-    overlay.appendChild(group);
-  });
+  for (const side of ["left", "right"]) {
+    // Stack each column in the same top-to-bottom order as its spots, so connector lines never cross.
+    const column = placed.filter((item) => item.side === side).sort((a, b) => a.spot.y - b.spot.y);
+    const slots = loupeSlots(column.length, (minY + maxY) / 2, radius, height);
+    const columnX = side === "left" ? radius + unit * 7 : width - radius - unit * 7;
+    column.forEach((item, row) => {
+      const { index, spot } = item;
+      const area = marked[index];
+      const color = CONCERN_STYLES[area.concern].color;
+      const cy = slots[row];
+      const edgeX = side === "left" ? columnX + radius : columnX - radius;
+      // Zoom slightly toward the centre of the face so the circle shows skin, not the face edge.
+      const focus = { x: spot.x + (nose.x - spot.x) * 0.22, y: spot.y + (nose.y - spot.y) * 0.08 };
+      const group = svg("g", { class: "face-map-loupe", style: "--delay:" + (0.4 + index * 0.25) + "s" });
+      group.appendChild(svg("path", { d: "M" + spot.x.toFixed(1) + " " + spot.y.toFixed(1) + "L" + edgeX.toFixed(1) + " " + cy.toFixed(1), stroke: "#ffffff", "stroke-width": unit * 0.9, "stroke-opacity": 0.9, fill: "none" }));
+      group.appendChild(svg("circle", { cx: spot.x, cy: spot.y, r: unit * 3.2, fill: "#ffffff", "fill-opacity": 0.35 }));
+      group.appendChild(svg("circle", { cx: spot.x, cy: spot.y, r: unit * 1.7, fill: "#ffffff" }));
+      group.appendChild(svg("circle", { cx: edgeX, cy, r: unit * 1.5, fill: "#ffffff" }));
+      const clip = svg("clipPath", { id: uid + "-loupe-" + index });
+      clip.appendChild(svg("circle", { cx: columnX, cy, r: radius }));
+      defs.appendChild(clip);
+      group.appendChild(svg("circle", { cx: columnX, cy, r: radius + unit * 3, fill: "#000000", "fill-opacity": 0.18 }));
+      group.appendChild(svg("image", { href: shown, x: columnX - focus.x * ZOOM, y: cy - focus.y * ZOOM, width: width * ZOOM, height: height * ZOOM, preserveAspectRatio: "none", "clip-path": "url(#" + uid + "-loupe-" + index + ")", filter: "url(#" + uid + "-sharp)" }));
+      group.appendChild(svg("circle", { cx: columnX, cy, r: radius, fill: "none", stroke: "#ffffff", "stroke-width": unit * 2.4 }));
+      // Thin ring in the concern colour ties the loupe to its row in the list.
+      group.appendChild(svg("circle", { cx: columnX, cy, r: radius + unit * 2.6, fill: "none", stroke: color, "stroke-width": unit * 1.1, "stroke-opacity": 0.9 }));
+      // Number badge on the face-facing side of the loupe.
+      const bx = side === "left" ? columnX + radius * 0.72 : columnX - radius * 0.72, by = cy - radius * 0.72;
+      group.appendChild(svg("circle", { cx: bx, cy: by, r: unit * 6.5, fill: color, stroke: "#ffffff", "stroke-width": unit * 1.4 }));
+      const text = svg("text", { x: bx, y: by, "text-anchor": "middle", "dominant-baseline": "central", "font-size": unit * 7.5, "font-weight": 700, fill: "#ffffff", "font-family": "system-ui, sans-serif" });
+      text.textContent = String(index + 1);
+      group.appendChild(text);
+      overlay.appendChild(group);
+    });
+  }
   stage.appendChild(overlay);
 }
 
@@ -186,7 +200,7 @@ export async function buildFaceMap({ photo, areas, landmarks, mirrored }) {
   let shown = photo, width = original.width, height = original.height;
   if (points) {
     // Face on the left, loupes on the right of the displayed (possibly mirrored) frame.
-    const crop = faceCrop(points, original.width, original.height, mirrored ? 0.6 : 0.4);
+    const crop = faceCrop(points, original.width, original.height, 0.5);
     shown = cropPhoto(image, crop, mirrored);
     points = points.map((point) => {
       const x = (point.x * original.width - crop.x) / crop.w;

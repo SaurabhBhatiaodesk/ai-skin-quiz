@@ -123,7 +123,9 @@ export async function createFaceScan(video, zone, onStatus) {
   const hint = document.createElement("span"); hint.className = "face-scan-hint";
   const quality = document.createElement("span"); quality.className = "face-scan-quality";
   quality.hidden = true;
-  guide.append(instruction, hint, quality); zone.appendChild(guide);
+  guide.append(instruction, hint, quality);
+  // In the floating popup the guidance is a pill inside the camera; on the page it stays below the camera.
+  if (zone.closest(".scan-chat-open")) zone.appendChild(guide); else zone.after(guide);
   const countdown = document.createElement("div"); countdown.className = "face-scan-countdown"; countdown.setAttribute("aria-hidden", "true"); zone.appendChild(countdown);
   const context = overlay.getContext("2d");
   const sample = document.createElement("canvas"); sample.width = 64; sample.height = 64;

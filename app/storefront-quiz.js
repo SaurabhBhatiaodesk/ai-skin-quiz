@@ -128,7 +128,19 @@ import { buildScanReport } from "./scan-report.js";
       if (oldMap) oldMap.remove();
       root.querySelectorAll("[data-scan-report], [data-scan-report-end]").forEach(function (node) { node.remove(); });
       var mapToken = ++faceMapToken;
-      if (isScanResult) {
+      // The redesigned scan report is only used inside the floating popup; the page section keeps its own layout.
+      var inPopup = root.classList.contains("scan-chat-open");
+      if (isScanResult && !inPopup && scanPhoto) {
+        var insightBox = q("[data-insight]");
+        buildFaceMap({ photo: scanPhoto, areas: result.scanAreas, landmarks: scanLandmarks, mirrored: scanMirrored }).then(function (map) {
+          if (!map || mapToken !== faceMapToken || !insightBox) return;
+          var stale = q("[data-face-map]");
+          if (stale) stale.remove();
+          insightBox.before(map);
+          if (reading) reading.style.display = "";
+        }).catch(function () { /* the written observations still show without the map */ });
+      }
+      if (isScanResult && inPopup) {
         // Scan results use the premium report layout; the quiz hero, reading card and ritual list are hidden by CSS.
         var built = buildScanReport(result);
         var wrap = q('[data-screen="result"] .result-wrap');
@@ -222,7 +234,7 @@ import { buildScanReport } from "./scan-report.js";
       var sendButton = q("[data-save-email]");
       if (sendButton) {
         if (sendButton.getAttribute("data-quiz-style") === null) sendButton.setAttribute("data-quiz-style", sendButton.style.cssText);
-        if (isScanResult) { sendButton.style.removeProperty("background"); sendButton.style.setProperty("font-size", "15px", "important"); }
+        if (isScanResult && root.classList.contains("scan-chat-open")) { sendButton.style.removeProperty("background"); sendButton.style.setProperty("font-size", "15px", "important"); }
         else sendButton.style.cssText = sendButton.getAttribute("data-quiz-style");
       }
       // Without a brand name the footer would start with a stray separator.
@@ -286,6 +298,36 @@ import { buildScanReport } from "./scan-report.js";
         if (payload.path === "scan" && status) { status.textContent = error.message; showError(error.message || "Skin analysis failed. Please try again.", "scan"); }
         else showError(error.message || "Something went wrong. Please try again.", payload.path);
       }).finally(function () { clearTimeout(requestTimer); setSubmitting(false); });
+    }
+
+    // Analysing screen: the captured photo with a moving scan line, rotating step text and a progress bar.
+    var analyzingTimer = 0;
+    var ANALYZING_STEPS = ["Mapping your face", "Checking skin texture", "Reviewing tone and redness", "Preparing your report"];
+    function showAnalyzing(overlay) {
+      overlay.textContent = "";
+      var card = document.createElement("div"); card.className = "an-card";
+      if (scanPhoto) {
+        var frame = document.createElement("div"); frame.className = "an-photo";
+        var photo = document.createElement("img"); photo.src = scanPhoto; photo.alt = "";
+        if (scanMirrored) photo.style.transform = "scaleX(-1)";
+        frame.appendChild(photo);
+        ["an-grid", "an-line", "an-corners"].forEach(function (name) { var layer = document.createElement("span"); layer.className = name; layer.setAttribute("aria-hidden", "true"); frame.appendChild(layer); });
+        card.appendChild(frame);
+      }
+      var title = document.createElement("p"); title.className = "an-title"; title.setAttribute("data-analyzing-text", ""); title.textContent = "Analysing your skin";
+      var step = document.createElement("p"); step.className = "an-step"; step.textContent = ANALYZING_STEPS[0];
+      var bar = document.createElement("div"); bar.className = "an-bar"; bar.appendChild(document.createElement("span"));
+      card.append(title, step, bar);
+      overlay.appendChild(card);
+      var index = 0;
+      clearInterval(analyzingTimer);
+      analyzingTimer = setInterval(function () { index = Math.min(index + 1, ANALYZING_STEPS.length - 1); step.textContent = ANALYZING_STEPS[index]; }, 1600);
+      if (root.classList.contains("scan-chat-open")) root.scrollTop = 0;
+      overlay.classList.add("active");
+    }
+    function hideAnalyzing(overlay) {
+      clearInterval(analyzingTimer);
+      overlay.classList.remove("active");
     }
 
     function isDarkColor(hex) {
@@ -494,7 +536,7 @@ import { buildScanReport } from "./scan-report.js";
             faceScan = tracker;
             q("[data-scan-status]").textContent = "";
             // Modern hold-to-scan: start right away; the photo is taken once the face holds steady in the oval.
-            if (consentGiven()) runScan();
+            if (consentGiven() && root.classList.contains("scan-chat-open")) runScan();
           }).catch(function () { if (generation === cameraGeneration) { stopCamera(); q("[data-scan-status]").textContent = "Face tracking could not load. Check your connection, retry the camera, or upload a photo."; } });
         }
       }).catch(function (error) {
@@ -666,7 +708,7 @@ import { buildScanReport } from "./scan-report.js";
         if (!faceScan) { q("[data-scan-status]").textContent = "Wait for face tracking to load, or retry the camera."; return; }
         scanCapturing = true;
         // While the hold-to-scan runs there is nothing to tap; the button returns as "Try again" if it stops.
-        root.setAttribute("data-auto-scan", "");
+        if (root.classList.contains("scan-chat-open")) root.setAttribute("data-auto-scan", "");
         faceScan.start().then(function (images) {
           scanCapturing = false;
           root.removeAttribute("data-auto-scan");
@@ -718,7 +760,8 @@ import { buildScanReport } from "./scan-report.js";
       scanLandmarks = Array.isArray(images) && images.landmarks ? images.landmarks : null;
       scanMirrored = scanMode === "camera";
       var overlay = q("[data-analyzing]");
-      if (overlay) overlay.classList.add("active");
+      if (overlay && root.classList.contains("scan-chat-open")) showAnalyzing(overlay);
+      else if (overlay) overlay.classList.add("active");
       Promise.all((Array.isArray(images) ? images : [images]).map(compactScanPhoto)).then(function (photos) {
         return submit({ path: "scan", images: photos, consent: true, adult: true });
       }).catch(function (error) {
@@ -732,7 +775,7 @@ import { buildScanReport } from "./scan-report.js";
         if (fileInput) fileInput.value = "";
         var uploadZone = q("[data-upload-zone]");
         if (uploadZone && scanMode === "upload") uploadZone.classList.remove("hidden");
-        if (overlay) overlay.classList.remove("active");
+        if (overlay) hideAnalyzing(overlay);
       });
     }
 
@@ -921,9 +964,9 @@ import { buildScanReport } from "./scan-report.js";
         launcher.style[appearance.position === "left" ? "left" : "right"] = (appearance.offset == null ? 24 : appearance.offset) + "px";
         launcher.style[appearance.position === "left" ? "right" : "left"] = "auto";
         root.style.setProperty("--scan-offset", (appearance.offset == null ? 24 : appearance.offset) + "px");
-        root.style.setProperty("--scan-panel", appearance.panelColor || "#faf7f2");
+        root.style.setProperty("--scan-panel", appearance.panelColor || "#000a30");
         // On a dark popup background, text placed directly on the panel switches to light colours.
-        if (isDarkColor(appearance.panelColor || "#faf7f2")) root.setAttribute("data-scan-dark", "");
+        if (isDarkColor(appearance.panelColor || "#000a30")) root.setAttribute("data-scan-dark", "");
         else root.removeAttribute("data-scan-dark");
         root.style.setProperty("--scan-text", appearance.textColor || "#1a1208");
         root.style.setProperty("--scan-accent", appearance.accentColor || "#52695a");
