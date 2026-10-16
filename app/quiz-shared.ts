@@ -44,7 +44,7 @@ export type StoredQuiz = {
   layout?: "three" | "single" | "scan";
   scanner?: { title: string; description: string; camera: boolean; upload: boolean };
   scanIntegration?: { provider: string; endpoint: string; documentation: string };
-  design?: { headingColor?: string; cardColor?: string; answerColor?: string; answerText?: string; selectedColor?: string; selectedText?: string; headingSize?: number; questionSize?: number; bodySize?: number; answerSize?: number; buttonSize?: number; buttonAlignment?: "left" | "center" | "right"; background: string; text: string; accent: string; buttonText: string; font: "classic" | "sans"; radius: "square" | "rounded" | "pill" };
+  design?: { headingColor?: string; cardColor?: string; answerColor?: string; answerText?: string; selectedColor?: string; selectedText?: string; headingSize?: number; questionSize?: number; bodySize?: number; answerSize?: number; buttonSize?: number; desktopWidth?: number; desktopPadding?: number; mobileWidth?: number; mobilePadding?: number; mobileHeadingSize?: number; mobileQuestionSize?: number; mobileAnswerSize?: number; answerSpacing?: number; mobileAnswerSpacing?: number; buttonAlignment?: "left" | "center" | "right"; background: string; text: string; accent: string; buttonText: string; font: "classic" | "sans"; radius: "square" | "rounded" | "pill" };
   quick: QuickQuestion[];
   deep: DeepQuestion[];
   profiles: Record<string, QuizProfile>;
@@ -63,6 +63,15 @@ export const recommendedQuizDesign: Required<NonNullable<StoredQuiz["design"]>> 
   bodySize: 15,
   answerSize: 18,
   buttonSize: 18,
+  desktopWidth: 1120,
+  desktopPadding: 48,
+  mobileWidth: 100,
+  mobilePadding: 16,
+  mobileHeadingSize: 28,
+  mobileQuestionSize: 24,
+  mobileAnswerSize: 16,
+  answerSpacing: 14,
+  mobileAnswerSpacing: 10,
   buttonAlignment: "center",
   background: "#f4f6f2",
   text: "#1a2921",
