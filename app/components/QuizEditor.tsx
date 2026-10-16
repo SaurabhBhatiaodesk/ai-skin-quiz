@@ -368,7 +368,7 @@ export default function QuizEditor({
             </s-box> : null}
           </s-section> : null}
           <s-stack gap="base">
-            {tab === "design" || tab === "settings" ? <s-section heading="Widget appearance settings">
+            {tab === "design" ? <s-section heading="Widget appearance settings">
               <s-stack gap="base">
                 <s-paragraph color="subdued">{scanOnly ? "Customize this Skin Scan widget on your storefront. These settings are saved for this widget." : "Colors and font sizes are saved only for this widget and apply to its theme block and embed code."}</s-paragraph>
                 <s-paragraph color="subdued">Heading and body fonts follow your Shopify theme.</s-paragraph>
