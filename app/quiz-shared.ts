@@ -44,14 +44,14 @@ export type StoredQuiz = {
   layout?: "three" | "single" | "scan";
   scanner?: { title: string; description: string; camera: boolean; upload: boolean };
   scanIntegration?: { provider: string; endpoint: string; documentation: string };
-  design?: { answerPadding?: number; mobileAnswerPadding?: number; scanCard?: string; scanText?: string; scanHeading?: string; scanButton?: string; scanButtonText?: string; headingColor?: string; cardColor?: string; answerColor?: string; answerText?: string; selectedColor?: string; selectedText?: string; headingSize?: number; questionSize?: number; bodySize?: number; answerSize?: number; buttonSize?: number; desktopWidth?: number; desktopPadding?: number; mobileWidth?: number; mobilePadding?: number; mobileHeadingSize?: number; mobileQuestionSize?: number; mobileAnswerSize?: number; answerSpacing?: number; mobileAnswerSpacing?: number; desktopButtonWidth?: number; mobileButtonWidth?: number; desktopButtonHeight?: number; mobileButtonHeight?: number; mobileButtonSize?: number; buttonAlignment?: "left" | "center" | "right"; background: string; text: string; accent: string; buttonText: string; font: "classic" | "sans"; radius: "square" | "rounded" | "pill" };
+  design?: { backBg?: string; backText?: string; backBorder?: string; answerPadding?: number; mobileAnswerPadding?: number; scanCard?: string; scanText?: string; scanHeading?: string; scanButton?: string; scanButtonText?: string; headingColor?: string; cardColor?: string; answerColor?: string; answerText?: string; selectedColor?: string; selectedText?: string; headingSize?: number; questionSize?: number; bodySize?: number; answerSize?: number; buttonSize?: number; desktopWidth?: number; desktopPadding?: number; mobileWidth?: number; mobilePadding?: number; mobileHeadingSize?: number; mobileQuestionSize?: number; mobileAnswerSize?: number; answerSpacing?: number; mobileAnswerSpacing?: number; desktopButtonWidth?: number; mobileButtonWidth?: number; desktopButtonHeight?: number; mobileButtonHeight?: number; mobileButtonSize?: number; buttonAlignment?: "left" | "center" | "right"; background: string; text: string; accent: string; buttonText: string; font: "classic" | "sans"; radius: "square" | "rounded" | "pill" };
   quick: QuickQuestion[];
   deep: DeepQuestion[];
   profiles: Record<string, QuizProfile>;
   mappings: ProductMapping[];
 };
 
-export const recommendedQuizDesign: Omit<Required<NonNullable<StoredQuiz["design"]>>, "scanCard" | "scanText" | "scanHeading" | "scanButton" | "scanButtonText"> = {
+export const recommendedQuizDesign: Omit<Required<NonNullable<StoredQuiz["design"]>>, "scanCard" | "scanText" | "scanHeading" | "scanButton" | "scanButtonText" | "backBg" | "backText" | "backBorder"> = {
   answerPadding: 12,
   mobileAnswerPadding: 12,
   headingColor: "#000000",

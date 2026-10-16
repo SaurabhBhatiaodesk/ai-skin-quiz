@@ -880,7 +880,7 @@ import { buildScanReport } from "./scan-report.js";
         root.style.setProperty("--button-radius", design.radius === "pill" ? "999px" : design.radius === "square" ? "0px" : "8px");
         root.querySelectorAll('[data-screen="quick"], [data-screen="deep"]').forEach(function (element) { element.style.setProperty("background", "transparent", "important"); });
         // Skin Scan colours of this widget (inline scan screen only; the floating popup has its own appearance).
-        [["scanCard", "--sx-card"], ["scanText", "--sx-text"], ["scanHeading", "--sx-heading"], ["scanButton", "--sx-button"], ["scanButtonText", "--sx-button-text"]].forEach(function (pair) {
+        [["scanCard", "--sx-card"], ["scanText", "--sx-text"], ["scanHeading", "--sx-heading"], ["scanButton", "--sx-button"], ["scanButtonText", "--sx-button-text"], ["backBg", "--back-bg"], ["backText", "--back-text"], ["backBorder", "--back-border"]].forEach(function (pair) {
           var attribute = "data-" + pair[1].slice(2);
           if (design[pair[0]]) { root.style.setProperty(pair[1], design[pair[0]]); root.setAttribute(attribute, ""); }
           else { root.style.removeProperty(pair[1]); root.removeAttribute(attribute); }
