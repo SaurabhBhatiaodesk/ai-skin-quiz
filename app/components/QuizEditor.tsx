@@ -371,12 +371,12 @@ export default function QuizEditor({
             </s-box> : null}
           </s-section> : null}
           <s-stack gap="base">
-            {tab === "design" ? <s-section heading="Widget appearance settings">
+            {tab === "design" ? <div className="quiz-design-workspace"><style>{`.quiz-design-workspace{display:grid;grid-template-columns:minmax(300px,380px) minmax(0,1fr);gap:24px;align-items:start}.quiz-design-controls,.quiz-design-preview{min-width:0}.quiz-design-preview{position:sticky;top:20px}.quiz-design-controls .quiz-design-fields{grid-template-columns:minmax(0,1fr)!important}@media(max-width:1050px){.quiz-design-workspace{grid-template-columns:minmax(0,1fr)}.quiz-design-preview{position:static}}`}</style><div className="quiz-design-controls"><s-section heading="Widget appearance settings">
               <s-stack gap="base">
                 <s-paragraph color="subdued">{scanOnly ? "Customize this Skin Scan widget on your storefront. These settings are saved for this widget." : "Colors and font sizes are saved only for this widget and apply to its theme block and embed code."}</s-paragraph>
                 <s-paragraph color="subdued">Heading and body fonts follow your Shopify theme.</s-paragraph>
                 {!scanOnly ? <s-button onClick={() => setQuiz(current => ({ ...current, design: { ...recommendedQuizDesign } }))}>Restore recommended design</s-button> : null}
-                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(300px, 1fr))",gap:16}}>
+                <div className="quiz-design-fields" style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(300px, 1fr))",gap:16}}>
                   <div style={{border:"1px solid #E1E3E1",borderRadius:12,padding:20,background:"#FFFFFF"}}><s-stack gap="base"><s-heading>Background and body</s-heading><s-color-field label="Background color" value={design.background} onInput={event => { const value = event.currentTarget.value; setQuiz(current => ({ ...current, design: { ...design, ...current.design, background: value } })); }} /><s-color-field label="Body text color" value={design.text} onInput={event => { const value = event.currentTarget.value; setQuiz(current => ({ ...current, design: { ...design, ...current.design, text: value } })); }} /><s-number-field label="Body text size" suffix="px" min={10} max={64} value={String(design.bodySize ?? 14)} onInput={event => { const value = Number(event.currentTarget.value); setQuiz(current => ({ ...current, design: { ...design, ...current.design, bodySize: value } })); }} /></s-stack></div>
                   <div style={{border:"1px solid #E1E3E1",borderRadius:12,padding:20,background:"#FFFFFF"}}><s-stack gap="base"><s-heading>Heading</s-heading><s-color-field label="Heading color" value={design.headingColor || "#000000"} onInput={event => { const value = event.currentTarget.value; setQuiz(current => ({ ...current, design: { ...design, ...current.design, headingColor: value } })); }} /><s-number-field label="Heading size" suffix="px" min={10} max={64} value={String(design.headingSize ?? 36)} onInput={event => { const value = Number(event.currentTarget.value); setQuiz(current => ({ ...current, design: { ...design, ...current.design, headingSize: value } })); }} /></s-stack></div>
                   <div style={{border:"1px solid #E1E3E1",borderRadius:12,padding:20,background:"#FFFFFF"}}><s-stack gap="base"><s-heading>Question card</s-heading><s-color-field label="Question card background" value={design.cardColor || "#fff9ee"} onInput={event => { const value = event.currentTarget.value; setQuiz(current => ({ ...current, design: { ...design, ...current.design, cardColor: value } })); }} /><s-number-field label="Question size" suffix="px" min={10} max={64} value={String(design.questionSize ?? 26)} onInput={event => { const value = Number(event.currentTarget.value); setQuiz(current => ({ ...current, design: { ...design, ...current.design, questionSize: value } })); }} /></s-stack></div>
@@ -398,8 +398,7 @@ export default function QuizEditor({
 <s-number-field label="Mobile answer spacing" suffix="px" min={0} max={32} value={String(design.mobileAnswerSpacing ?? 10)} onInput={event => { const value = Number(event.currentTarget.value); setQuiz(current => ({ ...current, design: { ...design, ...current.design, mobileAnswerSpacing: value } })); }} /></s-grid></s-section>
                 <s-stack direction="inline" justifyContent="end"><s-button variant="primary" loading={pending} onClick={save}>Save design</s-button></s-stack>
               </s-stack>
-            </s-section> : null}
-            {tab === "design" ? <s-section heading={scanOnly ? "Scan design preview" : "Quiz design preview"}>
+            </s-section></div><div className="quiz-design-preview"><s-section heading={scanOnly ? "Scan design preview" : "Quiz design preview"}>
               <s-stack gap="base">
                 <s-paragraph color="subdued">Colors and button shape update as you edit. Storefront heading and body fonts follow your theme.</s-paragraph>
                 <div role="group" aria-label="Preview device" style={{display:"flex",gap:6,alignItems:"center"}}>
@@ -419,7 +418,7 @@ export default function QuizEditor({
                   </div>
                 </div>
               </s-stack>
-            </s-section> : null}
+            </s-section></div></div> : null}
             {showQuestions && kind === "scan" ? <s-section heading="AI Skin Scan settings">
               <s-stack gap="base">
                 {!scanConfigured ? <s-banner tone="warning" heading="Analysis setup required">Camera and photo upload are available. Select OpenAI and save its API key in Global Settings to enable skin observations.<s-button slot="primary-action" href="/app/settings">Connect AI</s-button></s-banner> : null}
