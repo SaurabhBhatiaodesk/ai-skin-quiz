@@ -369,10 +369,15 @@ export function normalizeQuiz(input: unknown, { draft = false }: { draft?: boole
   };
   if (!scanner.camera && !scanner.upload) throw new Error("Enable camera or photo upload for Skin Scan.");
   const suppliedDesign = (input as StoredQuiz)?.design;
-  function color(value: unknown, fallback: string) {
-    if (value === undefined) return fallback;
-    if (typeof value !== "string" || !/^#[0-9a-f]{6}$/i.test(value)) throw new Error("Use six-digit hex colors in Quiz design.");
-    return value;
+  const colorLabels: Record<string, string> = { headingColor: "Heading color", cardColor: "Question card background", answerColor: "Answer background", answerText: "Answer text color", selectedColor: "Selected answer background", selectedText: "Selected answer text", background: "Background color", text: "Body text color", accent: "Button background", buttonText: "Button text color" };
+  // Accepts #RGB, #RRGGBB and #RRGGBBAA (alpha dropped) with stray spaces; empty values use the default.
+  function color(value: unknown, fallback: string, field = "") {
+    if (value === undefined || value === null || value === "") return fallback;
+    const raw = typeof value === "string" ? value.trim().replace(/^([0-9a-f]{6}|[0-9a-f]{8})$/i, "#$1") : "";
+    const short = raw.match(/^#([0-9a-f])([0-9a-f])([0-9a-f])$/i);
+    const hex = short ? `#${short[1]}${short[1]}${short[2]}${short[2]}${short[3]}${short[3]}` : /^#[0-9a-f]{8}$/i.test(raw) ? raw.slice(0, 7) : raw;
+    if (!/^#[0-9a-f]{6}$/i.test(hex)) throw new Error(`${colorLabels[field] || "A color"} must be a hex color like #1A2921.`);
+    return hex;
   }
   function fontSize(value: unknown, fallback: number) {
     if (value === undefined) return fallback;
@@ -381,20 +386,20 @@ export function normalizeQuiz(input: unknown, { draft = false }: { draft?: boole
     return size;
   }
   const design: NonNullable<StoredQuiz["design"]> = {
-    headingColor: color(suppliedDesign?.headingColor, recommendedQuizDesign.headingColor),
-    cardColor: color(suppliedDesign?.cardColor, recommendedQuizDesign.cardColor),
-    answerColor: color(suppliedDesign?.answerColor, recommendedQuizDesign.answerColor),
-    answerText: color(suppliedDesign?.answerText, recommendedQuizDesign.answerText),
-    selectedColor: color(suppliedDesign?.selectedColor, recommendedQuizDesign.selectedColor),
-    selectedText: color(suppliedDesign?.selectedText, recommendedQuizDesign.selectedText),
+    headingColor: color(suppliedDesign?.headingColor, recommendedQuizDesign.headingColor, "headingColor"),
+    cardColor: color(suppliedDesign?.cardColor, recommendedQuizDesign.cardColor, "cardColor"),
+    answerColor: color(suppliedDesign?.answerColor, recommendedQuizDesign.answerColor, "answerColor"),
+    answerText: color(suppliedDesign?.answerText, recommendedQuizDesign.answerText, "answerText"),
+    selectedColor: color(suppliedDesign?.selectedColor, recommendedQuizDesign.selectedColor, "selectedColor"),
+    selectedText: color(suppliedDesign?.selectedText, recommendedQuizDesign.selectedText, "selectedText"),
     headingSize: fontSize(suppliedDesign?.headingSize, recommendedQuizDesign.headingSize),
     questionSize: fontSize(suppliedDesign?.questionSize, recommendedQuizDesign.questionSize),
     bodySize: fontSize(suppliedDesign?.bodySize, recommendedQuizDesign.bodySize),
     answerSize: fontSize(suppliedDesign?.answerSize, recommendedQuizDesign.answerSize),
     buttonSize: fontSize(suppliedDesign?.buttonSize, recommendedQuizDesign.buttonSize),
 
-    background: color(suppliedDesign?.background, recommendedQuizDesign.background), text: color(suppliedDesign?.text, recommendedQuizDesign.text),
-    accent: color(suppliedDesign?.accent, recommendedQuizDesign.accent), buttonText: color(suppliedDesign?.buttonText, recommendedQuizDesign.buttonText),
+    background: color(suppliedDesign?.background, recommendedQuizDesign.background, "background"), text: color(suppliedDesign?.text, recommendedQuizDesign.text, "text"),
+    accent: color(suppliedDesign?.accent, recommendedQuizDesign.accent, "accent"), buttonText: color(suppliedDesign?.buttonText, recommendedQuizDesign.buttonText, "buttonText"),
     font: suppliedDesign?.font === "sans" ? "sans" : recommendedQuizDesign.font,
     buttonAlignment: suppliedDesign?.buttonAlignment === "left" ? "left" : suppliedDesign?.buttonAlignment === "right" ? "right" : "center",
     radius: suppliedDesign?.radius === "square" ? "square" : suppliedDesign?.radius === "pill" ? "pill" : recommendedQuizDesign.radius,
