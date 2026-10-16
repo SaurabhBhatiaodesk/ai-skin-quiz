@@ -369,7 +369,7 @@ export function normalizeQuiz(input: unknown, { draft = false }: { draft?: boole
   };
   if (!scanner.camera && !scanner.upload) throw new Error("Enable camera or photo upload for Skin Scan.");
   const suppliedDesign = (input as StoredQuiz)?.design;
-  const colorLabels: Record<string, string> = { backBg: "Back button background", backText: "Back button text color", backBorder: "Back button border color", scanCard: "Skin Scan card background", scanText: "Skin Scan text color", scanHeading: "Skin Scan heading color", scanButton: "Skin Scan button background", scanButtonText: "Skin Scan button text", headingColor: "Heading color", cardColor: "Question card background", answerColor: "Answer background", answerText: "Answer text color", selectedColor: "Selected answer background", selectedText: "Selected answer text", background: "Background color", text: "Body text color", accent: "Button background", buttonText: "Button text color" };
+  const colorLabels: Record<string, string> = { headingAccent: "Highlight word color", backBg: "Back button background", backText: "Back button text color", backBorder: "Back button border color", scanCard: "Skin Scan card background", scanText: "Skin Scan text color", scanHeading: "Skin Scan heading color", scanButton: "Skin Scan button background", scanButtonText: "Skin Scan button text", headingColor: "Heading color", cardColor: "Question card background", answerColor: "Answer background", answerText: "Answer text color", selectedColor: "Selected answer background", selectedText: "Selected answer text", background: "Background color", text: "Body text color", accent: "Button background", buttonText: "Button text color" };
   // Accepts #RGB, #RRGGBB and #RRGGBBAA (alpha dropped) with stray spaces; empty values use the default.
   function color(value: unknown, fallback: string, field = "") {
     if (value === undefined || value === null || value === "") return fallback;
@@ -387,7 +387,7 @@ export function normalizeQuiz(input: unknown, { draft = false }: { draft?: boole
   }
   const design: NonNullable<StoredQuiz["design"]> = {
     // Skin Scan colours for this widget's scan screen; empty means "same as the quiz".
-    ...Object.fromEntries((["scanCard", "scanText", "scanHeading", "scanButton", "scanButtonText", "backBg", "backText", "backBorder"] as const).flatMap(key => { const value = suppliedDesign?.[key]; return value ? [[key, color(value, "", key)]] : []; })),
+    ...Object.fromEntries((["scanCard", "scanText", "scanHeading", "scanButton", "scanButtonText", "backBg", "backText", "backBorder", "headingAccent"] as const).flatMap(key => { const value = suppliedDesign?.[key]; return value ? [[key, color(value, "", key)]] : []; })),
     headingColor: color(suppliedDesign?.headingColor, recommendedQuizDesign.headingColor, "headingColor"),
     cardColor: color(suppliedDesign?.cardColor, recommendedQuizDesign.cardColor, "cardColor"),
     answerColor: color(suppliedDesign?.answerColor, recommendedQuizDesign.answerColor, "answerColor"),
@@ -407,6 +407,13 @@ export function normalizeQuiz(input: unknown, { draft = false }: { draft?: boole
     desktopPadding: Math.min(100, Math.max(0, Number.isFinite(Number(suppliedDesign?.desktopPadding)) ? Number(suppliedDesign?.desktopPadding) : 36)),
     mobileWidth: Math.min(100, Math.max(60, Number.isFinite(Number(suppliedDesign?.mobileWidth)) ? Number(suppliedDesign?.mobileWidth) : 100)),
     mobilePadding: Math.min(48, Math.max(0, Number.isFinite(Number(suppliedDesign?.mobilePadding)) ? Number(suppliedDesign?.mobilePadding) : 24)),
+    questionGap: Math.min(80, Math.max(0, Number.isFinite(Number(suppliedDesign?.questionGap)) ? Number(suppliedDesign?.questionGap) : 28)),
+    mobileQuestionGap: Math.min(60, Math.max(0, Number.isFinite(Number(suppliedDesign?.mobileQuestionGap)) ? Number(suppliedDesign?.mobileQuestionGap) : 20)),
+    buttonGap: Math.min(80, Math.max(0, Number.isFinite(Number(suppliedDesign?.buttonGap)) ? Number(suppliedDesign?.buttonGap) : 28)),
+    mobileButtonGap: Math.min(60, Math.max(0, Number.isFinite(Number(suppliedDesign?.mobileButtonGap)) ? Number(suppliedDesign?.mobileButtonGap) : 24)),
+    brandSize: Math.min(24, Math.max(8, Number.isFinite(Number(suppliedDesign?.brandSize)) ? Number(suppliedDesign?.brandSize) : 11)),
+    mobileBrandSize: Math.min(20, Math.max(8, Number.isFinite(Number(suppliedDesign?.mobileBrandSize)) ? Number(suppliedDesign?.mobileBrandSize) : 10)),
+    mobileSubtitleSize: Math.min(24, Math.max(10, Number.isFinite(Number(suppliedDesign?.mobileSubtitleSize)) ? Number(suppliedDesign?.mobileSubtitleSize) : 13)),
     mobileHeadingSize: Math.min(48, Math.max(14, Number.isFinite(Number(suppliedDesign?.mobileHeadingSize)) ? Number(suppliedDesign?.mobileHeadingSize) : 28)),
     mobileQuestionSize: Math.min(48, Math.max(14, Number.isFinite(Number(suppliedDesign?.mobileQuestionSize)) ? Number(suppliedDesign?.mobileQuestionSize) : 20)),
     mobileAnswerSize: Math.min(32, Math.max(12, Number.isFinite(Number(suppliedDesign?.mobileAnswerSize)) ? Number(suppliedDesign?.mobileAnswerSize) : 18)),

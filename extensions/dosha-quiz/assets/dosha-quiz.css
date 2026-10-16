@@ -3796,3 +3796,24 @@
   .prana-quiz.prana-quiz.scan-chat-open [data-screen="scanner"] .hdr { padding-top: 14px; padding-bottom: 2px; }
   .prana-quiz.prana-quiz.scan-chat-open [data-screen="scanner"] .scanner-wrap { padding-bottom: 12px; }
 }
+
+/* Widget header (brand line, title, subtitle): desktop and mobile sizes from Quiz design. */
+.prana-quiz.prana-quiz:not(.scan-chat-open) [data-screen]:not([data-screen="scanner"]) .hdr-logo { font-size: var(--layout-brandSize, 11px) !important; }
+.prana-quiz.prana-quiz:not(.scan-chat-open) [data-screen]:not([data-screen="scanner"]) .hdr-title { font-size: var(--layout-headingSize, 36px) !important; }
+.prana-quiz.prana-quiz:not(.scan-chat-open) [data-screen]:not([data-screen="scanner"]) .hdr-sub { font-size: var(--layout-bodySize, 15px) !important; }
+.prana-quiz.prana-quiz:not(.scan-chat-open)[data-heading-accent] [data-screen]:not([data-screen="scanner"]) .hdr-title em { color: var(--heading-accent) !important; }
+@media (max-width: 600px) {
+  .prana-quiz.prana-quiz:not(.scan-chat-open) [data-screen]:not([data-screen="scanner"]) .hdr-logo { font-size: var(--layout-mobileBrandSize, 10px) !important; }
+  .prana-quiz.prana-quiz:not(.scan-chat-open) [data-screen]:not([data-screen="scanner"]) .hdr-title { font-size: var(--layout-mobileHeadingSize, 28px) !important; }
+  .prana-quiz.prana-quiz:not(.scan-chat-open) [data-screen]:not([data-screen="scanner"]) .hdr-sub { font-size: var(--layout-mobileSubtitleSize, 13px) !important; }
+}
+
+/* Question spacing from Quiz design: question -> answers, answers -> Continue button (one gap, not two). */
+.prana-quiz.prana-quiz:not(.scan-chat-open) :where([data-screen="quick"],[data-screen="deep"]) .q-text { margin-bottom: var(--layout-questionGap, 28px) !important; }
+.prana-quiz.prana-quiz:not(.scan-chat-open) :where([data-screen="quick"],[data-screen="deep"]) .q-nav { margin-top: 0 !important; }
+.prana-quiz.prana-quiz:not(.scan-chat-open) :where([data-screen="quick"],[data-screen="deep"]) .btn-next { margin-top: var(--layout-buttonGap, 28px) !important; }
+.prana-quiz.prana-quiz:not(.scan-chat-open) :where([data-screen="quick"],[data-screen="deep"]) .q-error:empty { display: none; }
+@media (max-width: 600px) {
+  .prana-quiz.prana-quiz:not(.scan-chat-open) :where([data-screen="quick"],[data-screen="deep"]) .q-text { margin-bottom: var(--layout-mobileQuestionGap, 20px) !important; }
+  .prana-quiz.prana-quiz:not(.scan-chat-open) :where([data-screen="quick"],[data-screen="deep"]) .btn-next { margin-top: var(--layout-mobileButtonGap, 24px) !important; }
+}

@@ -870,7 +870,7 @@ import { buildScanReport } from "./scan-report.js";
       if (data.design) {
         var design = data.design;
         root.style.setProperty("--canvas", design.background);
-        ["desktopButtonWidth","mobileButtonWidth","desktopButtonHeight","mobileButtonHeight","mobileButtonSize","desktopWidth","desktopPadding","mobileWidth","mobilePadding","mobileHeadingSize","mobileQuestionSize","mobileAnswerSize","answerSpacing","mobileAnswerSpacing","answerPadding","mobileAnswerPadding"].forEach(function(key) { if (Number.isFinite(Number(design[key]))) root.style.setProperty('--layout-' + key, Number(design[key]) + (['mobileWidth','desktopButtonWidth','mobileButtonWidth'].includes(key) ? '%' : 'px')); });
+        ["desktopButtonWidth","mobileButtonWidth","desktopButtonHeight","mobileButtonHeight","mobileButtonSize","desktopWidth","desktopPadding","mobileWidth","mobilePadding","mobileHeadingSize","mobileQuestionSize","mobileAnswerSize","answerSpacing","mobileAnswerSpacing","answerPadding","mobileAnswerPadding","headingSize","bodySize","brandSize","mobileBrandSize","mobileSubtitleSize","questionGap","mobileQuestionGap","buttonGap","mobileButtonGap"].forEach(function(key) { if (Number.isFinite(Number(design[key]))) root.style.setProperty('--layout-' + key, Number(design[key]) + (['mobileWidth','desktopButtonWidth','mobileButtonWidth'].includes(key) ? '%' : 'px')); });
         root.dataset.buttonAlignment = ["left", "right"].includes(design.buttonAlignment) ? design.buttonAlignment : "center";
         root.style.setProperty("--ink", design.text);
         root.style.setProperty("--gold", design.accent);
@@ -880,7 +880,7 @@ import { buildScanReport } from "./scan-report.js";
         root.style.setProperty("--button-radius", design.radius === "pill" ? "999px" : design.radius === "square" ? "0px" : "8px");
         root.querySelectorAll('[data-screen="quick"], [data-screen="deep"]').forEach(function (element) { element.style.setProperty("background", "transparent", "important"); });
         // Skin Scan colours of this widget (inline scan screen only; the floating popup has its own appearance).
-        [["scanCard", "--sx-card"], ["scanText", "--sx-text"], ["scanHeading", "--sx-heading"], ["scanButton", "--sx-button"], ["scanButtonText", "--sx-button-text"], ["backBg", "--back-bg"], ["backText", "--back-text"], ["backBorder", "--back-border"]].forEach(function (pair) {
+        [["scanCard", "--sx-card"], ["scanText", "--sx-text"], ["scanHeading", "--sx-heading"], ["scanButton", "--sx-button"], ["scanButtonText", "--sx-button-text"], ["backBg", "--back-bg"], ["backText", "--back-text"], ["backBorder", "--back-border"], ["headingAccent", "--heading-accent"]].forEach(function (pair) {
           var attribute = "data-" + pair[1].slice(2);
           if (design[pair[0]]) { root.style.setProperty(pair[1], design[pair[0]]); root.setAttribute(attribute, ""); }
           else { root.style.removeProperty(pair[1]); root.removeAttribute(attribute); }
@@ -888,7 +888,7 @@ import { buildScanReport } from "./scan-report.js";
         if (design.cardColor !== undefined) root.style.setProperty('--quiz-card', design.cardColor);
         if (design.cardColor !== undefined) root.querySelectorAll('.quiz-wrap').forEach(function (element) { element.style.setProperty("background", String(design.cardColor), "important"); });
         if (design.headingColor !== undefined) root.querySelectorAll('[data-screen]:not([data-screen="scanner"]) .hdr-title, .rh-dosha').forEach(function (element) { element.style.setProperty("color", String(design.headingColor), "important"); });
-        if (design.headingSize !== undefined) root.querySelectorAll('[data-screen]:not([data-screen="scanner"]) .hdr-title, .rh-dosha').forEach(function (element) { element.style.setProperty("font-size", String(design.headingSize) + "px", "important"); });
+        if (design.headingSize !== undefined) root.querySelectorAll('.rh-dosha').forEach(function (element) { element.style.setProperty("font-size", String(design.headingSize) + "px", "important"); });
         if (design.questionSize !== undefined) root.querySelectorAll('.q-text').forEach(function (element) { element.style.setProperty("font-size", String(design.questionSize) + "px"); });
         if (design.headingColor !== undefined) root.querySelectorAll('.q-text').forEach(function (element) { element.style.setProperty("color", String(design.headingColor), "important"); });
         if (design.answerColor !== undefined) root.querySelectorAll('.q-opt:not(.selected)').forEach(function (element) { element.style.setProperty("background", String(design.answerColor), "important"); });
@@ -898,7 +898,7 @@ import { buildScanReport } from "./scan-report.js";
         if (design.answerSize !== undefined) root.querySelectorAll('.q-opt-main').forEach(function (element) { element.style.setProperty("font-size", String(design.answerSize) + "px"); });
         if (design.accent !== undefined) root.querySelectorAll('.btn-next, .btn-eb, .btn-upgrade').forEach(function (element) { element.style.setProperty("background", String(design.accent), "important"); });
         if (design.buttonSize !== undefined) root.querySelectorAll('.btn-next, .btn-upgrade').forEach(function (element) { element.style.setProperty("font-size", String(design.buttonSize) + "px"); });
-        if (design.bodySize !== undefined) root.querySelectorAll('.q-sub, .insight-text, .hdr-sub').forEach(function (element) { element.style.setProperty("font-size", String(design.bodySize) + "px", "important"); });
+        if (design.bodySize !== undefined) root.querySelectorAll('.q-sub, .insight-text').forEach(function (element) { element.style.setProperty("font-size", String(design.bodySize) + "px", "important"); });
         if (design.font === "sans") root.setAttribute("data-font", "sans");
       }
       var scanReady = data.scanReady === true;
