@@ -3798,14 +3798,14 @@
 }
 
 /* Widget header (brand line, title, subtitle): desktop and mobile sizes from Quiz design. */
-.prana-quiz.prana-quiz:not(.scan-chat-open) [data-screen]:not([data-screen="scanner"]) .hdr-logo { font-size: var(--layout-brandSize, 11px) !important; }
-.prana-quiz.prana-quiz:not(.scan-chat-open) [data-screen]:not([data-screen="scanner"]) .hdr-title { font-size: var(--layout-headingSize, 36px) !important; }
-.prana-quiz.prana-quiz:not(.scan-chat-open) [data-screen]:not([data-screen="scanner"]) .hdr-sub { font-size: var(--layout-bodySize, 15px) !important; }
-.prana-quiz.prana-quiz:not(.scan-chat-open)[data-heading-accent] [data-screen]:not([data-screen="scanner"]) .hdr-title em { color: var(--heading-accent) !important; }
+.prana-quiz.prana-quiz:not(.scan-chat-open) [data-screen] .hdr-logo { font-size: var(--layout-brandSize, 11px) !important; }
+.prana-quiz.prana-quiz:not(.scan-chat-open) [data-screen] .hdr-title { font-size: var(--layout-headingSize, 36px) !important; }
+.prana-quiz.prana-quiz:not(.scan-chat-open) [data-screen] .hdr-sub { font-size: var(--layout-bodySize, 15px) !important; }
+.prana-quiz.prana-quiz:not(.scan-chat-open)[data-heading-accent] [data-screen] .hdr-title em { color: var(--heading-accent) !important; }
 @media (max-width: 600px) {
-  .prana-quiz.prana-quiz:not(.scan-chat-open) [data-screen]:not([data-screen="scanner"]) .hdr-logo { font-size: var(--layout-mobileBrandSize, 10px) !important; }
-  .prana-quiz.prana-quiz:not(.scan-chat-open) [data-screen]:not([data-screen="scanner"]) .hdr-title { font-size: var(--layout-mobileHeadingSize, 28px) !important; }
-  .prana-quiz.prana-quiz:not(.scan-chat-open) [data-screen]:not([data-screen="scanner"]) .hdr-sub { font-size: var(--layout-mobileSubtitleSize, 13px) !important; }
+  .prana-quiz.prana-quiz:not(.scan-chat-open) [data-screen] .hdr-logo { font-size: var(--layout-mobileBrandSize, 10px) !important; }
+  .prana-quiz.prana-quiz:not(.scan-chat-open) [data-screen] .hdr-title { font-size: var(--layout-mobileHeadingSize, 28px) !important; }
+  .prana-quiz.prana-quiz:not(.scan-chat-open) [data-screen] .hdr-sub { font-size: var(--layout-mobileSubtitleSize, 13px) !important; }
 }
 
 /* Question spacing from Quiz design: question -> answers, answers -> Continue button (one gap, not two). */
@@ -3836,8 +3836,8 @@
 }
 
 /* Widget header colours (brand line, subtitle) from Quiz design. */
-.prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open)[data-brand-color] [data-screen]:not([data-screen="scanner"]) .hdr-logo { color: var(--brand-color) !important; }
-.prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open)[data-subtitle-color] [data-screen]:not([data-screen="scanner"]) .hdr-sub { color: var(--subtitle-color) !important; }
+.prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open)[data-brand-color] [data-screen] .hdr-logo { color: var(--brand-color) !important; }
+.prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open)[data-subtitle-color] [data-screen] .hdr-sub { color: var(--subtitle-color) !important; }
 .prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open)[data-entry-title] .entry-card .ec-name { color: var(--entry-title) !important; }
 .prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open)[data-entry-text] .entry-card .ec-desc { color: var(--entry-text) !important; }
 .prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open)[data-entry-time] .entry-card .ec-time { color: var(--entry-time) !important; }
@@ -3856,10 +3856,10 @@
   .prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open) .entry-card .ec-time { font-size: var(--layout-mobileEntryTimeSize, 10px); }
 }
 /* Space above the widget header and between the header and the cards / question card (one value each). */
-.prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open) [data-screen]:not([data-screen="scanner"]) > .hdr { padding-top: var(--layout-headerTop, 40px) !important; padding-bottom: var(--layout-headerGap, 40px) !important; }
+.prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open) [data-screen] > .hdr { padding-top: var(--layout-headerTop, 40px) !important; padding-bottom: var(--layout-headerGap, 40px) !important; }
 .prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open) .entry-cards { padding-top: 0 !important; }
 @media (max-width: 600px) {
-  .prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open) [data-screen]:not([data-screen="scanner"]) > .hdr { padding-top: var(--layout-mobileHeaderTop, 24px) !important; padding-bottom: var(--layout-mobileHeaderGap, 24px) !important; }
+  .prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open) [data-screen] > .hdr { padding-top: var(--layout-mobileHeaderTop, 24px) !important; padding-bottom: var(--layout-mobileHeaderGap, 24px) !important; }
 }
 
 /* Inline Skin Scan screen: steps/checkbox colour, notice and consent box backgrounds, title and text sizes. */
@@ -3884,3 +3884,15 @@
 .prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open) [data-screen="scanner"] .scanner-choice .sc-btn-icon svg { width: 20px; height: 20px; visibility: visible; stroke-width: 1.8; }
 .prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open) [data-screen="scanner"] .scanner-choice .sc-btn-label { margin: 0 !important; font-size: 15px !important; font-weight: 600; letter-spacing: normal !important; text-transform: none !important; color: inherit !important; }
 .prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open) [data-screen="scanner"] .scanner-choice .sc-btn-sub { display: none !important; }
+
+/* More inline Skin Scan colours: inactive steps, divider, notice text, consent box border and text. */
+.prana-quiz.prana-quiz:not(.scan-chat-open)[data-sx-step-idle] [data-screen="scanner"] .scan-steps li:not([aria-current="step"]) span { background: var(--sx-step-idle) !important; border-color: var(--sx-step-idle) !important; }
+.prana-quiz.prana-quiz:not(.scan-chat-open)[data-sx-divider] [data-screen="scanner"] .scan-steps { border-bottom-color: var(--sx-divider) !important; }
+.prana-quiz.prana-quiz:not(.scan-chat-open)[data-sx-notice-text] [data-screen="scanner"] .consent-notice :is(.cn-text, .cn-icon) { color: var(--sx-notice-text) !important; }
+.prana-quiz.prana-quiz:not(.scan-chat-open)[data-sx-box-border] [data-screen="scanner"] :is(.consent-box, .consent-notice) { border-color: var(--sx-box-border) !important; }
+.prana-quiz.prana-quiz:not(.scan-chat-open)[data-sx-label] [data-screen="scanner"] .consent-label { color: var(--sx-label) !important; }
+
+/* Floating popup: one type family for every heading (the theme serif was mixing into "Skin Insights"). */
+.prana-quiz.prana-quiz.prana-quiz.scan-chat-open :is(.hdr-title, .hdr-title em, .scan-step-title, .sr-title, .sr-section-title, .face-map-title, h1, h2, h3) { font-family: var(--sr-font, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif) !important; font-style: normal !important; }
+.prana-quiz.prana-quiz.prana-quiz.scan-chat-open [data-screen="scanner"] .hdr-title { font-weight: 700 !important; letter-spacing: -0.02em; }
+.prana-quiz.prana-quiz.prana-quiz.scan-chat-open [data-screen="scanner"] .scan-step-title { font-weight: 650 !important; }

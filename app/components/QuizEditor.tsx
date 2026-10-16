@@ -379,10 +379,10 @@ export default function QuizEditor({
               <s-stack gap="base">
                 <s-paragraph color="subdued">{scanOnly ? "Customize this Skin Scan widget on your storefront. These settings are saved for this widget." : "Colors and font sizes are saved only for this widget and apply to its theme block and embed code."}</s-paragraph>
                 <s-paragraph color="subdued">Heading and body fonts follow your Shopify theme.</s-paragraph>
-                {kind === "scan" && !scanOnly ? <div style={{border:"1px solid #E1E3E1",borderRadius:12,padding:20,background:"#FFFFFF"}}><s-stack gap="base">
+                {kind === "scan" || scanOnly ? <div style={{border:"1px solid #E1E3E1",borderRadius:12,padding:20,background:"#FFFFFF"}}><s-stack gap="base">
                   <s-heading>Skin Scan colors</s-heading>
                   <s-paragraph color="subdued">Used on this widget&apos;s Skin Scan screen. Leave a field empty to use the quiz colors. The floating popup has its own colors in Skin Scan appearance.</s-paragraph>
-                  {([["scanCard", "Card background", design.cardColor], ["scanText", "Text color", design.text], ["scanHeading", "Heading color", design.headingColor], ["scanButton", "Button background", design.accent], ["scanButtonText", "Button text color", design.buttonText], ["scanAccent", "Steps and checkbox color", design.accent], ["scanNoticeBg", "Notice background", "#F7EEE2"], ["scanBoxBg", "Consent box background", "#FFFFFF"]] as const).map(([key, label, fallback]) => <s-stack key={key} direction="inline" gap="small" alignItems="end">
+                  {([["scanCard", "Card background", design.cardColor], ["scanText", "Text color", design.text], ["scanHeading", "Heading color", design.headingColor], ["scanButton", "Button background", design.accent], ["scanButtonText", "Button text color", design.buttonText], ["scanAccent", "Steps and checkbox color", design.accent], ["scanNoticeBg", "Notice background", "#F7EEE2"], ["scanBoxBg", "Consent box background", "#FFFFFF"], ["scanStepIdle", "Inactive steps color", "#EFEAE2"], ["scanDivider", "Divider line color", "#E6DED2"], ["scanNoticeText", "Notice text color", "#6b6158"], ["scanBoxBorder", "Consent box border color", "#E3DCD0"], ["scanLabel", "Consent text color", "#6b6158"]] as const).map(([key, label, fallback]) => <s-stack key={key} direction="inline" gap="small" alignItems="end">
                     <div style={{flex:1,minWidth:0}}><s-color-field label={label} placeholder={fallback || ""} value={quiz.design?.[key] || ""} onInput={event => { const value = event.currentTarget.value; setQuiz(current => ({ ...current, design: { ...design, ...current.design, [key]: value } })); }} /></div>
                     {quiz.design?.[key] ? <s-button variant="tertiary" onClick={() => setQuiz(current => { const next = { ...design, ...current.design }; delete next[key]; return { ...current, design: next }; })}>Use quiz color</s-button> : null}
                   </s-stack>)}
@@ -451,6 +451,7 @@ export default function QuizEditor({
 </s-stack></div>
 </s-stack></s-section> : null}
                 <div className="quiz-design-fields" style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(300px, 1fr))",gap:16}}>
+                  {!scanOnly ? <>
                   <div style={{border:"1px solid #E1E3E1",borderRadius:12,padding:20,background:"#FFFFFF"}}><s-stack gap="base"><s-heading>4. Question card</s-heading>
 <s-color-field label="Question heading color" value={design.headingColor || "#000000"} onInput={event => { const value = event.currentTarget.value; setQuiz(current => ({ ...current, design: { ...design, ...current.design, headingColor: value } })); }} />
 <s-color-field label="Question card background" value={design.cardColor || "#fff9ee"} onInput={event => { const value = event.currentTarget.value; setQuiz(current => ({ ...current, design: { ...design, ...current.design, cardColor: value } })); }} />
@@ -489,6 +490,7 @@ export default function QuizEditor({
 <s-number-field label="Desktop answers to button gap" suffix="px" min={0} max={80} value={String(design.buttonGap ?? 28)} onInput={event => { const value = Number(event.currentTarget.value); setQuiz(current => ({ ...current, design: { ...design, ...current.design, buttonGap: value } })); }} />
 <s-number-field label="Mobile answers to button gap" suffix="px" min={0} max={60} value={String(design.mobileButtonGap ?? 24)} onInput={event => { const value = Number(event.currentTarget.value); setQuiz(current => ({ ...current, design: { ...design, ...current.design, mobileButtonGap: value } })); }} />
 </s-stack></div>
+                  </> : null}
                   <div style={{border:"1px solid #E1E3E1",borderRadius:12,padding:20,background:"#FFFFFF"}}><s-stack gap="base"><s-heading>7. Back button</s-heading>
 {([["backBg", "Back button background", "#F3E8DA"], ["backText", "Back button text color", "#651D30"], ["backBorder", "Back button border color", "#D4BDA8"]] as const).map(([key, label, fallback]) => <s-color-field key={key} label={label} placeholder={fallback} value={quiz.design?.[key] || ""} onInput={event => { const value = event.currentTarget.value; setQuiz(current => ({ ...current, design: { ...design, ...current.design, [key]: value } })); }} />)}
 </s-stack></div>
