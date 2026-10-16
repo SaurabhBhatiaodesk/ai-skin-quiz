@@ -412,16 +412,17 @@ export default function QuizEditor({
             </s-section></div><div className="quiz-design-preview"><s-section heading={scanOnly ? "Scan design preview" : "Quiz design preview"}>
               <s-stack gap="base">
                 <s-paragraph color="subdued">This is your live storefront widget with your unsaved changes. On your store, heading and body fonts follow your theme.</s-paragraph>
+                <div style={{display:"grid",gridTemplateColumns:"minmax(0,1fr) auto",gap:16,alignItems:"end"}}>
+                <div style={{minWidth:0}}><s-select label="Preview flow" value={kind} onChange={event => { setKind(event.currentTarget.value as Kind); setIndex(0); }}>
+                  {enabledPaths.map(path => <s-option key={path} value={path}>{path === "scan" ? "Skin Scan" : path === "deep" ? "Deep Quiz" : "Quick Quiz"}</s-option>)}
+                </s-select></div>
                 <div role="group" aria-label="Preview device" style={{display:"flex",gap:6,alignItems:"center"}}>
                   {([false, true] as const).map(mobile => <button key={String(mobile)} type="button" title={mobile ? "Mobile preview (375px)" : "Desktop preview"} aria-label={mobile ? "Mobile preview" : "Desktop preview"} aria-pressed={previewMobile === mobile} onClick={() => setPreviewMobile(mobile)} style={{width:40,height:40,display:"grid",placeItems:"center",border:0,borderRadius:10,cursor:"pointer",background:previewMobile === mobile ? "#e9efff" : "#f1f1f1",color:previewMobile === mobile ? "#005bd3" : "#555"}}>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">{mobile ? <><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M10 18h4"/></> : <><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M12 17v4M7 21h10"/></>}</svg>
                   </button>)}
                 </div>
-                <s-select label="Preview flow" value={kind} onChange={event => { setKind(event.currentTarget.value as Kind); setIndex(0); }}>
-                  {enabledPaths.map(path => <s-option key={path} value={path}>{path === "scan" ? "Skin Scan" : path === "deep" ? "Deep Quiz" : "Quick Quiz"}</s-option>)}
-                </s-select>
-                {kind !== "scan" && questions.length ? <s-select label="Preview question" value={String(safeIndex)} onChange={event => setIndex(Number(event.currentTarget.value))}>{questions.map((item, itemIndex) => <s-option key={itemIndex} value={String(itemIndex)}>{itemIndex + 1}. {item.text}</s-option>)}</s-select> : null}
-                {previewAssets ? <WidgetPreview assets={previewAssets} quiz={{ ...quiz, handle: code }} kind={kind} index={safeIndex} mobile={previewMobile} /> : null}
+                </div>
+                {previewAssets ? <WidgetPreview assets={previewAssets} quiz={{ ...quiz, handle: code }} kind={kind} index={0} mobile={previewMobile} /> : null}
               </s-stack>
             </s-section></div></div> : null}
             {showQuestions && kind === "scan" ? <s-section heading="AI Skin Scan settings">
