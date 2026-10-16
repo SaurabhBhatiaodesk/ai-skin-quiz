@@ -789,15 +789,15 @@ import { buildScanReport } from "./scan-report.js";
       var input = q("[data-email]");
       var confirm = q("[data-email-confirm]");
       if (!input || !reportId) return;
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.value.trim())) { confirm.textContent = "Enter a valid email address."; confirm.classList.add("show"); return; }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.value.trim())) { confirm.textContent = "Enter a valid email address."; confirm.setAttribute("data-delivery", "error"); confirm.classList.add("show"); return; }
       var button = q("[data-save-email]");
       if (button.disabled) return;
       button.disabled = true;
       var email = input.value.trim();
       fetch(PROXY + "/result", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ intent: "unlock", reportId: reportId, email: email }) })
         .then(function (response) { return response.json().then(function (data) { if (!response.ok) throw new Error(data.error || "Could not save your email."); return data; }); })
-        .then(function (data) { paintResult(data); confirm.textContent = data.delivery === "queued" ? "Guide unlocked. Email delivery has been queued." : data.delivery === "failed" ? "Guide unlocked and email saved. Delivery failed; retry to send again." : "Guide unlocked and email saved. Email delivery is not configured yet."; confirm.classList.add("show"); input.value = email; })
-        .catch(function (error) { confirm.textContent = error.message; confirm.classList.add("show"); })
+        .then(function (data) { paintResult(data); confirm.textContent = data.delivery === "queued" ? "✓ Email sent to " + email + ". Check your inbox." : data.delivery === "failed" ? "✓ Saved. We could not send the email right now; tap Send to try again." : "✓ Saved. Your full report is unlocked below."; confirm.classList.add("show"); confirm.setAttribute("data-delivery", data.delivery || "saved"); input.value = email; })
+        .catch(function (error) { confirm.textContent = error.message; confirm.setAttribute("data-delivery", "error"); confirm.classList.add("show"); })
         .finally(function () { button.disabled = false; });
     }
     root.addEventListener("change", function (event) {

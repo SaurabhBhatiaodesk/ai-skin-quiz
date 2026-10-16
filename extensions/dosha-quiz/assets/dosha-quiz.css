@@ -3634,3 +3634,7 @@
 .prana-quiz.prana-quiz.prana-quiz.scan-chat-open[data-scan-result] .scan-report > .sr-section { margin-top: 8px; padding-top: 24px; }
 /* More breathing room above the report header in the popup. */
 .prana-quiz.prana-quiz.prana-quiz.scan-chat-open[data-scan-result] .scan-report .sr-head { padding-top: 22px; }
+/* Email saved / sent confirmation: a clear green success line. */
+.prana-quiz.prana-quiz.prana-quiz [data-email-confirm].show { display: block; margin-top: 10px; padding: 9px 12px; border-radius: 10px; background: #e8f6ee; color: #12633a; font-size: 13.5px; font-weight: 600; line-height: 1.4; }
+.prana-quiz.prana-quiz.prana-quiz [data-email-confirm][data-delivery="failed"].show { background: #fdf1e6; color: #8a4b0f; }
+.prana-quiz.prana-quiz.prana-quiz [data-email-confirm][data-delivery="error"].show { background: #fdecec; color: #a3242a; }
