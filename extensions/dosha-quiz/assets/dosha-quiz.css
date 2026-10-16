@@ -3849,3 +3849,9 @@
 @media (max-width: 600px) {
   .prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open) .entry-card .ec-icon.has-image { width: var(--layout-mobileEntryIconSize, 104px); height: var(--layout-mobileEntryIconSize, 104px); }
 }
+/* Entry cards: time line size, and time line + button sit at the bottom so they line up across cards. */
+.prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open) .entry-card { display: flex; flex-direction: column; }
+.prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open) .entry-card .ec-time { margin-top: auto; padding-top: 12px; font-size: var(--layout-entryTimeSize, 11px); }
+@media (max-width: 600px) {
+  .prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open) .entry-card .ec-time { font-size: var(--layout-mobileEntryTimeSize, 10px); }
+}

@@ -407,6 +407,8 @@ export function normalizeQuiz(input: unknown, { draft = false }: { draft?: boole
     desktopPadding: Math.min(100, Math.max(0, Number.isFinite(Number(suppliedDesign?.desktopPadding)) ? Number(suppliedDesign?.desktopPadding) : 36)),
     mobileWidth: Math.min(100, Math.max(60, Number.isFinite(Number(suppliedDesign?.mobileWidth)) ? Number(suppliedDesign?.mobileWidth) : 100)),
     mobilePadding: Math.min(48, Math.max(0, Number.isFinite(Number(suppliedDesign?.mobilePadding)) ? Number(suppliedDesign?.mobilePadding) : 24)),
+    entryTimeSize: Math.min(20, Math.max(8, Number.isFinite(Number(suppliedDesign?.entryTimeSize)) ? Number(suppliedDesign?.entryTimeSize) : 11)),
+    mobileEntryTimeSize: Math.min(18, Math.max(8, Number.isFinite(Number(suppliedDesign?.mobileEntryTimeSize)) ? Number(suppliedDesign?.mobileEntryTimeSize) : 10)),
     entryIconSize: Math.min(180, Math.max(40, Number.isFinite(Number(suppliedDesign?.entryIconSize)) ? Number(suppliedDesign?.entryIconSize) : 116)),
     mobileEntryIconSize: Math.min(160, Math.max(40, Number.isFinite(Number(suppliedDesign?.mobileEntryIconSize)) ? Number(suppliedDesign?.mobileEntryIconSize) : 104)),
     entryTitleSize: Math.min(48, Math.max(14, Number.isFinite(Number(suppliedDesign?.entryTitleSize)) ? Number(suppliedDesign?.entryTitleSize) : 26)),
