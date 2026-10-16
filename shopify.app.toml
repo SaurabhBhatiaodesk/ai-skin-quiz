@@ -33,5 +33,4 @@ subpath = "dosha-quiz"
 redirect_urls = [ "https://example.com/auth/callback" ]
 
 [build]
-include_config_on_deploy = true
 automatically_update_urls_on_dev = true
