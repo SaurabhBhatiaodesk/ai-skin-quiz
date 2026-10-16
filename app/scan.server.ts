@@ -52,7 +52,7 @@ export async function analysePhoto(image: unknown, key: string) {
   return { summary: result.summary as string, concerns: unique };
 }
 export async function scanResult(submission: {code?: unknown; image?: unknown; images?: unknown; consent?: boolean; adult?: boolean; us?: boolean}, shop: string, admin?: Parameters<typeof loadStoreProducts>[0]): Promise<QuizResult> {
-  if (submission.consent !== true || submission.adult !== true) throw new Error("Confirm you are 18 or older and consent to OpenAI photo analysis.");
+  if (submission.consent !== true || submission.adult !== true) throw new Error("Confirm you are 18 or older and consent to the photo analysis.");
   const quiz = await loadQuiz(shop, submission.code);
   if (!(quiz.enabledPaths || []).includes("scan")) throw new Error("Skin Scan is not enabled for this quiz.");
   if (await selectedProvider(shop) !== "openai") throw new Error("Selected provider photo integration is awaiting approval. Select OpenAI for now.");

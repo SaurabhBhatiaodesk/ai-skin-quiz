@@ -870,7 +870,7 @@ import { buildScanReport } from "./scan-report.js";
       if (data.design) {
         var design = data.design;
         root.style.setProperty("--canvas", design.background);
-        ["desktopButtonWidth","mobileButtonWidth","desktopButtonHeight","mobileButtonHeight","mobileButtonSize","desktopWidth","desktopPadding","mobileWidth","mobilePadding","mobileHeadingSize","mobileQuestionSize","mobileAnswerSize","answerSpacing","mobileAnswerSpacing"].forEach(function(key) { if (Number.isFinite(Number(design[key]))) root.style.setProperty('--layout-' + key, Number(design[key]) + (['mobileWidth','desktopButtonWidth','mobileButtonWidth'].includes(key) ? '%' : 'px')); });
+        ["desktopButtonWidth","mobileButtonWidth","desktopButtonHeight","mobileButtonHeight","mobileButtonSize","desktopWidth","desktopPadding","mobileWidth","mobilePadding","mobileHeadingSize","mobileQuestionSize","mobileAnswerSize","answerSpacing","mobileAnswerSpacing","answerPadding","mobileAnswerPadding"].forEach(function(key) { if (Number.isFinite(Number(design[key]))) root.style.setProperty('--layout-' + key, Number(design[key]) + (['mobileWidth','desktopButtonWidth','mobileButtonWidth'].includes(key) ? '%' : 'px')); });
         root.dataset.buttonAlignment = ["left", "right"].includes(design.buttonAlignment) ? design.buttonAlignment : "center";
         root.style.setProperty("--ink", design.text);
         root.style.setProperty("--gold", design.accent);

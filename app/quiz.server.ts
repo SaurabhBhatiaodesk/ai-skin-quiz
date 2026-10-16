@@ -411,6 +411,9 @@ export function normalizeQuiz(input: unknown, { draft = false }: { draft?: boole
     mobileQuestionSize: Math.min(48, Math.max(14, Number.isFinite(Number(suppliedDesign?.mobileQuestionSize)) ? Number(suppliedDesign?.mobileQuestionSize) : 20)),
     mobileAnswerSize: Math.min(32, Math.max(12, Number.isFinite(Number(suppliedDesign?.mobileAnswerSize)) ? Number(suppliedDesign?.mobileAnswerSize) : 18)),
     answerSpacing: Math.min(40, Math.max(0, Number.isFinite(Number(suppliedDesign?.answerSpacing)) ? Number(suppliedDesign?.answerSpacing) : 14)),
+    // Top/bottom padding inside each answer (no fixed minimum height).
+    answerPadding: Math.min(40, Math.max(0, Number.isFinite(Number(suppliedDesign?.answerPadding)) ? Number(suppliedDesign?.answerPadding) : 12)),
+    mobileAnswerPadding: Math.min(40, Math.max(0, Number.isFinite(Number(suppliedDesign?.mobileAnswerPadding)) ? Number(suppliedDesign?.mobileAnswerPadding) : 12)),
     mobileAnswerSpacing: Math.min(32, Math.max(0, Number.isFinite(Number(suppliedDesign?.mobileAnswerSpacing)) ? Number(suppliedDesign?.mobileAnswerSpacing) : 14)),
     desktopButtonWidth: Math.min(100, Math.max(20, Number.isFinite(Number(suppliedDesign?.desktopButtonWidth)) ? Number(suppliedDesign?.desktopButtonWidth) : 22)),
     mobileButtonWidth: Math.min(100, Math.max(20, Number.isFinite(Number(suppliedDesign?.mobileButtonWidth)) ? Number(suppliedDesign?.mobileButtonWidth) : 60)),

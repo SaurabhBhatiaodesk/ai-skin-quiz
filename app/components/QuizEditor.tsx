@@ -406,8 +406,16 @@ export default function QuizEditor({
 <s-number-field label="Mobile question size" suffix="px" min={14} max={48} value={String(design.mobileQuestionSize ?? 20)} onInput={event => { const value = Number(event.currentTarget.value); setQuiz(current => ({ ...current, design: { ...design, ...current.design, mobileQuestionSize: value } })); }} />
 <s-number-field label="Mobile answer size" suffix="px" min={12} max={32} value={String(design.mobileAnswerSize ?? 18)} onInput={event => { const value = Number(event.currentTarget.value); setQuiz(current => ({ ...current, design: { ...design, ...current.design, mobileAnswerSize: value } })); }} />
 <s-number-field label="Desktop answer spacing" suffix="px" min={0} max={40} value={String(design.answerSpacing ?? 14)} onInput={event => { const value = Number(event.currentTarget.value); setQuiz(current => ({ ...current, design: { ...design, ...current.design, answerSpacing: value } })); }} />
+<s-number-field label="Desktop answer padding" suffix="px" min={0} max={40} value={String(design.answerPadding ?? 12)} onInput={event => { const value = Number(event.currentTarget.value); setQuiz(current => ({ ...current, design: { ...design, ...current.design, answerPadding: value } })); }} />
+<s-number-field label="Mobile answer padding" suffix="px" min={0} max={40} value={String(design.mobileAnswerPadding ?? 12)} onInput={event => { const value = Number(event.currentTarget.value); setQuiz(current => ({ ...current, design: { ...design, ...current.design, mobileAnswerPadding: value } })); }} />
 <s-number-field label="Mobile answer spacing" suffix="px" min={0} max={32} value={String(design.mobileAnswerSpacing ?? 10)} onInput={event => { const value = Number(event.currentTarget.value); setQuiz(current => ({ ...current, design: { ...design, ...current.design, mobileAnswerSpacing: value } })); }} /></s-grid></s-section>
-                <s-stack direction="inline" justifyContent="end" gap="small">{!scanOnly ? <s-button onClick={() => setQuiz(current => ({ ...current, design: { ...recommendedQuizDesign } }))}>Restore recommended design</s-button> : null}<s-button variant="primary" loading={pending} onClick={save}>Save design</s-button></s-stack>
+                <s-stack direction="inline" justifyContent="end" gap="small">{!scanOnly ? <><s-button commandFor="restore-design-modal" command="--show">Restore recommended design</s-button>
+                  <s-modal id="restore-design-modal" heading="Restore recommended design?">
+                    <s-paragraph>All colors, font sizes, button and layout settings in Quiz design go back to the recommended design. Your questions, products and other settings stay as they are.</s-paragraph>
+                    <s-paragraph color="subdued">Nothing is saved until you click Save design, so you can still discard it.</s-paragraph>
+                    <s-button slot="primary-action" variant="primary" commandFor="restore-design-modal" command="--hide" onClick={() => setQuiz(current => ({ ...current, design: { ...recommendedQuizDesign } }))}>Restore design</s-button>
+                    <s-button slot="secondary-actions" commandFor="restore-design-modal" command="--hide">Cancel</s-button>
+                  </s-modal></> : null}<s-button variant="primary" loading={pending} onClick={save}>Save design</s-button></s-stack>
               </s-stack>
             </s-section></div><div className="quiz-design-preview"><s-section heading={scanOnly ? "Scan design preview" : "Quiz design preview"}>
               <s-stack gap="base">

@@ -3765,3 +3765,9 @@
 .prana-quiz.prana-quiz:not(.scan-chat-open) [data-screen="scanner"] .btn-scan { white-space: nowrap; width: auto; min-width: 200px; max-width: 100%; }
 /* Any theme wrapper directly around the inline widget fills the section too (not only .shopify-app-block). */
 :where(*):has(> .prana-quiz:not(.scan-chat-open)[data-prana-quiz]) { width: 100%; max-width: 100%; flex: 1 1 100%; align-self: stretch; min-width: 0; }
+
+/* Answer height comes from the padding setting (Quiz design > answer padding), not a fixed minimum height. */
+.prana-quiz.prana-quiz :where([data-screen="quick"],[data-screen="deep"]) .q-opt { min-height: 0; padding: var(--layout-answerPadding, 12px) 18px; }
+@media (max-width: 600px) {
+  .prana-quiz.prana-quiz :where([data-screen="quick"],[data-screen="deep"]) .q-opt { min-height: 0; padding: var(--layout-mobileAnswerPadding, 12px) 16px; }
+}
