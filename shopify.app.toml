@@ -1,7 +1,7 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 client_id = "7c7f0cc16b5b8d2c0ea9bd2158176233"
-application_url = "https://example.com"
+application_url = "https://prana-ai-skin-quiz-6c73f81a8fb4.herokuapp.com"
 embedded = true
 name = "Skin Scan and Quiz"
 
@@ -25,12 +25,12 @@ api_version = "2026-07"
   compliance_topics = [ "customers/data_request", "customers/redact", "shop/redact" ]
 
 [app_proxy]
-url = "https://example.com/proxy"
+url = "https://prana-ai-skin-quiz-6c73f81a8fb4.herokuapp.com/proxy"
 prefix = "apps"
 subpath = "dosha-quiz"
 
 [auth]
-redirect_urls = [ "https://example.com/auth/callback" ]
+redirect_urls = [ "https://prana-ai-skin-quiz-6c73f81a8fb4.herokuapp.com/auth/callback" ]
 
 [build]
 automatically_update_urls_on_dev = true
