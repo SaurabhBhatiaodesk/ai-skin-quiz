@@ -10,10 +10,11 @@ export function landmarkPose(points) {
   return { yaw: Math.atan2(nose.x-centerX, distance/2), pitch: Math.atan2(nose.y-centerY, distance) };
 }
 
-// The face guide is an oval in the middle of the frame, sized from the shorter side.
+// The face guide is a circle in the middle of the frame, sized from the shorter side so it (and its ticks)
+// stays inside the portrait camera frame, which crops the sides of a landscape video.
 export function guideOval(width, height) {
-  const radiusX = Math.min(width, height) * 0.3;
-  return { centerX: width * 0.5, centerY: height * 0.47, radiusX, radiusY: Math.min(radiusX * 1.32, height * 0.44) };
+  const radius = Math.min(width, height) * 0.34;
+  return { centerX: width * 0.5, centerY: height * 0.5, radiusX: radius, radiusY: radius };
 }
 
 // Decides whether the current frame is good enough to start the flash capture, and what to tell the shopper.

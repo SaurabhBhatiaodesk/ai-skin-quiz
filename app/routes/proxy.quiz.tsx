@@ -25,6 +25,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const matching = library.filter(quiz => !layout || (quiz.layout || "three") === layout);
   let selected = matching.find(quiz => quiz.handle === code || (code && quiz.legacyHandles?.includes(code)));
   if (!selected && !code && layout === "scan" && params.get("floating") === "1") selected = matching[0];
+  // An empty widget code (a freshly added block) shows the store's only quiz of that type; with several, the merchant must choose.
+  if (!selected && !code && matching.length === 1) selected = matching[0];
   if (!selected) {
     const type = layout === "scan" ? "AI Skin Scan" : layout === "single" ? "Single Quiz" : "Combined Quiz";
     return apiJson({ error: matching.length ? `Paste the widget code of your ${type} from All quizzes.` : `Create an ${type} in the app first. It will appear here after you connect it.` }, { status: 404 });

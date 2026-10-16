@@ -9,7 +9,9 @@ const module={exports:{}};
 new Function('env','module','with(env){'+compiled.code+'}')(env,module);
 const call=(query)=>module.exports.loader({request:new Request('https://store.example/apps/dosha-quiz/quiz?'+query)});
 for(const code of ['111','222']){const response=await call('layout=single&code='+code);assert.equal(response.status,200);const data=await response.json();assert.equal(data.handle,code);assert.deepEqual(data.design,library.find(q=>q.handle===code).design);}
-for(const query of ['layout=single','layout=single&code=dosha-quiz','layout=single&code=deleted','layout=scan&code=111','layout=scan'])assert.equal((await call(query)).status,404,query);
+for(const query of ['layout=single','layout=single&code=dosha-quiz','layout=single&code=deleted','layout=scan&code=111'])assert.equal((await call(query)).status,404,query);
+// An empty code picks the store's only quiz of that layout (one scan here), never one of several (two singles).
+assert.equal((await call('layout=scan')).status,200);
 assert.equal((await call('layout=scan&floating=1')).status,200);
 assert.equal((await call('layout=scan&floating=1&code=deleted')).status,404);
-console.log('PASS: each block loads its exact widget and design; missing, deleted, and wrong-layout IDs cannot select another widget.');
+console.log('PASS: each block loads its exact widget and design; missing, deleted, and wrong-layout IDs cannot select another widget; an empty code uses the only quiz of its type.');

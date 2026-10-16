@@ -3614,3 +3614,9 @@
 .prana-quiz.prana-quiz [data-screen="scanner"] .camera-zone .scan-overlay::after { content: "Starting camera…"; color: rgba(255, 255, 255, 0.78); font: 500 13px/1.4 var(--sr-font, system-ui, sans-serif); }
 .prana-quiz.prana-quiz [data-screen="scanner"] .camera-zone:has(.face-tracking-canvas) .scan-overlay { display: none; }
 @keyframes pranaCamSpin { to { transform: rotate(360deg); } }
+
+/* Camera / upload toggle: real line icons in the text colour instead of the faded illustrations. */
+.prana-quiz.prana-quiz.prana-quiz.scan-chat-open [data-screen="scanner"] .scanner-choice .sc-btn-icon { width: 20px; height: 20px; background: none !important; border-radius: 0; opacity: 1; color: currentColor; }
+.prana-quiz.prana-quiz.prana-quiz.scan-chat-open [data-screen="scanner"] .scanner-choice .sc-btn-icon svg { visibility: visible; width: 20px; height: 20px; stroke-width: 1.8; }
+/* Disabled popup button keeps its colour (no grey fade). */
+.prana-quiz.prana-quiz.prana-quiz.prana-quiz.scan-chat-open .btn-scan:disabled { opacity: 1; cursor: not-allowed; }

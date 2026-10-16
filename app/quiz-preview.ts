@@ -7,10 +7,10 @@ type PreviewQuiz = { name?: string; singleFlow?: string; quick: Array<{ text: st
 const escape = (value: string) => value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 const shorten = (value: string, length: number) => value.length > length ? `${value.slice(0, length - 3)}...` : value;
 export function quizPreview(type: string, quiz?: PreviewQuiz) {
-  if (type === "three") return "/images/onboarding/premium-combined-quiz.png";
-  if (type === "scan") return "/images/onboarding/premium-skin-scan.png";
-  if (type === "products") return "/images/onboarding/premium-skincare-trio.png";
-  if (type === "single") return "/images/onboarding/premium-single-quiz.png";
+  if (type === "three") return "/images/onboarding/premium-combined-quiz.webp";
+  if (type === "scan") return "/images/onboarding/premium-skin-scan.webp";
+  if (type === "products") return "/images/onboarding/premium-skincare-trio.webp";
+  if (type === "single") return "/images/onboarding/premium-single-quiz.webp";
   let svg = previews[type] || single;
   if (quiz && type === "single") {
     const question = (quiz.singleFlow === "deep" ? quiz.deep : quiz.quick)[0];

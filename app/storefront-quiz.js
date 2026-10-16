@@ -972,7 +972,7 @@ import { buildScanReport } from "./scan-report.js";
         root.style.setProperty("--scan-accent", appearance.accentColor || "#52695a");
         root.style.setProperty("--scan-heading", appearance.headingColor || "#1a1208");
         root.style.setProperty("--scan-button-text", appearance.modalButtonTextColor || "#ffffff");
-        root.style.setProperty("--scan-button", appearance.modalButtonColor || "#000000");
+        root.style.setProperty("--scan-button", !appearance.modalButtonColor || ["#303030", "#4a2c21"].includes(String(appearance.modalButtonColor).toLowerCase()) ? "#000000" : appearance.modalButtonColor);
         root.style.setProperty("--scan-font-size", (appearance.modalFontSize || 14) + "px");
         root.style.setProperty("--scan-width", (appearance.modalWidth || 520) + "px");
         root.style.setProperty("--scan-radius", (appearance.modalRadius == null ? 24 : appearance.modalRadius) + "px");
