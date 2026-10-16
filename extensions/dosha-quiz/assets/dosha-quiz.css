@@ -3834,3 +3834,12 @@
   .prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open) .entry-card .ec-name { font-size: var(--layout-mobileEntryTitleSize, 24px); }
   .prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open) .entry-card .ec-desc { font-size: var(--layout-mobileEntryTextSize, 14px); }
 }
+
+/* Widget header colours (brand line, subtitle) from Quiz design. */
+.prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open)[data-brand-color] [data-screen]:not([data-screen="scanner"]) .hdr-logo { color: var(--brand-color) !important; }
+.prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open)[data-subtitle-color] [data-screen]:not([data-screen="scanner"]) .hdr-sub { color: var(--subtitle-color) !important; }
+.prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open)[data-entry-title] .entry-card .ec-name { color: var(--entry-title) !important; }
+.prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open)[data-entry-text] .entry-card .ec-desc { color: var(--entry-text) !important; }
+.prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open)[data-entry-time] .entry-card .ec-time { color: var(--entry-time) !important; }
+.prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open)[data-entry-ghost] .entry-card .btn-entry.ghost { color: var(--entry-ghost) !important; border-color: var(--entry-ghost) !important; }
+.prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open)[data-entry-ghost] .entry-card .btn-entry.ghost:hover { background: var(--entry-ghost) !important; color: #fff !important; }
