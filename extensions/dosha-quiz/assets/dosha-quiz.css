@@ -3914,3 +3914,5 @@
 @media (max-width: 600px) {
   .prana-quiz.prana-quiz.prana-quiz:not(.scan-chat-open) [data-screen="scanner"] .consent-notice .cn-text { font-size: var(--layout-mobileScanNoticeSize, 12px) !important; }
 }
+
+@media(max-width:600px) { .prana-quiz.scan-chat-open { border-radius:var(--scan-mobile-radius,0px)!important; } }

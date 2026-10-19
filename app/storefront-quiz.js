@@ -769,6 +769,7 @@ import { buildScanReport } from "./scan-report.js";
         if (verdict && verdict.points) scanLandmarks = verdict.points;
         return Promise.all((Array.isArray(images) ? images : [images]).map(compactScanPhoto));
       }).then(function (photos) {
+        if (removed || !consentGiven()) throw new Error("Scan cancelled. Confirm the required consents before trying again.");
         return submit({ path: "scan", images: photos, consent: true, adult: true });
       }).catch(function (error) {
         q("[data-scan-status]").textContent = error.message || "Could not prepare your photo. Please try again.";
@@ -1028,6 +1029,7 @@ import { buildScanReport } from "./scan-report.js";
         root.style.setProperty("--scan-font-size", (appearance.modalFontSize || 14) + "px");
         root.style.setProperty("--scan-width", (appearance.modalWidth || 520) + "px");
         root.style.setProperty("--scan-radius", (appearance.modalRadius == null ? 24 : appearance.modalRadius) + "px");
+        root.style.setProperty("--scan-mobile-radius", (appearance.mobileModalRadius == null ? 0 : appearance.mobileModalRadius) + "px");
         root.setAttribute("data-scan-position", appearance.position === "left" ? "left" : "right");
         if (removed) return;
         document.body.appendChild(launcher);

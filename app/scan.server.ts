@@ -40,12 +40,14 @@ export async function analysePhoto(image: unknown, key: string) {
     console.error("OpenAI scan request failed", { status: response.status, code: typeof code === "string" ? code.slice(0, 80) : "unknown" });
     throw new Error(message);
   }
-  const body = await response.json();
-  const content = body.output?.flatMap((item: {content?: Array<{type: string; text?: string}>}) => item.content || []).find((item: {type: string}) => item.type === "output_text")?.text;
+  const body = await response.json().catch(() => null);
+  if (!body || !Array.isArray(body.output)) throw new Error("Could not read the analysis. Please try again.");
+  const content = body.output.flatMap((item: {content?: Array<{type: string; text?: string}>} | null) => item && Array.isArray(item.content) ? item.content : []).find((item: {type: string} | null) => item?.type === "output_text")?.text;
   let result;
   try { result = JSON.parse(content || ""); } catch { throw new Error("Could not read the analysis. Please retake the photo."); }
+  if (!result || typeof result !== "object" || Array.isArray(result)) throw new Error("Invalid analysis response. Please try again.");
   if (result.usable !== true) throw new Error("Use a clear, well-lit photo of one face without filters.");
-  if (typeof result.summary !== "string" || result.summary.length > 2000 || !Array.isArray(result.concerns) || result.concerns.length > 5 || result.concerns.some((item: ScanArea) => !concerns.includes(item.concern) || typeof item.observation !== "string" || item.observation.length > 600 || !Array.isArray(item.regions) || !item.regions.length || item.regions.length > 3 || item.regions.some(region => !regions.includes(region)) || !intensities.includes(item.intensity))) throw new Error("Invalid analysis response. Please try again.");
+  if (typeof result.summary !== "string" || result.summary.length > 2000 || !Array.isArray(result.concerns) || result.concerns.length > 5 || result.concerns.some((item: ScanArea) => !item || typeof item !== "object" || !concerns.includes(item.concern) || typeof item.observation !== "string" || item.observation.length > 600 || !Array.isArray(item.regions) || !item.regions.length || item.regions.length > 3 || item.regions.some(region => !regions.includes(region)) || !intensities.includes(item.intensity))) throw new Error("Invalid analysis response. Please try again.");
   // One entry per concern, each region listed once.
   const seen = new Set<string>();
   const unique = (result.concerns as ScanArea[]).filter(item => !seen.has(item.concern) && seen.add(item.concern)).map(item => ({ ...item, regions: [...new Set(item.regions)] }));
@@ -64,7 +66,11 @@ export async function scanResult(submission: {code?: unknown; image?: unknown; i
   const allowance = await prisma.$executeRawUnsafe("INSERT INTO ScanUsage (shop,hour,count) VALUES (?,?,1) ON CONFLICT(shop,hour) DO UPDATE SET count=ScanUsage.count+1 WHERE ScanUsage.count<60", shop, hour);
   if (!allowance) throw new Error("Scan limit reached. Please try again later.");
   const result = await analysePhoto(submission.images ?? submission.image, key);
-  const catalog = admin ? await loadStoreProducts(admin) : [];
+  let catalog: Awaited<ReturnType<typeof loadStoreProducts>> = [];
+  if (admin) {
+    try { catalog = await loadStoreProducts(admin); }
+    catch { console.error("Scan product recommendations unavailable", { category: "catalog_fetch_failed" }); }
+  }
   const matching = recommendScanProducts(result.concerns.map(item => item.concern), quiz.mappings, catalog);
   const insight = `<p>${escape(result.summary)}</p>` + result.concerns.map(item => `<p><strong>${escape(item.concern.replaceAll("_", " "))}</strong> (${escape(regionText(item))}, ${escape(item.intensity)}): ${escape(item.observation)}</p>`).join("") + "<p>Photo-based cosmetic observations, not a medical diagnosis. Dosha and internal skin health cannot be measured from a photo.</p>";
   return { dosha: "not_assessed", source: "AI Skin Scan", scanAreas: result.concerns, showUpgrade: false, markers: null, insight,

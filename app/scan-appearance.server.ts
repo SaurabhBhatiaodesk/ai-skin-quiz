@@ -1,5 +1,5 @@
 import prisma from "./db.server";
-export const scanAppearanceDefaults = { enabled: true, iconImage: "", shape: "circle", label: "Skin Scan", position: "right", buttonColor: "#e8f0eb", buttonTextColor: "#284c37", panelColor: "#450333", textColor: "#1a1208", accentColor: "#52695a", radius: 32, offset: 24, headingColor: "#1a1208", modalButtonColor: "#000000", modalButtonTextColor: "#ffffff", modalFontSize: 14, modalWidth: 520, modalRadius: 24 };
+export const scanAppearanceDefaults = { enabled: true, iconImage: "", shape: "circle", label: "Skin Scan", position: "right", buttonColor: "#e8f0eb", buttonTextColor: "#284c37", panelColor: "#450333", textColor: "#1a1208", accentColor: "#52695a", radius: 32, offset: 24, headingColor: "#1a1208", modalButtonColor: "#000000", modalButtonTextColor: "#ffffff", modalFontSize: 14, modalWidth: 520, modalRadius: 24, mobileModalRadius: 0 };
 export type ScanAppearance = typeof scanAppearanceDefaults;
 async function prepare() { await prisma.$executeRawUnsafe("CREATE TABLE IF NOT EXISTS ScanAppearance (shop TEXT PRIMARY KEY, payload TEXT NOT NULL)"); }
 export function normalizeAppearance(value: unknown): ScanAppearance {
@@ -25,7 +25,7 @@ export function normalizeAppearance(value: unknown): ScanAppearance {
     if (!Number.isFinite(number) || number < 0 || number > 64) throw new Error("Spacing and corners must be between 0 and 64 pixels.");
     result[key] = number;
   }
-  for (const [key, min, max] of [["modalFontSize", 12, 18], ["modalWidth", 360, 760], ["modalRadius", 0, 40]] as const) {
+  for (const [key, min, max] of [["modalFontSize", 12, 18], ["modalWidth", 360, 760], ["modalRadius", 0, 40], ["mobileModalRadius", 0, 40]] as const) {
     const number = Number(input?.[key] ?? result[key]);
     if (!Number.isFinite(number) || number < min || number > max) throw new Error(`${key} must be between ${min} and ${max}.`);
     result[key] = number;

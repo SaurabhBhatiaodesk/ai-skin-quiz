@@ -103,7 +103,7 @@ export default function ScanAppearanceSettings() {
             {([["panelColor", "Modal background"], ["textColor", "Modal text"], ["headingColor", "Modal headings"], ["modalButtonColor", "Modal buttons"], ["modalButtonTextColor", "Modal button text"], ["accentColor", "Modal highlights"]] as const).map(([key, label]) => <s-color-field key={key} label={label} required value={value[key]} onChange={event => { const color = event.currentTarget.value; setValue(current => ({...current,[key]:color})); }} />)}
           </div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(180px, 1fr))",gap:16}}>
-            {([["modalFontSize", "Modal text size", 12, 18], ["modalWidth", "Modal width", 360, 760], ["modalRadius", "Modal rounded corners", 0, 40]] as const).map(([key, label, min, max]) => <s-number-field key={key} label={label} suffix="px" min={min} max={max} required value={String(value[key])} onChange={event => { const number = Number(event.currentTarget.value); setValue(current => ({...current,[key]:number})); }} />)}
+            {([["modalFontSize", "Modal text size", 12, 18], ["modalWidth", "Modal width", 360, 760], ["modalRadius", "Desktop rounded corners", 0, 40], ["mobileModalRadius", "Mobile rounded corners", 0, 40]] as const).map(([key, label, min, max]) => <s-number-field key={key} label={label} suffix="px" min={min} max={max} required value={String(value[key])} onChange={event => { const number = Number(event.currentTarget.value); setValue(current => ({...current,[key]:number})); }} />)}
           </div>
         </s-stack>
       </s-section>

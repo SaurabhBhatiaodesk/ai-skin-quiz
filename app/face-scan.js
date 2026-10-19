@@ -49,6 +49,9 @@ export function sharpness(pixels, width, height) {
   return count ? sumSq / count - (sum / count) ** 2 : 0;
 }
 
+// Conservative rejection of almost detail-free face crops; not a skin measurement.
+export function isSeverelyBlurred(pixels, width, height) { return sharpness(pixels, width, height) < 4; }
+
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 // How long the face must stay steady in the oval before the photo is taken.
 export const HOLD_MS = 1400;
@@ -125,7 +128,22 @@ export async function checkPhoto(src) {
     let hands = [];
     try { hands = hand ? hand.detect(image).landmarks : []; } catch { hands = []; }
     const points = faces.length ? faces[0].map((point) => ({ x: point.x, y: point.y })) : null;
-    return { points, problem: photoProblem({ faces: faces.length, points, hands }) };
+    let problem = photoProblem({ faces: faces.length, points, hands });
+    if (!problem && points) {
+      const xs = points.map(point => point.x), ys = points.map(point => point.y);
+      const left = Math.max(0, Math.min(...xs)), top = Math.max(0, Math.min(...ys));
+      const width = Math.min(1, Math.max(...xs)) - left, height = Math.min(1, Math.max(...ys)) - top;
+      if (width * image.naturalWidth < 120 || height * image.naturalHeight < 120) problem = "Your face is too small in this photo. Move closer or upload a higher-resolution photo.";
+      else {
+        const detail = document.createElement("canvas"); detail.width = 160; detail.height = 160;
+        const context = detail.getContext("2d", { willReadFrequently: true });
+        if (context) {
+          context.drawImage(image,left*image.naturalWidth,top*image.naturalHeight,width*image.naturalWidth,height*image.naturalHeight,0,0,160,160);
+          if (isSeverelyBlurred(context.getImageData(0,0,160,160).data,160,160)) problem = "This photo is too blurred. Hold still, clean the camera lens and try again in better light.";
+        }
+      }
+    }
+    return { points, problem };
   } catch {
     return null;
   }
@@ -354,6 +372,7 @@ export async function createFaceScan(video, zone, onStatus) {
     instruction.textContent = "Checking your photo…";
     onStatus(instruction.textContent);
     const verdict = await Promise.race([checkPhoto(images[0]), wait(9000).then(() => null)]);
+    assertActive();
     if (verdict && verdict.problem) { readySince = 0; instruction.textContent = verdict.problem; throw new Error(verdict.problem); }
     if (verdict && verdict.points) images.landmarks = verdict.points;
     return images;

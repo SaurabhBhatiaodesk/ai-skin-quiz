@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { transform } from 'esbuild';
 import assert from 'node:assert/strict';
 let source = await readFile('app/scan.server.ts', 'utf8');
-source = source.replace(/import prisma from .*?;/, 'const prisma = {};').replace(/import \{ getOpenAIKey, selectedProvider \} from .*?;/, 'const getOpenAIKey = () => null; const selectedProvider=()=>"openai";').replace(/import \{ loadQuiz, loadStoreProducts \} from .*?;/, 'const loadQuiz=()=>null; const loadStoreProducts=()=>[];');
+source = source.replace(/import prisma from .*?;/, 'const prisma = { $executeRawUnsafe: async () => 1 };').replace(/import \{ getOpenAIKey, selectedProvider \} from .*?;/, 'const getOpenAIKey = () => "test-key"; const selectedProvider=()=>"openai";').replace(/import \{ loadQuiz, loadStoreProducts \} from .*?;/, 'const loadQuiz=()=>({enabledPaths:["scan"],mappings:[]}); const loadStoreProducts=()=>{throw new Error("Catalog unavailable");};');
 const code = await transform(source, { loader: 'ts', format: 'esm' });
 const { analysePhoto, scanResult, recommendScanProducts } = await import('data:text/javascript;base64,' + Buffer.from(code.code).toString('base64'));
 const catalog = [{title:'Saffron Glow Serum',handle:'saffron-glow-serum'},{title:'Bakuchiol Night Restorative Serum',handle:'bakuchiol-night-restorative-serum'},{title:'Gift Card',handle:'gift-card'}];
@@ -39,6 +39,24 @@ globalThis.fetch=async()=>({ok:true,json:async()=>({output:[{content:[{type:'out
 await assert.rejects(()=>analysePhoto(photos[0],'dummy'),/Invalid analysis/);
 globalThis.fetch=async()=>({ok:false,status:401,json:async()=>({error:{code:"invalid_api_key"}})});
 await assert.rejects(()=>analysePhoto('data:image/jpeg;base64,YWJj','dummy'),/invalid/);
+
+for (const payload of [null, {output:{}}, {output:[null]}]) {
+ globalThis.fetch=async()=>({ok:true,json:async()=>payload});
+ await assert.rejects(()=>analysePhoto('data:image/jpeg;base64,YWJj','dummy'),/Could not read the analysis/);
+}
+for (const parsed of [null, [], {usable:true,summary:'Test',concerns:[null]}]) {
+ globalThis.fetch=async()=>({ok:true,json:async()=>({output:[{content:[{type:'output_text',text:JSON.stringify(parsed)}]}]})});
+ await assert.rejects(()=>analysePhoto('data:image/jpeg;base64,YWJj','dummy'),/Invalid analysis response/);
+}
+globalThis.fetch=async()=>({ok:true,json:async()=>({output:[{content:[{type:'output_text',text:JSON.stringify({usable:true,summary:'Visible texture.',concerns:[{concern:'texture',observation:'Texture on cheeks.',regions:['cheeks'],intensity:'mild'}]})}]}]})});
+const savedConsoleError = console.error;
+const catalogErrors = [];
+let catalogFallback;
+try { console.error=(...args)=>catalogErrors.push(args); catalogFallback=await scanResult({code:'test',consent:true,adult:true,image:'data:image/jpeg;base64,YWJj'},'test',{}); }
+finally { console.error=savedConsoleError; }
+assert.equal(catalogFallback.profile.essence,'Visible texture.');
+assert.deepEqual(catalogFallback.products,[]);
+assert.equal(catalogErrors[0][1].category,'catalog_fetch_failed');
 console.log('Passed: scan recommendations, consent validation, structured response parsing and API errors. External calls mocked.');
 
 const { landmarkPose, frameCheck, guideOval, sharpness, photoProblem } = await import('../app/face-scan.js');
@@ -94,3 +112,11 @@ assert.deepEqual(regionCircles(face, 1000, 1000, 'unknown'), []);
 assert.deepEqual(regionCircles([], 1000, 1000, 'cheeks'), []);
 console.log('Passed: skin map regions are placed on the face from landmarks.');
 
+
+const {isSeverelyBlurred}=await import('../app/face-scan.js');
+const flatPixels=new Uint8ClampedArray(16*16*4).fill(128);
+assert.equal(isSeverelyBlurred(flatPixels,16,16),true);
+const detailPixels=new Uint8ClampedArray(16*16*4);
+for(let y=0;y<16;y++)for(let x=0;x<16;x++){const v=(x+y)%2?255:0;const i=(y*16+x)*4;detailPixels[i]=detailPixels[i+1]=detailPixels[i+2]=v;detailPixels[i+3]=255;}
+assert.equal(isSeverelyBlurred(detailPixels,16,16),false);
+console.log('PASS: detail-free images reject; sharp image detail is retained.');
