@@ -1,5 +1,5 @@
 import { defaultScanIcon } from "./default-scan-icon.js";
-import { checkPhoto, createFaceScan } from "./face-scan.js";
+import { checkPhoto, createFaceScan, warmUpFaceScan } from "./face-scan.js";
 import { buildFaceMap } from "./face-map.js";
 import { buildScanReport, reportImage } from "./scan-report.js";
 (function () {
@@ -50,6 +50,7 @@ import { buildScanReport, reportImage } from "./scan-report.js";
     function q(sel) { return root.querySelector(sel); }
 
     function go(name, fromUser) {
+      if (name === "scanner") warmUpFaceScan();
       if (scanChatOpen) {
         if (name === "entry") { if (closeScanChat) closeScanChat(); return; }
         if (name === "quick" || name === "deep") name = "scanner";

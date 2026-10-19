@@ -57,7 +57,7 @@ export function isSeverelyBlurred(pixels, width, height) { return sharpness(pixe
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 // How long the face must stay steady in the oval before the photo is taken.
-export const HOLD_MS = 1400;
+export const HOLD_MS = 900;
 
 // Progress (0-1) of the hold-to-scan ring.
 export function holdProgress(readySince, now) {
@@ -71,6 +71,15 @@ function loadVision() {
   visionModule ||= import(/* @vite-ignore */ VISION_URL + "/vision_bundle.mjs").then(async (module) => ({ module, files: await module.FilesetResolver.forVisionTasks(VISION_URL + "/wasm") }));
   visionModule.catch(() => { visionModule = null; });
   return visionModule;
+}
+
+// Starts downloading the vision runtime and face model early (e.g. on the consent step), so the camera step is ready sooner.
+let warmed = false;
+export function warmUpFaceScan() {
+  if (warmed) return;
+  warmed = true;
+  loadVision().catch(() => { warmed = false; });
+  try { fetch(MODEL_URL, { mode: "cors", credentials: "omit" }).catch(() => {}); } catch { /* best effort */ }
 }
 
 // Landmarks for a still photo (used for uploaded photos, which have no live tracking).
@@ -337,7 +346,7 @@ export async function createFaceScan(video, zone, onStatus) {
     const track = video.srcObject && video.srcObject.getVideoTracks ? video.srcObject.getVideoTracks()[0] : null;
     if (!track || typeof ImageCapture === "undefined") return null;
     try {
-      const blob = await Promise.race([new ImageCapture(track).takePhoto(), wait(2500).then(() => null)]);
+      const blob = await Promise.race([new ImageCapture(track).takePhoto(), wait(1200).then(() => null)]);
       if (!blob) return null;
       const bitmap = await createImageBitmap(blob);
       const sameFraming = Math.abs(bitmap.width / bitmap.height - video.videoWidth / video.videoHeight) < 0.03;
@@ -377,25 +386,24 @@ export async function createFaceScan(video, zone, onStatus) {
   // turn within a few seconds, the scan continues with the photos it has instead of getting stuck.
   async function sideViews(images) {
     const sides = [];
-    let firstSign = 0;
-    for (const step of [1, 2]) {
-      const deadline = performance.now() + 9000;
-      let since = 0, captured = false;
-      while (!disposed && performance.now() < deadline) {
-        assertActive();
-        instruction.textContent = step === 1 ? "Great. Now turn your head slowly to one side" : "Now turn slowly to the other side";
-        onStatus(instruction.textContent);
-        const fresh = performance.now() - checkedAt < 600 && lastFaces === 1;
-        const turned = fresh && Math.abs(lastYaw) > 0.28 && Math.abs(lastYaw) < 0.95 && (!firstSign || Math.sign(lastYaw) !== firstSign);
-        if (turned) { since = since || performance.now(); if (performance.now() - since >= 350) { captured = true; break; } } else since = 0;
-        await wait(60);
-      }
-      if (!captured) break;
-      firstSign = Math.sign(lastYaw);
-      sides.push(grabFrame().canvas.toDataURL("image/jpeg", 0.85));
-      instruction.textContent = step === 1 ? "Got it" : "All angles captured";
-      await wait(250);
+    const done = { left: false, right: false };
+    // Raw (unmirrored) camera frames: a positive yaw means the shopper turned to their left.
+    const progress = () => "Slowly turn left and right   ·   Front ✓  " + (done.left ? "Left ✓" : "Left") + "  " + (done.right ? "Right ✓" : "Right");
+    const deadline = performance.now() + 7000;
+    let since = 0, side = "";
+    while (!disposed && sides.length < 2 && performance.now() < deadline) {
+      assertActive();
+      instruction.textContent = progress();
+      onStatus(instruction.textContent);
+      const fresh = performance.now() - checkedAt < 600 && lastFaces === 1;
+      const turnedTo = fresh && Math.abs(lastYaw) > 0.26 && Math.abs(lastYaw) < 0.95 ? (lastYaw > 0 ? "left" : "right") : "";
+      if (turnedTo && !done[turnedTo]) {
+        if (side !== turnedTo) { side = turnedTo; since = performance.now(); }
+        if (performance.now() - since >= 200) { sides.push(grabFrame().canvas.toDataURL("image/jpeg", 0.85)); done[turnedTo] = true; side = ""; }
+      } else side = "";
+      await wait(50);
     }
+    instruction.textContent = sides.length === 2 ? "All angles captured ✓" : progress();
     const all = [images[0], ...sides];
     all.landmarks = images.landmarks;
     return all;
@@ -403,13 +411,16 @@ export async function createFaceScan(video, zone, onStatus) {
   // The photo itself is checked before it is sent: a hand over the face or a turned head stops the scan
   // (the camera keeps running for another try), and the landmarks found on the photo replace the live ones.
   async function verified(images) {
+    // The front photo is checked in the background while the side photos are taken, so the shopper never waits twice.
+    const check = Promise.race([checkPhoto(images[0]), wait(9000).then(() => null)]);
+    const withSides = await sideViews(images);
     instruction.textContent = "Checking your photo…";
     onStatus(instruction.textContent);
-    const verdict = await Promise.race([checkPhoto(images[0]), wait(9000).then(() => null)]);
+    const verdict = await check;
     assertActive();
     if (verdict && verdict.problem) { readySince = 0; instruction.textContent = verdict.problem; throw new Error(verdict.problem); }
-    if (verdict && verdict.points) images.landmarks = verdict.points;
-    return images;
+    if (verdict && verdict.points) withSides.landmarks = verdict.points;
+    return withSides;
   }
   async function capture() {
     // Hold-to-scan: the ring around the oval fills while the face stays steady, then the photo is taken.
@@ -417,37 +428,39 @@ export async function createFaceScan(video, zone, onStatus) {
     while (!(freshFace() && readySince && performance.now() - readySince >= HOLD_MS)) {
       assertActive();
       if (performance.now() > deadline) throw new Error("We could not see your face clearly. Try better light, or upload a photo.");
-      instruction.textContent = freshFace() ? "Hold still — scanning" : lastCheck.message;
+      instruction.textContent = freshFace() ? "Hold still… then slowly turn left and right" : lastCheck.message;
       onStatus(instruction.textContent);
       await wait(60);
     }
     countdown.textContent = "";
     onStatus("Capturing...");
+    let front = null;
     await flash(true);
     try {
-      await wait(450); // let the camera adjust its exposure to the flash
+      await wait(250); // let the camera adjust its exposure to the flash
       // A full-resolution still from the camera is much sharper than a video frame; use it when available.
       const still = await takeStill();
       if (still) {
-        const images = [still.toDataURL("image/jpeg", 0.9)];
-        images.landmarks = facePoints ? facePoints.map((point) => ({ x: point.x, y: point.y })) : null;
-        return await verified(images);
+        front = [still.toDataURL("image/jpeg", 0.9)];
+        front.landmarks = facePoints ? facePoints.map((point) => ({ x: point.x, y: point.y })) : null;
       }
       const frames = [];
-      for (let i = 0; i < 5; i++) {
+      for (let i = 0; !front && i < 5; i++) {
         if (disposed) throw new Error("Scan cancelled. You can start again.");
         assertActive();
         if (!freshFace()) throw new Error("Your face moved during capture. Position your face and retry.");
         frames.push(grabFrame()); await wait(70);
       }
       if (disposed) throw new Error("Scan cancelled. You can start again.");
-      frames.sort((a, b) => b.score - a.score);
-      const images = [frames[0].canvas.toDataURL("image/jpeg", 0.88)];
-      images.landmarks = frames[0].points;
-      return await verified(images);
+      if (!front) frames.sort((a, b) => b.score - a.score);
+      if (!front) {
+        front = [frames[0].canvas.toDataURL("image/jpeg", 0.88)];
+        front.landmarks = frames[0].points;
+      }
     } finally {
       await flash(false);
     }
+    return await verified(front);
   }
 
 
@@ -457,7 +470,7 @@ export async function createFaceScan(video, zone, onStatus) {
       if (disposed) return Promise.reject(new Error("Camera closed. Please reopen it."));
       if (scanning) return Promise.reject(new Error("A scan is already running."));
       scanning = true;
-      return capture().then(sideViews).then((images) => { onStatus("Photo captured. Analysing visible skin details…"); return images; }).finally(() => { scanning = false; countdown.textContent = ""; });
+      return capture().then((images) => { onStatus("Photo captured. Analysing visible skin details…"); return images; }).finally(() => { scanning = false; countdown.textContent = ""; });
     },
     close() {
       disposed = true; clearTimeout(timer); flash(false); detector.close();
