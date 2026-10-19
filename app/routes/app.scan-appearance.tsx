@@ -2,6 +2,9 @@ import { skinScanActivationUrl } from "../theme-activation.server";
 import { defaultScanIcon } from "../default-scan-icon.js";
 import { contrastRatio } from "../color-contrast";
 import UnsavedChangesBar from "../components/UnsavedChangesBar";
+import PopupPreview from "../components/PopupPreview";
+import { widgetPreviewAssets } from "../widget-preview.server";
+import { loadLibrary } from "../quiz.server";
 import { useEffect, useRef, useState } from "react";
 import { useFetcher, useLoaderData } from "react-router";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -9,7 +12,11 @@ import { authenticate } from "../shopify.server";
 import { loadScanAppearance, saveScanAppearance, scanAppearanceDefaults } from "../scan-appearance.server";
 export async function loader({ request }: LoaderFunctionArgs) {
   const { session } = await authenticate.admin(request);
-  return { appearance: await loadScanAppearance(session.shop), recommendedAppearance: scanAppearanceDefaults, embedUrl: skinScanActivationUrl(session.shop) };
+  // The popup preview runs the store's Skin Scan widget, like the floating launcher on the storefront.
+  const library = await loadLibrary(session.shop).catch(() => []);
+  const scanQuiz = library.find(item => item.layout === "scan") || library.find(item => (item.enabledPaths || []).includes("scan"));
+  const popupQuiz = scanQuiz ? { handle: scanQuiz.handle, name: scanQuiz.name, design: scanQuiz.design, scanner: scanQuiz.scanner, texts: scanQuiz.texts, hiddenTexts: scanQuiz.hiddenTexts, widgetCss: scanQuiz.widgetCss } : { handle: "preview", name: "" };
+  return { appearance: await loadScanAppearance(session.shop), recommendedAppearance: scanAppearanceDefaults, embedUrl: skinScanActivationUrl(session.shop), popupQuiz, previewAssets: widgetPreviewAssets({ handle: popupQuiz.handle, name: popupQuiz.name, layout: "scan" }) };
 }
 export async function action({ request }: ActionFunctionArgs) {
   const { session } = await authenticate.admin(request);
@@ -17,7 +24,7 @@ export async function action({ request }: ActionFunctionArgs) {
   catch (error) { return { ok: false, error: error instanceof Error ? error.message : "Could not save appearance." }; }
 }
 export default function ScanAppearanceSettings() {
-  const { appearance: defaults, recommendedAppearance, embedUrl } = useLoaderData<typeof loader>();
+  const { appearance: defaults, recommendedAppearance, embedUrl, popupQuiz, previewAssets } = useLoaderData<typeof loader>();
   const [value, setValue] = useState(defaults);
   const [savedValue, setSavedValue] = useState(defaults);
   const submittedValue = useRef(defaults);
@@ -139,18 +146,8 @@ export default function ScanAppearanceSettings() {
             <s-button variant={!mobilePreview ? "primary" : "secondary"} onClick={() => setMobilePreview(false)}>Desktop</s-button>
             <s-button variant={mobilePreview ? "primary" : "secondary"} onClick={() => setMobilePreview(true)}>Mobile</s-button>
           </s-stack>
-          <s-paragraph color="subdued">Layout sample using your current colors and corners. Photo analysis is available on your storefront.</s-paragraph>
-          <div style={{background:"#f1f2f1",padding:20,borderRadius:12,overflow:"auto"}}>
-            <div style={{width:"100%",maxWidth:mobilePreview ? 375 : value.modalWidth,margin:"0 auto",boxSizing:"border-box",padding:24,background:value.panelColor,color:value.textColor,borderRadius:mobilePreview ? value.mobileModalRadius : value.modalRadius,fontSize:value.modalFontSize,lineHeight:1.5,boxShadow:"0 8px 24px #0002"}}>
-              <div style={{display:"flex",alignItems:"start",justifyContent:"space-between",gap:16}}><h2 style={{margin:0,color:value.headingColor,fontSize:26}}>Skin Insights</h2><span aria-hidden="true" style={{background:"#fff",color:"#222",borderRadius:"50%",width:32,height:32,display:"grid",placeItems:"center",flexShrink:0}}>×</span></div>
-              <p style={{margin:"8px 0 24px"}}>Discover your skin insights.</p>
-              <div style={{display:"flex",gap:8,justifyContent:"space-between",marginBottom:24}}>{["Consent","Photo","Results"].map((step,i)=><span key={step} style={{color:value.accentColor,fontWeight:600}}>{i+1}. {step}</span>)}</div>
-              <h3 style={{color:value.headingColor,margin:"0 0 8px"}}>Ready to scan?</h3>
-              <p style={{margin:"0 0 20px"}}>Confirm below, then take or upload a photo.</p>
-              <div style={{background:"#fff",color:"#222",border:"1px solid #ddd",borderRadius:12,padding:16,marginBottom:20}}>Photo analysis consent and age confirmation appear here.</div>
-              <div style={{background:value.modalButtonColor,color:value.modalButtonTextColor,padding:"12px 16px",borderRadius:8,textAlign:"center",fontWeight:600}}>Continue to photo →</div>
-            </div>
-          </div>
+          <s-paragraph color="subdued">This is the real storefront popup with your unsaved colors. Camera and photo analysis work on your store.</s-paragraph>
+          <PopupPreview assets={previewAssets} quiz={popupQuiz} appearance={value} mobile={mobilePreview} />
         </s-stack>
       </s-section>
       <s-stack direction="inline"><s-button variant="primary" disabled={!dirty} loading={fetcher.state !== "idle"} onClick={save}>Save appearance</s-button><s-text color="subdued">{dirty ? "You have unsaved changes." : "All changes saved."}</s-text></s-stack>
