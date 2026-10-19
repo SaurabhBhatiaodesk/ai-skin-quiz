@@ -840,12 +840,14 @@ import { buildScanReport, reportImage } from "./scan-report.js";
     }
 
     // Bound vision input dimensions; JPEG compression alone does not reduce image tokens.
-    function compactScanPhoto(value) {
+    // The front photo keeps 1280px for fine detail; side views only need 768px.
+    function compactScanPhoto(value, index) {
+      var limit = index ? 768 : 1280;
       return new Promise(function (resolve, reject) {
         var image = new Image();
         image.onload = function () {
           // 1280px keeps fine detail (under-eye tone, spots, pores) readable for the analysis.
-          var scale = Math.min(1, 1280 / Math.max(image.naturalWidth, image.naturalHeight));
+          var scale = Math.min(1, limit / Math.max(image.naturalWidth, image.naturalHeight));
           var canvas = document.createElement("canvas");
           canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
           canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
@@ -882,7 +884,7 @@ import { buildScanReport, reportImage } from "./scan-report.js";
       photoCheck.then(function (verdict) {
         if (verdict && verdict.problem) throw new Error(verdict.problem);
         if (verdict && verdict.points) scanLandmarks = verdict.points;
-        return Promise.all((Array.isArray(images) ? images : [images]).map(compactScanPhoto));
+        return Promise.all((Array.isArray(images) ? images : [images]).map(function (value, index) { return compactScanPhoto(value, index); }));
       }).then(function (photos) {
         if (removed || !consentGiven()) throw new Error("Scan cancelled. Confirm the required consents before trying again.");
         return submit({ path: "scan", images: photos, consent: true, adult: true }).then(function (succeeded) { scanSucceeded = succeeded === true; });

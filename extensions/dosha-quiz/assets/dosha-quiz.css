@@ -3946,3 +3946,11 @@
 .prana-quiz.prana-quiz.prana-quiz .sr-add.is-added { background: #1f7a4d; }
 .prana-quiz .sr-products > li, .prana-quiz .product-card { transition: opacity 0.3s ease, transform 0.3s ease; }
 .prana-quiz .sr-products > li.is-leaving, .prana-quiz .product-card.is-leaving { opacity: 0; transform: scale(0.96); }
+
+/* 3-step how-to above the camera (Look straight, Turn left, Turn right). */
+.prana-quiz .scan-howto { display: flex; justify-content: center; gap: 8px; margin: 0 auto 14px; padding: 0; list-style: none; flex-wrap: wrap; }
+.prana-quiz .scan-howto li { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px 6px 6px; border-radius: 999px; background: rgba(0, 0, 0, 0.05); font-size: 13px; font-weight: 600; line-height: 1; }
+.prana-quiz .scan-howto li span { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--sx-accent, var(--sr-button, #000)); color: #fff; font-size: 11px; }
+.prana-quiz.scan-chat-open[data-scan-dark] .scan-howto li { background: rgba(255, 255, 255, 0.12); color: #fff; }
+.prana-quiz.scan-chat-open[data-scan-dark] .scan-howto li span { background: #fff; color: #111; }
+[data-upload-mode] .scan-howto, .prana-quiz [data-scan-step="2"]:has([data-mode="upload"].active) .scan-howto { display: none; }

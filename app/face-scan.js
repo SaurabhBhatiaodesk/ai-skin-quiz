@@ -216,6 +216,8 @@ export async function createFaceScan(video, zone, onStatus) {
   let disposed = false, timer = 0, lastCheck = { ok: false, message: "Loading camera..." }, readySince = 0;
   // Latest head turn and face count, used to take the left and right side photos.
   let lastYaw = 0, lastFaces = 0;
+  // Side-photo step shown on the camera: arrows on both sides, each turning green once that side is taken.
+  const sideState = { active: false, left: false, right: false };
   let scanning = false, flashEl = null, checkedAt = 0, trackingFailed = false, faceBox = null, facePoints = null;
   // Count presented frames. Some mobile browsers never advance video.currentTime for a live camera,
   // so it cannot be used to tell whether a new frame has arrived.
@@ -253,6 +255,21 @@ export async function createFaceScan(video, zone, onStatus) {
       context.moveTo(oval.centerX + cos * oval.radiusX * inner, oval.centerY + sin * oval.radiusY * inner);
       context.lineTo(oval.centerX + cos * oval.radiusX * outer, oval.centerY + sin * oval.radiusY * outer);
       context.stroke();
+    }
+    if (sideState.active) {
+      // Raw (unmirrored) frame: the shopper's left is on the right of the raw image; the CSS mirror shows it on their left.
+      const pulse = 0.5 + 0.5 * Math.sin(now / 260);
+      for (const [side, dir] of [["left", 1], ["right", -1]]) {
+        const done = sideState[side];
+        const x = oval.centerX + dir * oval.radiusX * (1.32 + (done ? 0 : 0.06 * pulse));
+        const y = oval.centerY, size = unit * 7;
+        context.strokeStyle = done ? "#7fe0a6" : `rgba(255, 255, 255, ${0.55 + 0.45 * pulse})`;
+        context.lineWidth = Math.max(3, unit * 1.1);
+        context.beginPath();
+        context.moveTo(x - dir * size * 0.6, y - size); context.lineTo(x + dir * size * 0.4, y); context.lineTo(x - dir * size * 0.6, y + size);
+        context.stroke();
+        if (done) { context.fillStyle = "#7fe0a6"; context.beginPath(); context.arc(x, y + size * 1.9, unit * 1.6, 0, Math.PI * 2); context.fill(); }
+      }
     }
     if (ok && scanning) {
       // Soft scan line sweeping top to bottom inside the oval.
@@ -386,7 +403,8 @@ export async function createFaceScan(video, zone, onStatus) {
   // turn within a few seconds, the scan continues with the photos it has instead of getting stuck.
   async function sideViews(images) {
     const sides = [];
-    const done = { left: false, right: false };
+    const done = sideState;
+    done.left = false; done.right = false; done.active = true;
     // Raw (unmirrored) camera frames: a positive yaw means the shopper turned to their left.
     const progress = () => "Slowly turn left and right   ·   Front ✓  " + (done.left ? "Left ✓" : "Left") + "  " + (done.right ? "Right ✓" : "Right");
     const deadline = performance.now() + 7000;
@@ -404,6 +422,7 @@ export async function createFaceScan(video, zone, onStatus) {
       await wait(50);
     }
     instruction.textContent = sides.length === 2 ? "All angles captured ✓" : progress();
+    done.active = false;
     const all = [images[0], ...sides];
     all.landmarks = images.landmarks;
     return all;

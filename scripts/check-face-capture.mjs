@@ -31,7 +31,7 @@ const sideEnd = source.indexOf('  // The photo itself is checked before it is se
 const sideSource = source.slice(sideStart, sideEnd).trim();
 function sideScenario(yawAt) {
   let now = 0;
-  const env = { performance: { now: () => now }, disposed: false, assertActive() {}, instruction: {}, onStatus() {},
+  const env = { performance: { now: () => now }, disposed: false, sideState: {}, assertActive() {}, instruction: {}, onStatus() {},
     get checkedAt() { return now; }, lastFaces: 1, get lastYaw() { return yawAt(now); },
     grabFrame: () => ({ canvas: { toDataURL: () => 'side' } }), wait: async (ms) => { now += ms; } };
   return new Function('env', 'with(env){ return (' + sideSource + ')(Object.assign(["front"], { landmarks: [] })); }')(env).then((images) => ({ images, now }));
