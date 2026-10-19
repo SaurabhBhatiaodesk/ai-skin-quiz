@@ -125,6 +125,20 @@ function drawOverlay(stage, shown, points, width, height, marked, uid) {
   grid.appendChild(svg("path", { d: "M" + nose.x.toFixed(1) + " " + minY.toFixed(1) + "V" + maxY.toFixed(1), stroke: "#ffffff", "stroke-opacity": 0.55, "stroke-width": unit * 0.6 }));
   overlay.appendChild(grid);
 
+  // Scan beam: a soft glowing band sweeps down the face when the map opens.
+  const beamGradient = svg("linearGradient", { id: uid + "-beam", x1: "0", y1: "0", x2: "0", y2: "1" });
+  beamGradient.appendChild(svg("stop", { offset: "0%", "stop-color": "#7fe0a6", "stop-opacity": 0 }));
+  beamGradient.appendChild(svg("stop", { offset: "85%", "stop-color": "#7fe0a6", "stop-opacity": 0.35 }));
+  beamGradient.appendChild(svg("stop", { offset: "100%", "stop-color": "#e8fff2", "stop-opacity": 0.95 }));
+  defs.appendChild(beamGradient);
+  const beamHeight = (maxY - minY) * 0.22;
+  const beam = svg("g", { class: "face-map-beam", "clip-path": "url(#" + uid + "-face)" });
+  const band = svg("rect", { x: minX - unit * 4, y: minY - beamHeight, width: maxX - minX + unit * 8, height: beamHeight, fill: "url(#" + uid + "-beam)" });
+  band.appendChild(svg("animate", { attributeName: "y", from: minY - beamHeight, to: maxY, dur: "1.6s", begin: "0.15s", repeatCount: "2", fill: "freeze" }));
+  band.appendChild(svg("animate", { attributeName: "opacity", values: "1;1;0", keyTimes: "0;0.9;1", dur: "3.2s", begin: "0.15s", fill: "freeze" }));
+  beam.appendChild(band);
+  overlay.appendChild(beam);
+
   // Corner brackets framing the face.
   const pad = unit * 6, arm = (maxX - minX) * 0.16, bend = unit * 4;
   const corners = [[minX - pad, minY - pad, 1, 1], [maxX + pad, minY - pad, -1, 1], [minX - pad, maxY + pad, 1, -1], [maxX + pad, maxY + pad, -1, -1]];
@@ -170,7 +184,12 @@ function drawOverlay(stage, shown, points, width, height, marked, uid) {
       // Zoom slightly toward the centre of the face so the circle shows skin, not the face edge.
       const focus = { x: spot.x + (nose.x - spot.x) * 0.22, y: spot.y + (nose.y - spot.y) * 0.08 };
       const group = svg("g", { class: "face-map-loupe", style: "--delay:" + (0.4 + index * 0.25) + "s" });
-      group.appendChild(svg("path", { d: "M" + spot.x.toFixed(1) + " " + spot.y.toFixed(1) + "L" + edgeX.toFixed(1) + " " + cy.toFixed(1), stroke: "#ffffff", "stroke-width": unit * 0.9, "stroke-opacity": 0.9, fill: "none" }));
+      group.appendChild(svg("path", { class: "face-map-leader", pathLength: "1", d: "M" + spot.x.toFixed(1) + " " + spot.y.toFixed(1) + "L" + edgeX.toFixed(1) + " " + cy.toFixed(1), stroke: "#ffffff", "stroke-width": unit * 0.9, "stroke-opacity": 0.9, fill: "none" }));
+      // Pulsing ring on the observed spot.
+      const ring = svg("circle", { cx: spot.x, cy: spot.y, r: unit * 2, fill: "none", stroke: color, "stroke-width": unit * 0.8 });
+      ring.appendChild(svg("animate", { attributeName: "r", values: unit * 2 + ";" + unit * 7 + ";" + unit * 2, dur: "2s", begin: (0.6 + index * 0.25) + "s", repeatCount: "indefinite" }));
+      ring.appendChild(svg("animate", { attributeName: "stroke-opacity", values: "0.9;0;0.9", dur: "2s", begin: (0.6 + index * 0.25) + "s", repeatCount: "indefinite" }));
+      group.appendChild(ring);
       group.appendChild(svg("circle", { cx: spot.x, cy: spot.y, r: unit * 3.2, fill: "#ffffff", "fill-opacity": 0.35 }));
       group.appendChild(svg("circle", { cx: spot.x, cy: spot.y, r: unit * 1.7, fill: "#ffffff" }));
       group.appendChild(svg("circle", { cx: edgeX, cy, r: unit * 1.5, fill: "#ffffff" }));

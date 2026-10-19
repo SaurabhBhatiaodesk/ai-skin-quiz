@@ -3954,3 +3954,24 @@
 .prana-quiz.scan-chat-open[data-scan-dark] .scan-howto li { background: rgba(255, 255, 255, 0.12); color: #fff; }
 .prana-quiz.scan-chat-open[data-scan-dark] .scan-howto li span { background: #fff; color: #111; }
 [data-upload-mode] .scan-howto, .prana-quiz [data-scan-step="2"]:has([data-mode="upload"].active) .scan-howto { display: none; }
+
+/* Skin map comes alive: grid fades in, leader lines draw from each spot to its loupe, loupes pop in. */
+.prana-quiz .face-map-grid { animation: pranaMapGrid 1.1s ease both; }
+@keyframes pranaMapGrid { 0% { opacity: 0; } 40% { opacity: 1; } 55% { opacity: 0.55; } 100% { opacity: 1; } }
+.prana-quiz .face-map-leader { stroke-dasharray: 1; stroke-dashoffset: 1; animation: pranaMapDraw 0.55s ease forwards; animation-delay: calc(var(--delay, 0.4s) + 0.1s); }
+@keyframes pranaMapDraw { to { stroke-dashoffset: 0; } }
+.prana-quiz.prana-quiz .face-map-loupe { animation: pranaMapPop 0.55s cubic-bezier(0.2, 1.4, 0.4, 1) both; animation-delay: var(--delay, 0.4s); transform-box: fill-box; transform-origin: center; }
+@keyframes pranaMapPop { 0% { opacity: 0; transform: scale(0.6); } 100% { opacity: 1; transform: scale(1); } }
+.prana-quiz .face-map-brackets { animation: pranaMapBrackets 0.8s ease both; transform-box: fill-box; transform-origin: center; }
+@keyframes pranaMapBrackets { 0% { opacity: 0; transform: scale(1.08); } 100% { opacity: 1; transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) {
+  .prana-quiz .face-map-grid, .prana-quiz .face-map-leader, .prana-quiz.prana-quiz .face-map-loupe, .prana-quiz .face-map-brackets { animation: none; stroke-dashoffset: 0; }
+  .prana-quiz .face-map-beam { display: none; }
+}
+
+/* Smaller Add to cart, and product cards without empty space between tags and price. */
+.prana-quiz.prana-quiz.prana-quiz .sr-add { min-height: 34px; padding: 6px 10px; font-size: 11px; letter-spacing: 0.12em; }
+.prana-quiz.prana-quiz .sr-products { align-items: start; }
+.prana-quiz.prana-quiz .sr-products > li > .sr-product { flex: 0 0 auto; height: auto; }
+.prana-quiz.prana-quiz .sr-product-body { flex: 0 0 auto; }
+.prana-quiz.prana-quiz .sr-product-side { margin-top: 10px !important; padding-top: 0; }
