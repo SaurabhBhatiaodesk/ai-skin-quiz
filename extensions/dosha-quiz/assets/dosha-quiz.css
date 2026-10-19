@@ -1,4 +1,5 @@
 /* AI Dosha Quiz — storefront styles. Scoped to .prana-quiz so theme CSS is left alone. */
+.prana-quiz .upload-zone .upload-sub { text-align: center; width: 100%; }
 .prana-quiz .quiz-progress .qp-bar { display: none; }
 .prana-quiz {
   --canvas: #faf7f2;

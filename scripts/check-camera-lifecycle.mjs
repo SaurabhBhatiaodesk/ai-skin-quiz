@@ -8,7 +8,7 @@ let resumes = 0;
 const feed = { play: () => { resumes++; return Promise.resolve(); } };
 const status = {};
 const pending = [];
-const env = {cameraStream: {getTracks:()=>[]}, cameraOpening:false, cameraGeneration:0, faceScan:null,
+const env = {quiz:null,cameraStream: {getTracks:()=>[]}, cameraOpening:false, cameraGeneration:0, faceScan:null,
  q: selector => selector === "[data-camera-feed]" ? feed : status,
  navigator: {mediaDevices:{getUserMedia:()=>new Promise((resolve,reject)=>pending.push({resolve,reject}))}},
  createFaceScan: async()=>({close(){}}), scanMode:"camera", consentGiven:()=>false, runScan:()=>{}};

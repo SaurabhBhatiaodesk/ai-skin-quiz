@@ -274,6 +274,10 @@ import { buildScanReport } from "./scan-report.js";
     });
 
     function submit(payload) {
+      if (quiz && quiz.preview) {
+        showError("Preview only. Open your storefront to test results and photo analysis.", payload.path);
+        return Promise.resolve(false);
+      }
       if (submitting) return Promise.resolve();
       setSubmitting(true);
       clearErrors();
@@ -290,6 +294,7 @@ import { buildScanReport } from "./scan-report.js";
       }).then(function (data) {
         if (payload.path === "scan") q("[data-scan-status]").textContent = "Scan Complete";
         paintResult(data);
+        return true;
       }).catch(function (error) {
         if (error.name === "AbortError") error = new Error("Analysis took too long. Check your connection and try again with a smaller photo.");
         var captureError = q('[data-screen="email-capture"].active [data-capture-error]');
@@ -297,6 +302,7 @@ import { buildScanReport } from "./scan-report.js";
         var status = q("[data-scan-status]");
         if (payload.path === "scan" && status) { status.textContent = error.message; showError(error.message || "Skin analysis failed. Please try again.", "scan"); }
         else showError(error.message || "Something went wrong. Please try again.", payload.path);
+        return false;
       }).finally(function () { clearTimeout(requestTimer); setSubmitting(false); });
     }
 
@@ -506,6 +512,11 @@ import { buildScanReport } from "./scan-report.js";
     }
 
     function startCamera() {
+      if (quiz && quiz.preview) {
+        var previewStatus = q("[data-scan-status]");
+        if (previewStatus) previewStatus.textContent = "Camera testing is available on your storefront. This is a design preview.";
+        return;
+      }
       if (cameraStream) {
         var currentFeed = q("[data-camera-feed]");
         if (currentFeed) currentFeed.play().catch(function () { q("[data-scan-status]").textContent = "Camera playback is blocked. Allow camera access or use Upload Photo."; });
@@ -762,6 +773,7 @@ import { buildScanReport } from "./scan-report.js";
       scanMirrored = scanMode === "camera";
       var overlay = q("[data-analyzing]");
       if (overlay) showAnalyzing(overlay);
+      var scanSucceeded = false;
       // Uploaded photos get the same check as camera photos (one face, no hand over it, facing the camera).
       var photoCheck = scanMode === "upload" ? Promise.race([checkPhoto(scanPhoto), new Promise(function (resolve) { setTimeout(resolve, 9000, null); })]) : Promise.resolve(null);
       photoCheck.then(function (verdict) {
@@ -770,10 +782,14 @@ import { buildScanReport } from "./scan-report.js";
         return Promise.all((Array.isArray(images) ? images : [images]).map(compactScanPhoto));
       }).then(function (photos) {
         if (removed || !consentGiven()) throw new Error("Scan cancelled. Confirm the required consents before trying again.");
-        return submit({ path: "scan", images: photos, consent: true, adult: true });
+        return submit({ path: "scan", images: photos, consent: true, adult: true }).then(function (succeeded) { scanSucceeded = succeeded === true; });
       }).catch(function (error) {
         q("[data-scan-status]").textContent = error.message || "Could not prepare your photo. Please try again.";
       }).finally(function () {
+        if (!scanSucceeded && scanMode === "upload" && !removed && consentGiven()) {
+          if (overlay) hideAnalyzing(overlay);
+          return;
+        }
         captured = null;
         stopCamera();
         var preview = q("[data-upload-preview]");

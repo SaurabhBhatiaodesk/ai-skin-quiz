@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import MappingEditor from "./MappingEditor";
 import WidgetPreview from "./WidgetPreview";
+import useQuizDraft from "./useQuizDraft";
 import type { WidgetPreviewAssets } from "../widget-preview.server";
 import type { MappingDraft } from "./MappingEditor";
 import { useFetcher } from "react-router";
@@ -85,6 +86,7 @@ export default function QuizEditor({
   const fetcher = useFetcher<SaveResult>();
   const [quiz, setQuiz] = useState(initial);
   const [savedQuiz, setSavedQuiz] = useState(initial);
+  const draft = useQuizDraft(shop, code, quiz, savedQuiz);
   const submittedQuiz = useRef(initial);
   const [embedCopyStatus, setEmbedCopyStatus] = useState("");
   const embedCode = widgetEmbedCode(code);
@@ -313,6 +315,11 @@ export default function QuizEditor({
       <s-button slot="breadcrumb-actions" href="/app/quizzes" accessibilityLabel="Back to Quizzes and Skin Scan">Quizzes &amp; Skin Scan</s-button>
       {!(tab === "products" && mappingDraft) ? <s-button slot="primary-action" variant="primary" loading={pending} disabled={JSON.stringify(quiz) === JSON.stringify(savedQuiz)} onClick={save}>Save quiz</s-button> : null}
       <s-stack gap="base">
+        {draft.recovery ? <s-banner heading="Unsaved draft found" tone="info">
+          <s-paragraph>A recent draft for this widget is available in this browser. Restoring it does not change your live widget until you save.</s-paragraph>
+          <s-button onClick={() => { setQuiz(draft.recovery!); draft.dismiss(); }}>Restore draft</s-button>
+          <s-button onClick={draft.dismiss}>Discard draft</s-button>
+        </s-banner> : null}
         {quiz.profileImage ? <s-stack direction="inline" justifyContent="space-between" alignItems="center"><s-heading>{quiz.name || "Quiz"}</s-heading><s-box inlineSize="80px"><s-image src={quiz.profileImage} alt={`${quiz.name || "Quiz"} image`} aspectRatio="1 / 1" objectFit="cover" borderRadius="large" /></s-box></s-stack> : null}
         <s-stack direction="inline" gap="small">
           {editorTabs.map(item => <s-button key={item.id} icon={item.icon} variant={tab === item.id ? "primary" : "tertiary"} onClick={() => setTab(item.id)}>{item.label}</s-button>)}
@@ -535,7 +542,9 @@ export default function QuizEditor({
                   </button>)}
                 </div>
                 </div>
-                {previewAssets ? <WidgetPreview assets={previewAssets} quiz={{ ...quiz, handle: code }} kind={kind} index={0} mobile={previewMobile} /> : null}
+                {kind !== "scan" && questions.length ? <s-select label="Preview question" value={String(safeIndex)} onChange={event => setIndex(Number(event.currentTarget.value))}>{questions.map((item, questionIndex) => <s-option key={questionIndex} value={String(questionIndex)}>{questionIndex + 1}. {item.text}</s-option>)}</s-select> : null}
+                <s-paragraph color="subdued">Preview does not submit results or run photo analysis. Use your storefront to test the complete scan.</s-paragraph>
+                {previewAssets ? <WidgetPreview assets={previewAssets} quiz={{ ...quiz, handle: code }} kind={kind} index={safeIndex} mobile={previewMobile} /> : null}
               </s-stack>
             </s-section></div></div> : null}
             {showQuestions && kind === "scan" ? <s-section heading="AI Skin Scan settings">

@@ -24,6 +24,7 @@ export function previewDocument(assets: WidgetPreviewAssets, quiz: StoredQuiz & 
     hiddenTexts: quiz.hiddenTexts || [],
     defaultCss: "",
     apiVersion: 1,
+    preview: true,
     endpoints: { result: "#" },
     quick: quiz.quick,
     mappings: quiz.mappings,
@@ -31,8 +32,10 @@ export function previewDocument(assets: WidgetPreviewAssets, quiz: StoredQuiz & 
   };
   const json = JSON.stringify(config).replace(/</g, "\\u003c");
   const target = kind === "scan" ? "scanner" : kind;
+  const questions = kind === "deep" ? quiz.deep : kind === "quick" ? quiz.quick : [];
+  const selectedIndex = Math.min(Math.max(0, Math.floor(index)), Math.max(0, questions.length - 1));
   const steer = `(function(){var root=document.getElementById(${JSON.stringify(assets.rootId)});var tries=0;
-function step(){var screen=root.querySelector('[data-screen="${target}"].active');if(!screen)return;var left=${Math.max(0, index)};
+function step(){var screen=root.querySelector('[data-screen="${target}"].active');if(!screen)return;var left=${selectedIndex};
 (function next(){if(!left)return;var opt=screen.querySelector('.q-opt');var btn=screen.querySelector('[data-${kind}-next]');if(!opt||!btn)return;opt.click();setTimeout(function(){btn.click();left--;setTimeout(next,60);},30);})();}
 (function wait(){var open=root.querySelector('[data-screen="${target}"].active');if(root.getAttribute('data-configured')==='true'&&open){setTimeout(function(){step();setTimeout(function(){if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();},150);},80);return;}if(root.getAttribute('data-configured')==='true'){var card=root.querySelector('.entry-card[data-goto="${target}"]')||root.querySelector('[data-goto="${target}"]');if(card)card.click();}if(++tries<120)setTimeout(wait,100);})();
 document.addEventListener('click',function(e){var a=e.target.closest&&e.target.closest('a[href]');if(a)e.preventDefault();},true);})();`;
@@ -46,7 +49,7 @@ export default function WidgetPreview({ assets, quiz, kind, index, mobile }: { a
     const timer = setTimeout(() => setDoc(previewDocument(assets, quiz, kind, index)), 350);
     return () => clearTimeout(timer);
   }, [assets, quiz, kind, index]);
-  return <div style={{ width: "100%", maxWidth: mobile ? 390 : "100%", margin: "0 auto", border: "1px solid #DADDD9", borderRadius: 12, overflow: "hidden", background: "#fff" }}>
+  return <div style={{ width: "100%", maxWidth: mobile ? 375 : "100%", margin: "0 auto", border: "1px solid #DADDD9", borderRadius: 12, overflow: "hidden", background: "#fff" }}>
     <iframe title="Storefront widget preview" srcDoc={doc} sandbox="allow-scripts" style={{ display: "block", width: "100%", height: mobile ? 760 : 720, border: 0 }} />
   </div>;
 }

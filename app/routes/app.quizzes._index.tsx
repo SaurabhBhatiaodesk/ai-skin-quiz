@@ -24,6 +24,7 @@ export default function Quizzes() {
   const { quizzes, themeActivated, themeEditorUrl } = useLoaderData<typeof loader>();
   const submit = useSubmit();
   const pending = useNavigation().state !== "idle";
+  const [developerMode, setDeveloperMode] = useState(false);
   const [developerQuiz, setDeveloperQuiz] = useState<{ handle: string; name: string; layout: string } | null>(null);
   const [copyStatus, setCopyStatus] = useState("");
   const [copyTarget, setCopyTarget] = useState("");
@@ -87,6 +88,18 @@ if (!response.ok || !payload.ok) {
     <s-page heading="Quizzes &amp; Skin Scan" inlineSize="large">
       <s-button slot="primary-action" variant="primary" href="/app/quizzes/new">Create Quiz</s-button>
       {themeActivated ? <s-button slot="secondary-actions" href={themeEditorUrl} target="_top">Open theme editor</s-button> : null}
+      <s-section>
+        <s-stack gap="base">
+          <s-checkbox label="Developer mode" checked={developerMode} onChange={event => setDeveloperMode(event.currentTarget.checked)} />
+          <s-paragraph>Build your own storefront design with the API. Enable Developer mode to see each widget&apos;s ID and data endpoint.</s-paragraph>
+          {developerMode ? <>
+            <s-heading>Create a custom quiz or Skin Scan experience</s-heading>
+            <s-paragraph>Load a widget&apos;s questions and saved settings, render your own desktop and mobile interface, then submit answers to receive matched results and products. Each widget has a separate API URL. Use Embed &amp; API on its card for JavaScript examples and photo-consent requirements.</s-paragraph>
+            <s-paragraph>These APIs run on your Shopify storefront domain. Developer mode only shows integration details; it does not change your live widget or enable any disabled quiz paths.</s-paragraph>
+            <s-link href="/app/documentation">Read the API request and response guide</s-link>
+          </> : null}
+        </s-stack>
+      </s-section>
       {!quizzes.length ? <s-section>
         <s-stack alignItems="center"><s-box inlineSize="120px"><s-image src="/images/onboarding/quiz.svg" alt="" accessibilityRole="presentation" aspectRatio="5 / 4" objectFit="contain" /></s-box></s-stack>
         <s-empty-state heading="Create your first quiz">
@@ -111,6 +124,12 @@ if (!response.ok || !payload.ok) {
               <s-stack direction="inline" gap="small" alignItems="center">
                 <s-badge>{LAYOUT_NAMES[quiz.layout]}</s-badge>
                 <s-text color="subdued">{quiz.layout === "scan" ? "Camera or photo upload" : `${quiz.questions} ${quiz.questions === 1 ? "question" : "questions"}`}</s-text>
+              {developerMode ? <s-stack gap="small">
+                <s-text-field label="Widget ID" readOnly value={quiz.handle} />
+                <s-text-field label="Storefront data API" readOnly value={`/apps/dosha-quiz/quiz?code=${encodeURIComponent(quiz.handle)}`} />
+                <s-button icon="clipboard" onClick={() => copyDeveloperValue(`/apps/dosha-quiz/quiz?code=${encodeURIComponent(quiz.handle)}`, `API URL for ${quiz.handle}`)}>Copy API URL</s-button>
+                {copyTarget === `API URL for ${quiz.handle}` ? <span role="status">{copyStatus}</span> : null}
+              </s-stack> : null}
                 {quiz.layout !== "scan" && !quiz.questions ? <s-badge tone="warning" icon="alert-triangle">No questions</s-badge> : null}
                 {quiz.live ? <s-badge tone="success" icon="view">Live in theme</s-badge> : null}
                 {quiz.scanPending ? <s-badge tone="warning" icon="alert-triangle">Skin Scan not connected</s-badge> : null}

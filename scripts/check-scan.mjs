@@ -120,3 +120,13 @@ const detailPixels=new Uint8ClampedArray(16*16*4);
 for(let y=0;y<16;y++)for(let x=0;x<16;x++){const v=(x+y)%2?255:0;const i=(y*16+x)*4;detailPixels[i]=detailPixels[i+1]=detailPixels[i+2]=v;detailPixels[i+3]=255;}
 assert.equal(isSeverelyBlurred(detailPixels,16,16),false);
 console.log('PASS: detail-free images reject; sharp image detail is retained.');
+
+// Rotating a front-facing photo in its own plane must not create false yaw.
+const upright=Array.from({length:264},()=>({x:0.5,y:0.5}));
+upright[33]={x:0.4,y:0.4};upright[263]={x:0.6,y:0.4};upright[1]={x:0.5,y:0.52};
+for(const angle of [-0.6,0.6]) {
+ const rotated=upright.map(p=>({x:0.5+(p.x-0.5)*Math.cos(angle)-(p.y-0.5)*Math.sin(angle),y:0.5+(p.x-0.5)*Math.sin(angle)+(p.y-0.5)*Math.cos(angle)}));
+ assert.ok(Math.abs(landmarkPose(rotated).yaw)<0.001);
+ assert.equal(photoProblem({faces:1,points:rotated,hands:[]}),null);
+}
+console.log('PASS: tilted front-facing photos are not mistaken for sideways faces.');

@@ -7,7 +7,10 @@ export function landmarkPose(points) {
   const distance = Math.hypot(right.x-left.x, right.y-left.y);
   if (distance < 0.025) return null;
   const centerX = (left.x+right.x)/2, centerY = (left.y+right.y)/2;
-  return { yaw: Math.atan2(nose.x-centerX, distance/2), pitch: Math.atan2(nose.y-centerY, distance) };
+  // Measure along the eye line, so an in-plane head/photo tilt is not mistaken for a head turn.
+  const axisX = (right.x-left.x)/distance, axisY = (right.y-left.y)/distance;
+  const offsetX = nose.x-centerX, offsetY = nose.y-centerY;
+  return { yaw: Math.atan2(offsetX*axisX + offsetY*axisY, distance/2), pitch: Math.atan2(-offsetX*axisY + offsetY*axisX, distance) };
 }
 
 // The face guide is a circle in the middle of the frame, sized from the shorter side so it (and its ticks)
