@@ -205,6 +205,8 @@ export async function createFaceScan(video, zone, onStatus) {
   const sampleContext = sample.getContext("2d", { willReadFrequently: true });
 
   let disposed = false, timer = 0, lastCheck = { ok: false, message: "Loading camera..." }, readySince = 0;
+  // Latest head turn and face count, used to take the left and right side photos.
+  let lastYaw = 0, lastFaces = 0;
   let scanning = false, flashEl = null, checkedAt = 0, trackingFailed = false, faceBox = null, facePoints = null;
   // Count presented frames. Some mobile browsers never advance video.currentTime for a live camera,
   // so it cannot be used to tell whether a new frame has arrived.
@@ -289,6 +291,7 @@ export async function createFaceScan(video, zone, onStatus) {
         light /= 4096;
         yaw = landmarkPose(points)?.yaw || 0;
       }
+      lastYaw = yaw; lastFaces = faces;
       lastCheck = frameCheck({ faces, box, light, yaw, width: video.videoWidth, height: video.videoHeight });
       checkedAt = performance.now();
       faceBox = box; facePoints = points;
@@ -369,6 +372,34 @@ export async function createFaceScan(video, zone, onStatus) {
     if (trackingFailed) throw new Error("Face tracking stopped. Switch to Upload, or reopen the camera.");
   }
   function freshFace() { return lastCheck.ok && performance.now() - checkedAt < 600 && !document.hidden && !video.paused && !video.ended; }
+  // After the front photo, the shopper turns the head to one side and then the other; a frame is taken once the
+  // head is clearly turned (either direction first, so camera mirroring does not matter). If the shopper does not
+  // turn within a few seconds, the scan continues with the photos it has instead of getting stuck.
+  async function sideViews(images) {
+    const sides = [];
+    let firstSign = 0;
+    for (const step of [1, 2]) {
+      const deadline = performance.now() + 9000;
+      let since = 0, captured = false;
+      while (!disposed && performance.now() < deadline) {
+        assertActive();
+        instruction.textContent = step === 1 ? "Great. Now turn your head slowly to one side" : "Now turn slowly to the other side";
+        onStatus(instruction.textContent);
+        const fresh = performance.now() - checkedAt < 600 && lastFaces === 1;
+        const turned = fresh && Math.abs(lastYaw) > 0.28 && Math.abs(lastYaw) < 0.95 && (!firstSign || Math.sign(lastYaw) !== firstSign);
+        if (turned) { since = since || performance.now(); if (performance.now() - since >= 350) { captured = true; break; } } else since = 0;
+        await wait(60);
+      }
+      if (!captured) break;
+      firstSign = Math.sign(lastYaw);
+      sides.push(grabFrame().canvas.toDataURL("image/jpeg", 0.85));
+      instruction.textContent = step === 1 ? "Got it" : "All angles captured";
+      await wait(250);
+    }
+    const all = [images[0], ...sides];
+    all.landmarks = images.landmarks;
+    return all;
+  }
   // The photo itself is checked before it is sent: a hand over the face or a turned head stops the scan
   // (the camera keeps running for another try), and the landmarks found on the photo replace the live ones.
   async function verified(images) {
@@ -426,7 +457,7 @@ export async function createFaceScan(video, zone, onStatus) {
       if (disposed) return Promise.reject(new Error("Camera closed. Please reopen it."));
       if (scanning) return Promise.reject(new Error("A scan is already running."));
       scanning = true;
-      return capture().then((images) => { onStatus("Photo captured. Analysing visible skin details…"); return images; }).finally(() => { scanning = false; countdown.textContent = ""; });
+      return capture().then(sideViews).then((images) => { onStatus("Photo captured. Analysing visible skin details…"); return images; }).finally(() => { scanning = false; countdown.textContent = ""; });
     },
     close() {
       disposed = true; clearTimeout(timer); flash(false); detector.close();
