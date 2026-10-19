@@ -241,7 +241,8 @@ export async function createFaceScan(video, zone, onStatus) {
     context.clearRect(0, 0, w, h);
     context.fillStyle = "rgba(8, 7, 6, 0.5)";
     context.beginPath(); context.rect(0, 0, w, h); context.ellipse(oval.centerX, oval.centerY, oval.radiusX, oval.radiusY, 0, 0, Math.PI * 2, true); context.fill("evenodd");
-    const progress = ok && scanning ? holdProgress(readySince, now) : 0;
+    // One ring for the whole scan: holding straight fills the first third, each side photo one more third.
+    const progress = sideState.active ? (1 + (sideState.left ? 1 : 0) + (sideState.right ? 1 : 0)) / 3 : ok && scanning ? holdProgress(readySince, now) / 3 : 0;
     const ticks = 72, unit = Math.min(w, h) / 100;
     context.lineCap = "round";
     context.lineWidth = Math.max(2, unit * 0.55);
@@ -357,27 +358,6 @@ export async function createFaceScan(video, zone, onStatus) {
     return setTorch(on);
   }
 
-  // Still photo through the ImageCapture API (Chrome on Android and desktop). Only used when it has the same
-  // framing as the preview, so the face landmarks still line up; otherwise the caller falls back to video frames.
-  async function takeStill() {
-    const track = video.srcObject && video.srcObject.getVideoTracks ? video.srcObject.getVideoTracks()[0] : null;
-    if (!track || typeof ImageCapture === "undefined") return null;
-    try {
-      const blob = await Promise.race([new ImageCapture(track).takePhoto(), wait(1200).then(() => null)]);
-      if (!blob) return null;
-      const bitmap = await createImageBitmap(blob);
-      const sameFraming = Math.abs(bitmap.width / bitmap.height - video.videoWidth / video.videoHeight) < 0.03;
-      if (!sameFraming || bitmap.width <= video.videoWidth) { bitmap.close(); return null; }
-      const scale = Math.min(1, 1600 / Math.max(bitmap.width, bitmap.height));
-      const canvas = document.createElement("canvas");
-      canvas.width = Math.round(bitmap.width * scale); canvas.height = Math.round(bitmap.height * scale);
-      canvas.getContext("2d").drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-      bitmap.close();
-      return canvas;
-    } catch {
-      return null;
-    }
-  }
 
   function grabFrame() {
     const scale = Math.min(1, 1600 / Math.max(video.videoWidth, video.videoHeight));
@@ -406,7 +386,7 @@ export async function createFaceScan(video, zone, onStatus) {
     const done = sideState;
     done.left = false; done.right = false; done.active = true;
     // Raw (unmirrored) camera frames: a positive yaw means the shopper turned to their left.
-    const progress = () => "Slowly turn left and right   ·   Front ✓  " + (done.left ? "Left ✓" : "Left") + "  " + (done.right ? "Right ✓" : "Right");
+    const progress = () => "Now slowly turn left and right   ·   Front ✓  " + (done.left ? "Left ✓" : "Left") + "  " + (done.right ? "Right ✓" : "Right");
     const deadline = performance.now() + 7000;
     let since = 0, side = "";
     while (!disposed && sides.length < 2 && performance.now() < deadline) {
@@ -447,38 +427,24 @@ export async function createFaceScan(video, zone, onStatus) {
     while (!(freshFace() && readySince && performance.now() - readySince >= HOLD_MS)) {
       assertActive();
       if (performance.now() > deadline) throw new Error("We could not see your face clearly. Try better light, or upload a photo.");
-      instruction.textContent = freshFace() ? "Hold still… then slowly turn left and right" : lastCheck.message;
+      instruction.textContent = freshFace() ? "Look straight, then slowly turn left and right" : lastCheck.message;
       onStatus(instruction.textContent);
       await wait(60);
     }
     countdown.textContent = "";
     onStatus("Capturing...");
-    let front = null;
-    await flash(true);
-    try {
-      await wait(250); // let the camera adjust its exposure to the flash
-      // A full-resolution still from the camera is much sharper than a video frame; use it when available.
-      const still = await takeStill();
-      if (still) {
-        front = [still.toDataURL("image/jpeg", 0.9)];
-        front.landmarks = facePoints ? facePoints.map((point) => ({ x: point.x, y: point.y })) : null;
-      }
-      const frames = [];
-      for (let i = 0; !front && i < 5; i++) {
-        if (disposed) throw new Error("Scan cancelled. You can start again.");
-        assertActive();
-        if (!freshFace()) throw new Error("Your face moved during capture. Position your face and retry.");
-        frames.push(grabFrame()); await wait(70);
-      }
+    // No flash or still-photo pause: the scan keeps flowing into the side turns. Sharpest of three quick frames.
+    const frames = [];
+    for (let i = 0; i < 3; i++) {
       if (disposed) throw new Error("Scan cancelled. You can start again.");
-      if (!front) frames.sort((a, b) => b.score - a.score);
-      if (!front) {
-        front = [frames[0].canvas.toDataURL("image/jpeg", 0.88)];
-        front.landmarks = frames[0].points;
-      }
-    } finally {
-      await flash(false);
+      assertActive();
+      if (!freshFace()) throw new Error("Your face moved during capture. Position your face and retry.");
+      frames.push(grabFrame()); await wait(50);
     }
+    if (disposed) throw new Error("Scan cancelled. You can start again.");
+    frames.sort((first, second) => second.score - first.score);
+    const front = [frames[0].canvas.toDataURL("image/jpeg", 0.9)];
+    front.landmarks = frames[0].points;
     return await verified(front);
   }
 
