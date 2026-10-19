@@ -94,7 +94,14 @@ export function buildScanReport(result) {
       if (product.price) side.appendChild(el("span", "sr-price", product.price));
       side.appendChild(el("span", "sr-view", "View →"));
       link.append(media, body, side);
-      item.appendChild(link);
+      // Add to cart sits outside the link (a button cannot live inside a link).
+      const add = el("button", "sr-add", "Add to cart");
+      add.type = "button";
+      add.setAttribute("data-add-to-cart", "");
+      add.setAttribute("data-handle", product.handle || "");
+      if (product.variantId) add.setAttribute("data-variant", String(product.variantId));
+      add.setAttribute("aria-label", "Add " + (product.title || "product") + " to cart");
+      item.append(link, add);
       list.appendChild(item);
     });
     section.appendChild(list);
@@ -106,6 +113,67 @@ export function buildScanReport(result) {
   const again = el("button", "sr-again", "Scan again");
   again.type = "button";
   again.setAttribute("data-goto", "scanner");
-  end.append(again, el("p", "sr-disclaimer", "Cosmetic observations from one photo, not a medical diagnosis. Your photo is not saved. Follow product labels and avoid the eyes and lips."));
+  const actions = el("div", "sr-actions");
+  const save = el("button", "sr-share", "Save report");
+  save.type = "button"; save.setAttribute("data-report-save", "");
+  const copy = el("button", "sr-share", "Copy link");
+  copy.type = "button"; copy.setAttribute("data-report-link", "");
+  actions.append(save, copy);
+  end.append(actions, again, el("p", "sr-disclaimer", "Cosmetic observations from one photo, not a medical diagnosis. Your photo is not saved. Follow product labels and avoid the eyes and lips."));
   return { report, end, mapSlot: areas.length ? mapSlot : null };
+}
+
+// A shareable PNG of the report (summary, photo, observations, picks), drawn on the shopper's device only.
+export async function reportImage(result, photoSrc, mirrored, storeName) {
+  const W = 1080, H = 1350, pad = 72;
+  const canvas = document.createElement("canvas"); canvas.width = W; canvas.height = H;
+  const c = canvas.getContext("2d");
+  c.fillStyle = "#ffffff"; c.fillRect(0, 0, W, H);
+  const font = (size, weight) => `${weight || 400} ${size}px Inter, -apple-system, "Segoe UI", Roboto, Arial, sans-serif`;
+  const wrap = (text, x, y, maxWidth, lineHeight, maxLines) => {
+    const words = String(text || "").split(/\s+/); let line = "", lines = 0;
+    for (const word of words) {
+      const test = line ? line + " " + word : word;
+      if (c.measureText(test).width > maxWidth && line) { c.fillText(line, x, y); y += lineHeight; line = word; if (++lines >= maxLines - 1) break; }
+      else line = test;
+    }
+    if (line) { c.fillText(line, x, y); y += lineHeight; }
+    return y;
+  };
+  c.fillStyle = "#6b6158"; c.font = font(26, 600);
+  c.fillText(new Date().toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" }), pad, pad + 10);
+  c.fillStyle = "#111111"; c.font = font(60, 700); c.fillText("My Skin Report", pad, pad + 86);
+  c.fillStyle = "#3a3a3a"; c.font = font(30, 400);
+  let y = wrap((result.profile && result.profile.essence) || "", pad, pad + 146, W - pad * 2, 42, 3);
+  if (photoSrc) {
+    try {
+      const img = new Image(); img.src = photoSrc; await img.decode();
+      const size = 460, x = (W - size) / 2, top = y + 20;
+      const scale = Math.max(size / img.naturalWidth, size / img.naturalHeight);
+      const sw = size / scale, sh = size / scale, sx = (img.naturalWidth - sw) / 2, sy = (img.naturalHeight - sh) / 2;
+      c.save(); c.beginPath(); c.roundRect ? c.roundRect(x, top, size, size, 32) : c.rect(x, top, size, size); c.clip();
+      if (mirrored) { c.translate(x + size, top); c.scale(-1, 1); c.drawImage(img, sx, sy, sw, sh, 0, 0, size, size); }
+      else c.drawImage(img, sx, sy, sw, sh, x, top, size, size);
+      c.restore();
+      y = top + size + 40;
+    } catch { y += 20; }
+  }
+  const areas = mappableAreas(result.scanAreas);
+  c.font = font(34, 700); c.fillStyle = "#111111"; c.fillText("What we observed", pad, y + 20); y += 70;
+  for (const area of areas.slice(0, 5)) {
+    const style = CONCERN_STYLES[area.concern];
+    c.fillStyle = style.color; c.beginPath(); c.arc(pad + 12, y - 10, 12, 0, Math.PI * 2); c.fill();
+    c.fillStyle = "#111111"; c.font = font(30, 600); c.fillText(style.label, pad + 40, y);
+    c.fillStyle = "#6b6158"; c.font = font(26, 400); c.fillText(String(area.intensity || "").replace(/^./, (ch) => ch.toUpperCase()), pad + 60 + c.measureText(style.label).width * 1.15, y);
+    y += 50;
+  }
+  const picks = (Array.isArray(result.products) ? result.products : []).slice(0, 3).map((product) => product.title).filter(Boolean);
+  if (picks.length && y < H - 220) {
+    c.font = font(30, 700); c.fillStyle = "#111111"; c.fillText("My picks", pad, y + 20); y += 62;
+    c.font = font(26, 400); c.fillStyle = "#3a3a3a";
+    for (const title of picks) { if (y > H - 140) break; y = wrap("\u2022 " + title, pad, y, W - pad * 2, 36, 1); }
+  }
+  c.fillStyle = "#8a8178"; c.font = font(22, 400);
+  c.fillText("Cosmetic observations, not a medical diagnosis" + (storeName ? "  \u00b7  " + storeName : ""), pad, H - pad / 2);
+  return new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
 }

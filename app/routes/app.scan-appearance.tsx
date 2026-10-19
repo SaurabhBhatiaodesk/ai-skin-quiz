@@ -57,6 +57,7 @@ export default function ScanAppearanceSettings() {
         <s-stack gap="base">
           <s-paragraph>Applies to the Skin Scan button and popup across this store.</s-paragraph>
           <s-checkbox label="Show floating Skin Scan button" checked={value.enabled} onChange={event => setValue({ ...value, enabled: event.currentTarget.checked })} />
+          <s-checkbox label="Soft pulse around the button" details="A slow glow so shoppers notice the button. Turned off automatically for shoppers who prefer reduced motion." checked={value.pulse !== false} onChange={event => setValue({ ...value, pulse: event.currentTarget.checked })} />
           <div className="floating-button-settings-grid" style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,240px),1fr))",gap:"20px 24px",alignItems:"start"}}>
           <div className="floating-setting-card">          <s-text-field label="Button text" value={value.label} onInput={event => setValue({ ...value, label: event.currentTarget.value })} /></div>
           <div className="floating-setting-card">          <s-select label="Position" value={value.position} onChange={event => setValue({ ...value, position: event.currentTarget.value })}><s-option value="right">Bottom right</s-option><s-option value="left">Bottom left</s-option></s-select></div>

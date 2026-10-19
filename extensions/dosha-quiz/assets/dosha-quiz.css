@@ -3917,3 +3917,24 @@
 }
 
 @media(max-width:600px) { .prana-quiz.scan-chat-open { border-radius:var(--scan-mobile-radius,0px)!important; } }
+
+/* Floating launcher: optional soft pulse in the launcher's own colour (off for reduced motion). */
+.prana-scan-launcher.is-pulsing::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; animation: pranaLauncherRing 2.6s ease-out infinite; }
+@keyframes pranaLauncherRing { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--pulse, #e47a0c) 55%, transparent); } 80%, 100% { box-shadow: 0 0 0 18px color-mix(in srgb, var(--pulse, #e47a0c) 0%, transparent); } }
+@media (prefers-reduced-motion: reduce) { .prana-scan-launcher.is-pulsing::after { animation: none; } }
+
+/* Scan report: Add to cart under each pick, and the save/copy actions. */
+.prana-quiz .sr-products > li { display: flex; flex-direction: column; gap: 8px; }
+.prana-quiz .sr-products > li > .sr-product { flex: 1 1 auto; }
+.prana-quiz.prana-quiz .sr-add { width: 100%; min-height: 40px; padding: 8px 12px; border: 0; border-radius: 10px; background: var(--sr-button, #000); color: var(--scan-button-text, #fff); font: 600 14px/1.2 var(--sr-font, system-ui, sans-serif); cursor: pointer; }
+.prana-quiz.prana-quiz .sr-add:disabled { opacity: 0.75; cursor: default; }
+.prana-quiz.prana-quiz .sr-add.is-added { background: #1f7a4d; }
+.prana-quiz .sr-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 0 0 10px; }
+.prana-quiz.prana-quiz .sr-share { min-height: 42px; padding: 8px 12px; border-radius: 10px; border: 1px solid rgba(0, 0, 0, 0.14); background: #fff; color: #111; font: 600 14px/1.2 var(--sr-font, system-ui, sans-serif); cursor: pointer; }
+.prana-quiz.scan-chat-open[data-scan-dark] .sr-share { border-color: rgba(255, 255, 255, 0.3); background: rgba(255, 255, 255, 0.1); color: #fff; }
+
+/* Quiz / section result cards: Add to cart next to Shop Now. */
+.prana-quiz .pc-bottom { flex-wrap: wrap; }
+.prana-quiz.prana-quiz .btn-add { margin-left: auto; padding: 9px 16px; border: 1px solid currentColor; border-radius: var(--button-radius, 8px); background: transparent; color: var(--gold, #561a24); font: inherit; font-size: 14px; cursor: pointer; }
+.prana-quiz.prana-quiz .btn-add + .btn-shop { margin-left: 8px; }
+.prana-quiz.prana-quiz .btn-add.is-added { border-color: #1f7a4d; color: #1f7a4d; }

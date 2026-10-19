@@ -77,7 +77,7 @@ export async function scanResult(submission: {code?: unknown; image?: unknown; i
     profile: { name: "Your skin observations", sub: "Based on your photo", essence: result.summary, insight, heroClass: "rh-balanced", modal: "balanced", products: matching.map(product => product.title) },
     products: matching.slice(0, 6).map(product => {
       const matched = result.concerns.filter(item => recommendScanProducts([item.concern], quiz.mappings, catalog).some(match => match.handle === product.handle));
-      return { title: product.title, handle: product.handle, price: product.price, image: product.image, concerns: matched.map(item => item.concern), why: matched.length ? `For ${matched.map(item => `${item.concern.replaceAll("_", " ")} (${regionText(item).toLowerCase()})`).join(", ")}` : "Matched to your skin observations" };
+      return { title: product.title, handle: product.handle, price: product.price, image: product.image, ...(product.variants?.[0]?.id ? { variantId: product.variants[0].id } : {}), concerns: matched.map(item => item.concern), why: matched.length ? `For ${matched.map(item => `${item.concern.replaceAll("_", " ")} (${regionText(item).toLowerCase()})`).join(", ")}` : "Matched to your skin observations" };
     }),
   };
 }

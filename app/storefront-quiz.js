@@ -1,7 +1,7 @@
 import { defaultScanIcon } from "./default-scan-icon.js";
 import { checkPhoto, createFaceScan } from "./face-scan.js";
 import { buildFaceMap } from "./face-map.js";
-import { buildScanReport } from "./scan-report.js";
+import { buildScanReport, reportImage } from "./scan-report.js";
 (function () {
   var PROXY = "/apps/dosha-quiz";
 
@@ -143,6 +143,7 @@ import { buildScanReport } from "./scan-report.js";
       }
       if (isScanResult && inPopup) {
         // Scan results use the premium report layout; the quiz hero, reading card and ritual list are hidden by CSS.
+        lastScanResult = result;
         var built = buildScanReport(result);
         var wrap = q('[data-screen="result"] .result-wrap');
         if (wrap) wrap.insertBefore(built.report, wrap.querySelector(".result-hero"));
@@ -227,7 +228,7 @@ import { buildScanReport } from "./scan-report.js";
         box.innerHTML = (result.products || []).map(function (product) {
           var img = product.image ? '<img src="' + esc(product.image) + '" alt="" loading="lazy">' : '<span class="no-img" aria-hidden="true">+</span>';
           var href = "/products/" + encodeURIComponent(product.handle || "") + (product.variantId ? "?variant=" + encodeURIComponent(String(product.variantId).split("/").pop()) : "");
-          return '<div class="product-card"><div class="pc-img">' + img + '</div><div class="pc-body"><div class="pc-name">' + esc(product.title) + "</div>" + (product.why ? '<div class="pc-why">' + esc(product.why) + "</div>" : "") + '<div class="pc-bottom"><span class="pc-price">' + esc(product.price) + '</span><a class="btn-shop" href="' + esc(href) + '" aria-label="Shop ' + esc(product.title) + '">Shop Now →</a></div></div></div>';
+          return '<div class="product-card"><div class="pc-img">' + img + '</div><div class="pc-body"><div class="pc-name">' + esc(product.title) + "</div>" + (product.why ? '<div class="pc-why">' + esc(product.why) + "</div>" : "") + '<div class="pc-bottom"><span class="pc-price">' + esc(product.price) + '</span><button class="btn-add" type="button" data-add-to-cart data-handle="' + esc(product.handle || "") + '"' + (product.variantId ? ' data-variant="' + esc(String(product.variantId)) + '"' : "") + '>Add to cart</button><a class="btn-shop" href="' + esc(href) + '" aria-label="Shop ' + esc(product.title) + '">Shop Now →</a></div></div></div>';
         }).join("");
         if (!result.products || !result.products.length) box.textContent = "No matching products are available for this result yet.";
       }
@@ -309,7 +310,9 @@ import { buildScanReport } from "./scan-report.js";
 
     // Analysing screen: the captured photo with a moving scan line, rotating step text and a progress bar.
     var analyzingTimer = 0;
-    var ANALYZING_STEPS = ["Mapping your face", "Checking skin texture", "Reviewing tone and redness", "Preparing your report"];
+    // Live progress while the photos are analysed, area by area, so the wait feels shorter.
+    var lastScanResult = null;
+    var ANALYZING_STEPS = ["Reading your photos", "Mapping your face", "Checking forehead and brows", "Checking under-eye area", "Checking left cheek", "Checking right cheek", "Looking at nose and pores", "Checking jawline and chin", "Reviewing tone and redness", "Matching products to your skin", "Preparing your report"];
     function showAnalyzing(overlay) {
       overlay.textContent = "";
       var card = document.createElement("div"); card.className = "an-card";
@@ -328,7 +331,7 @@ import { buildScanReport } from "./scan-report.js";
       overlay.appendChild(card);
       var index = 0;
       clearInterval(analyzingTimer);
-      analyzingTimer = setInterval(function () { index = Math.min(index + 1, ANALYZING_STEPS.length - 1); step.textContent = ANALYZING_STEPS[index]; }, 1600);
+      analyzingTimer = setInterval(function () { index = Math.min(index + 1, ANALYZING_STEPS.length - 1); step.textContent = ANALYZING_STEPS[index]; }, 1100);
       if (root.classList.contains("scan-chat-open")) root.scrollTop = 0;
       overlay.classList.add("active");
     }
@@ -577,9 +580,83 @@ import { buildScanReport } from "./scan-report.js";
       }
     }
 
+    // ---- Add to cart (results) ----
+    function shopRoot() { return (window.Shopify && window.Shopify.routes && window.Shopify.routes.root) || "/"; }
+    function variantFor(button) {
+      var gid = button.getAttribute("data-variant") || "";
+      var numeric = gid.split("/").pop();
+      if (/^\d+$/.test(numeric)) return Promise.resolve(numeric);
+      var handle = button.getAttribute("data-handle");
+      if (!handle) return Promise.reject(new Error("missing product"));
+      return fetch(shopRoot() + "products/" + encodeURIComponent(handle) + ".js", { headers: { Accept: "application/json" } })
+        .then(function (response) { if (!response.ok) throw new Error("product"); return response.json(); })
+        .then(function (product) { var variant = (product.variants || []).find(function (item) { return item.available; }) || (product.variants || [])[0]; if (!variant) throw new Error("sold out"); if (!variant.available) throw new Error("sold out"); return String(variant.id); });
+    }
+    // Updates the theme's cart count without a reload: common count elements plus the cart events themes listen to.
+    function refreshCartCount(cart) {
+      var count = cart && typeof cart.item_count === "number" ? cart.item_count : null;
+      if (count === null) return;
+      document.querySelectorAll("[data-cart-count], .cart-count-bubble span[aria-hidden], .cart-count, cart-count, .cart-count-bubble__count, .header__cart-count, .js-cart-count").forEach(function (element) { element.textContent = String(count); element.hidden = count === 0; });
+      var bubble = document.querySelector("#cart-icon-bubble .cart-count-bubble");
+      if (bubble) bubble.hidden = count === 0;
+      ["cart:update", "cart:refresh", "cart:updated", "theme:cart:change"].forEach(function (name) {
+        document.dispatchEvent(new CustomEvent(name, { bubbles: true, detail: { resource: cart, cart: cart, sourceId: "prana-quiz", data: { itemCount: count, source: "prana-quiz" } } }));
+      });
+    }
+    function addToCart(button) {
+      if (button.disabled) return;
+      var label = button.getAttribute("data-label") || button.textContent;
+      button.setAttribute("data-label", label);
+      if (quiz && quiz.preview) { button.textContent = "Works on your store"; setTimeout(function () { button.textContent = label; }, 2200); return; }
+      button.disabled = true; button.textContent = "Adding\u2026";
+      variantFor(button).then(function (id) {
+        return fetch(shopRoot() + "cart/add.js", { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify({ items: [{ id: Number(id), quantity: 1 }] }) });
+      }).then(function (response) {
+        if (!response.ok) return response.json().catch(function () { return {}; }).then(function (body) { throw new Error(body.description || body.message || "Could not add"); });
+        return fetch(shopRoot() + "cart.js", { headers: { Accept: "application/json" } }).then(function (cartResponse) { return cartResponse.json(); });
+      }).then(function (cart) {
+        refreshCartCount(cart);
+        button.textContent = "Added \u2713"; button.classList.add("is-added");
+        setTimeout(function () { button.disabled = false; button.textContent = label; button.classList.remove("is-added"); }, 2500);
+      }).catch(function (error) {
+        button.disabled = false;
+        button.textContent = /sold out/i.test(String(error && error.message)) ? "Sold out" : "Try again";
+        setTimeout(function () { button.textContent = label; }, 2500);
+      });
+    }
+    // ---- Report share/save ----
+    function saveReport(button) {
+      var label = button.textContent;
+      var result = lastScanResult;
+      if (!result) return;
+      button.disabled = true; button.textContent = "Preparing\u2026";
+      reportImage(result, scanPhoto, scanMirrored, location.hostname).then(function (blob) {
+        if (!blob) throw new Error("image");
+        var file = typeof File === "function" ? new File([blob], "my-skin-report.png", { type: "image/png" }) : null;
+        if (file && navigator.canShare && navigator.canShare({ files: [file] })) return navigator.share({ files: [file], title: "My Skin Report" }).catch(function () {});
+        var url = URL.createObjectURL(blob); var link = document.createElement("a");
+        link.href = url; link.download = "my-skin-report.png"; document.body.appendChild(link); link.click(); link.remove();
+        setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+      }).then(function () { button.textContent = "Saved \u2713"; }).catch(function () { button.textContent = "Could not save"; })
+        .finally(function () { button.disabled = false; setTimeout(function () { button.textContent = label; }, 2200); });
+    }
+    function copyReportLink(button) {
+      var label = button.textContent;
+      var url = location.origin + location.pathname;
+      var done = function () { button.textContent = "Link copied \u2713"; setTimeout(function () { button.textContent = label; }, 2200); };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(done, function () { button.textContent = url; });
+      else { var field = document.createElement("textarea"); field.value = url; document.body.appendChild(field); field.select(); try { document.execCommand("copy"); done(); } catch (copyError) { button.textContent = url; } field.remove(); }
+    }
+
     root.addEventListener("click", function (event) {
       var origin = event.target.closest ? event.target : null;
       if (!origin) return;
+      var addButton = origin.closest("[data-add-to-cart]");
+      if (addButton) { event.preventDefault(); addToCart(addButton); return; }
+      var saveButton = origin.closest("[data-report-save]");
+      if (saveButton) { saveReport(saveButton); return; }
+      var linkButton = origin.closest("[data-report-link]");
+      if (linkButton) { copyReportLink(linkButton); return; }
       var goto = origin.closest("[data-goto]");
       if (goto) { go(goto.getAttribute("data-goto"), true); return; }
       if (origin.closest("[data-scan-continue]")) {
@@ -1017,7 +1094,8 @@ import { buildScanReport } from "./scan-report.js";
       var appearance = data.scanAppearance || {};
       if (root.getAttribute("data-floating-embed") === "true" && appearance.enabled !== false && scanReady && enabledPaths.indexOf("scan") !== -1 && !document.querySelector("[data-scan-chat-launcher]")) {
         var launcher = document.createElement("button");
-        launcher.type = "button"; launcher.className = "prana-scan-launcher";
+        launcher.type = "button"; launcher.className = "prana-scan-launcher" + (appearance.pulse === false ? "" : " is-pulsing");
+        launcher.style.setProperty("--pulse", appearance.buttonColor || "#e8f0eb");
         launcher.setAttribute("data-scan-chat-launcher", "");
         launcher.setAttribute("aria-label", "Open skin scan assistant");
         launcher.setAttribute("aria-expanded", "false");
