@@ -146,6 +146,7 @@ import { buildScanReport, reportImage } from "./scan-report.js";
         // Scan results use the premium report layout; the quiz hero, reading card and ritual list are hidden by CSS.
         lastScanResult = result;
         var built = buildScanReport(result);
+        setTimeout(function () { hidePicksInCart(built.report); }, 0);
         var wrap = q('[data-screen="result"] .result-wrap');
         if (wrap) wrap.insertBefore(built.report, wrap.querySelector(".result-hero"));
         var emailBlock = q(".email-box");
@@ -604,6 +605,25 @@ import { buildScanReport, reportImage } from "./scan-report.js";
         document.dispatchEvent(new CustomEvent(name, { bubbles: true, detail: { resource: cart, cart: cart, sourceId: "prana-quiz", data: { itemCount: count, source: "prana-quiz" } } }));
       });
     }
+    // A product that is now in the cart leaves the recommendations (the section hides when none are left).
+    function removePick(element) {
+      var card = element.closest(".sr-products > li, .product-card");
+      if (!card) return;
+      card.classList.add("is-leaving");
+      setTimeout(function () {
+        var list = card.parentElement; card.remove();
+        if (list && !list.children.length) { var section = list.closest(".sr-section"); if (section) section.hidden = true; }
+      }, 320);
+    }
+    // When a report opens, picks that are already in the cart are not shown again.
+    function hidePicksInCart(scope) {
+      if (quiz && quiz.preview) return;
+      fetch(shopRoot() + "cart.js", { headers: { Accept: "application/json" } }).then(function (response) { return response.ok ? response.json() : null; }).then(function (cart) {
+        if (!cart || !cart.items) return;
+        var handles = cart.items.map(function (item) { return item.handle; });
+        scope.querySelectorAll("[data-add-to-cart]").forEach(function (button) { if (handles.indexOf(button.getAttribute("data-handle")) !== -1) removePick(button); });
+      }).catch(function () {});
+    }
     function addToCart(button) {
       if (button.disabled) return;
       var label = button.getAttribute("data-label") || button.textContent;
@@ -618,6 +638,7 @@ import { buildScanReport, reportImage } from "./scan-report.js";
       }).then(function (cart) {
         refreshCartCount(cart);
         button.textContent = "Added \u2713"; button.classList.add("is-added");
+        setTimeout(function () { removePick(button); }, 900);
         setTimeout(function () { button.disabled = false; button.textContent = label; button.classList.remove("is-added"); }, 2500);
       }).catch(function (error) {
         button.disabled = false;
@@ -1136,6 +1157,8 @@ import { buildScanReport, reportImage } from "./scan-report.js";
         root.style.setProperty("--scan-heading", appearance.headingColor || "#1a1208");
         root.style.setProperty("--scan-button-text", appearance.modalButtonTextColor || "#ffffff");
         root.style.setProperty("--scan-button", appearance.modalButtonColor || "#000000");
+        root.style.setProperty("--sr-cart", appearance.cartButtonColor || "#A8671E");
+        root.style.setProperty("--sr-cart-text", appearance.cartButtonTextColor || "#ffffff");
         root.style.setProperty("--scan-font-size", (appearance.modalFontSize || 14) + "px");
         root.style.setProperty("--scan-width", (appearance.modalWidth || 520) + "px");
         root.style.setProperty("--scan-radius", (appearance.modalRadius == null ? 24 : appearance.modalRadius) + "px");

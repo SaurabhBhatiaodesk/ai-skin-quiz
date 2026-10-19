@@ -3938,3 +3938,11 @@
 .prana-quiz.prana-quiz .btn-add { margin-left: auto; padding: 9px 16px; border: 1px solid currentColor; border-radius: var(--button-radius, 8px); background: transparent; color: var(--gold, #561a24); font: inherit; font-size: 14px; cursor: pointer; }
 .prana-quiz.prana-quiz .btn-add + .btn-shop { margin-left: 8px; }
 .prana-quiz.prana-quiz .btn-add.is-added { border-color: #1f7a4d; color: #1f7a4d; }
+
+/* Add to cart in the scan report: the store's button style (colour from Skin Scan appearance), and picks that
+   are added leave the list. */
+.prana-quiz.prana-quiz.prana-quiz .sr-add { min-height: 44px; border-radius: 3px; background: var(--sr-cart, #A8671E); color: var(--sr-cart-text, #fff); font-size: 13px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; }
+.prana-quiz.prana-quiz.prana-quiz .sr-add:hover { background: color-mix(in srgb, var(--sr-cart, #A8671E) 88%, #000); }
+.prana-quiz.prana-quiz.prana-quiz .sr-add.is-added { background: #1f7a4d; }
+.prana-quiz .sr-products > li, .prana-quiz .product-card { transition: opacity 0.3s ease, transform 0.3s ease; }
+.prana-quiz .sr-products > li.is-leaving, .prana-quiz .product-card.is-leaving { opacity: 0; transform: scale(0.96); }
