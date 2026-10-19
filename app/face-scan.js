@@ -260,7 +260,10 @@ export async function createFaceScan(video, zone, onStatus) {
     if (sideState.active) {
       // Raw (unmirrored) frame: the shopper's left is on the right of the raw image; the CSS mirror shows it on their left.
       const pulse = 0.5 + 0.5 * Math.sin(now / 260);
+      // Only the side still needed is shown: left first, then right (whichever is not taken yet).
+      const wanted = sideState.left ? "right" : "left";
       for (const [side, dir] of [["left", 1], ["right", -1]]) {
+        if (side !== wanted || sideState[side]) continue;
         const done = sideState[side];
         const x = oval.centerX + dir * oval.radiusX * (1.32 + (done ? 0 : 0.06 * pulse));
         const y = oval.centerY, size = unit * 7;
@@ -386,7 +389,7 @@ export async function createFaceScan(video, zone, onStatus) {
     const done = sideState;
     done.left = false; done.right = false; done.active = true;
     // Raw (unmirrored) camera frames: a positive yaw means the shopper turned to their left.
-    const progress = () => "Now slowly turn left and right   ·   Front ✓  " + (done.left ? "Left ✓" : "Left") + "  " + (done.right ? "Right ✓" : "Right");
+    const progress = () => (!done.left ? (done.right ? "Now turn your head left" : "Turn your head left") : "Now turn your head right");
     const deadline = performance.now() + 7000;
     let since = 0, side = "";
     while (!disposed && sides.length < 2 && performance.now() < deadline) {
