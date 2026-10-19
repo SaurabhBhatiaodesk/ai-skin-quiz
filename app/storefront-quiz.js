@@ -810,19 +810,29 @@ import { buildScanReport } from "./scan-report.js";
       fileInput.addEventListener("change", function (event) {
         var file = event.target.files && event.target.files[0];
         if (!file) return;
-        if (!/^image\/(jpeg|png|webp)$/.test(file.type) || file.size > 5 * 1024 * 1024) {
+        if (!(file.type.startsWith("image/") || (!file.type && /\.(jpe?g|png|webp|avif|gif|bmp|heic|heif|tiff?|svg)$/i.test(file.name))) || file.size > 5 * 1024 * 1024) {
           captured = null;
-          q("[data-scan-status]").textContent = "Upload a JPG, PNG or WebP photo under 5 MB.";
+          q("[data-scan-status]").textContent = "Choose an image under 5 MB in a browser-supported format, such as JPG, PNG, WebP or AVIF.";
           return;
         }
         var reader = new FileReader();
+        captured = null;
+        q("[data-scan-status]").textContent = "Preparing your photo...";
+        reader.onerror = function () { q("[data-scan-status]").textContent = "Could not read this file. Choose another photo."; };
         reader.onload = function (ev) {
-          captured = ev.target.result;
+          compactScanPhoto(ev.target.result).then(function (photo) {
+          if (fileInput.files[0] !== file || removed) return;
+          captured = photo;
           var preview = q("[data-upload-preview]");
-          preview.src = ev.target.result;
+          preview.src = photo;
           preview.style.display = "block";
           q("[data-upload-zone]").classList.add("hidden");
           q("[data-scan-status]").textContent = "Photo ready — tap Analyse My Skin";
+          }).catch(function () {
+            if (fileInput.files[0] !== file || removed) return;
+            captured = null;
+            q("[data-scan-status]").textContent = "Your browser cannot open this image format. Export it as JPG, PNG or WebP and try again.";
+          });
         };
         reader.readAsDataURL(file);
       });
