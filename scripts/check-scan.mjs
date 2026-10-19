@@ -19,6 +19,13 @@ assert.equal(mapped.concerns[0].concern,'pigmentation');
 assert.equal(mapped.concerns.length,1);
 assert.deepEqual(mapped.concerns[0].regions,['cheeks']);
 await assert.rejects(()=>analysePhoto('invalid','dummy'),/Upload/);
+// The response validator must accept all five concerns permitted by the provider schema.
+const fiveConcerns = ['pigmentation','dryness','redness','pores','texture'].map(concern => ({concern,observation:'Visible on cheeks.',regions:['cheeks'],intensity:'mild'}));
+globalThis.fetch=async()=>({ok:true,json:async()=>({output:[{content:[{type:'output_text',text:JSON.stringify({usable:true,summary:'Five visible concerns.',concerns:fiveConcerns})}]}]})});
+assert.equal((await analysePhoto('data:image/jpeg;base64,YWJj','dummy')).concerns.length,5);
+globalThis.fetch=async()=>({ok:true,json:async()=>({output:[{content:[{type:'output_text',text:JSON.stringify({usable:true,summary:'Too many.',concerns:[...fiveConcerns,fiveConcerns[0]]})}]}]})});
+await assert.rejects(()=>analysePhoto('data:image/jpeg;base64,YWJj','dummy'),/Invalid analysis/);
+
 await assert.rejects(()=>scanResult({consent:false},'test'),/Confirm/);
 assert.equal(calls,1);
 const photos = Array(5).fill('data:image/jpeg;base64,YWJj');

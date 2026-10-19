@@ -40,6 +40,16 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     if (submission.email) { const unlocked = await unlockReport(shop, result.reportId, submission.email); return apiJson({ ok: true, result: unlocked.result, delivery: unlocked.delivery }); }
     return apiJson({ ok: true, result });
   } catch (error) {
+    if (submission.path === "scan") {
+      const message = error instanceof Error ? error.message : "";
+      const category = /Invalid analysis response/.test(message) ? "invalid_analysis"
+        : /Could not read the analysis/.test(message) ? "unreadable_analysis"
+        : /well-lit photo/.test(message) ? "photo_not_usable"
+        : /timed out|too long/.test(message) ? "timeout"
+        : /API key|provider/.test(message) ? "provider_configuration"
+        : /credits|rate limit|Scan limit/.test(message) ? "quota_or_rate_limit" : "scan_processing_failed";
+      console.error("Skin scan submission failed", { category });
+    }
     return apiJson({ ok: false, error: error instanceof Error ? error.message : "Could not complete this quiz." }, { status: 422 });
   }
 };

@@ -45,7 +45,7 @@ export async function analysePhoto(image: unknown, key: string) {
   let result;
   try { result = JSON.parse(content || ""); } catch { throw new Error("Could not read the analysis. Please retake the photo."); }
   if (result.usable !== true) throw new Error("Use a clear, well-lit photo of one face without filters.");
-  if (typeof result.summary !== "string" || result.summary.length > 2000 || !Array.isArray(result.concerns) || result.concerns.length > 4 || result.concerns.some((item: ScanArea) => !concerns.includes(item.concern) || typeof item.observation !== "string" || item.observation.length > 600 || !Array.isArray(item.regions) || !item.regions.length || item.regions.length > 3 || item.regions.some(region => !regions.includes(region)) || !intensities.includes(item.intensity))) throw new Error("Invalid analysis response. Please try again.");
+  if (typeof result.summary !== "string" || result.summary.length > 2000 || !Array.isArray(result.concerns) || result.concerns.length > 5 || result.concerns.some((item: ScanArea) => !concerns.includes(item.concern) || typeof item.observation !== "string" || item.observation.length > 600 || !Array.isArray(item.regions) || !item.regions.length || item.regions.length > 3 || item.regions.some(region => !regions.includes(region)) || !intensities.includes(item.intensity))) throw new Error("Invalid analysis response. Please try again.");
   // One entry per concern, each region listed once.
   const seen = new Set<string>();
   const unique = (result.concerns as ScanArea[]).filter(item => !seen.has(item.concern) && seen.add(item.concern)).map(item => ({ ...item, regions: [...new Set(item.regions)] }));
