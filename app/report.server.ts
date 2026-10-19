@@ -19,6 +19,7 @@ export async function storeReport(shop: string, result: QuizResult) {
   return publicReport(result, id);
 }
 export async function unlockReport(shop: string, id: unknown, email: unknown) {
+  if (typeof email === "string") email = email.trim().toLowerCase();
   if (typeof id !== "string" || typeof email !== "string" || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) throw new Error("Enter a valid email address.");
   await prepare();
   const rows = await prisma.$queryRawUnsafe<Array<{payload:string; email:string|null; sent:number}>>("SELECT payload,email,sent FROM QuizReport WHERE id=? AND shop=? AND expires>?", id, shop, Date.now());
@@ -72,10 +73,10 @@ export async function reportStats(shop: string) {
 
 export async function collectedEmails(shop: string) {
   await prepare();
-  const rows = await prisma.$queryRawUnsafe<Array<{ email: string; total: number | bigint; latest: string }>>(
-    "SELECT email, COUNT(*) AS total, CAST(MAX(expires) AS TEXT) AS latest FROM QuizReport WHERE shop=? AND email IS NOT NULL GROUP BY email ORDER BY latest DESC LIMIT 500", shop,
+  const rows = await prisma.$queryRawUnsafe<Array<{ email: string; total: number | bigint; latest: string; failed: number | bigint; queued: number | bigint }>>(
+    "SELECT email, COUNT(*) AS total, CAST(MAX(expires) AS TEXT) AS latest, SUM(CASE WHEN sent=-1 THEN 1 ELSE 0 END) AS failed, SUM(CASE WHEN sent=1 THEN 1 ELSE 0 END) AS queued FROM QuizReport WHERE shop=? AND email IS NOT NULL GROUP BY email ORDER BY latest DESC LIMIT 500", shop,
   );
-  return rows.map(row => ({ email: row.email, results: Number(row.total), latestResultAt: Number(row.latest) - 7 * 86400000 }));
+  return rows.map(row => ({ email: row.email, results: Number(row.total), failed: Number(row.failed || 0), queued: Number(row.queued || 0), latestResultAt: Number(row.latest) - 7 * 86400000 }));
 }
 
 export async function emailDeliverySummary(shop: string) {

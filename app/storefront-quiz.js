@@ -21,6 +21,7 @@ import { buildScanReport } from "./scan-report.js";
     var faceScan = null;
     var cameraGeneration = 0;
     var scanCapturing = false;
+    var scanPreparing = false;
     var cameraOpening = false;
     var scanMode = "camera";
     var captured = null;
@@ -705,6 +706,7 @@ import { buildScanReport } from "./scan-report.js";
     });
 
     function runScan() {
+      if (scanPreparing) return;
       if (submitting) return;
       var bio = q("[data-consent='biometric']");
       var age = q("[data-consent='age']");
@@ -761,6 +763,7 @@ import { buildScanReport } from "./scan-report.js";
     }
 
     function finishScan(images) {
+      if (scanPreparing || submitting) return;
       stopCamera();
       if (!images) {
         q("[data-scan-status]").textContent = "Please enable camera or upload a photo first";
@@ -768,6 +771,7 @@ import { buildScanReport } from "./scan-report.js";
         return;
       }
       scanPhoto = Array.isArray(images) ? images[0] : images;
+      scanPreparing = true;
       // Camera captures carry the landmarks seen at capture and are shown mirrored like the live preview.
       scanLandmarks = Array.isArray(images) && images.landmarks ? images.landmarks : null;
       scanMirrored = scanMode === "camera";
@@ -786,6 +790,7 @@ import { buildScanReport } from "./scan-report.js";
       }).catch(function (error) {
         q("[data-scan-status]").textContent = error.message || "Could not prepare your photo. Please try again.";
       }).finally(function () {
+        scanPreparing = false;
         if (!scanSucceeded && scanMode === "upload" && !removed && consentGiven()) {
           if (overlay) hideAnalyzing(overlay);
           return;
@@ -1051,7 +1056,7 @@ import { buildScanReport } from "./scan-report.js";
         root.style.setProperty("--scan-accent", appearance.accentColor || "#52695a");
         root.style.setProperty("--scan-heading", appearance.headingColor || "#1a1208");
         root.style.setProperty("--scan-button-text", appearance.modalButtonTextColor || "#ffffff");
-        root.style.setProperty("--scan-button", !appearance.modalButtonColor || ["#303030", "#4a2c21"].includes(String(appearance.modalButtonColor).toLowerCase()) ? "#000000" : appearance.modalButtonColor);
+        root.style.setProperty("--scan-button", appearance.modalButtonColor || "#000000");
         root.style.setProperty("--scan-font-size", (appearance.modalFontSize || 14) + "px");
         root.style.setProperty("--scan-width", (appearance.modalWidth || 520) + "px");
         root.style.setProperty("--scan-radius", (appearance.modalRadius == null ? 24 : appearance.modalRadius) + "px");

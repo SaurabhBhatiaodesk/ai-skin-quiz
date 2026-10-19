@@ -1,4 +1,5 @@
 import { deleteScanAppearance } from "../scan-appearance.server";
+import { deleteScanHealth } from "../scan-health.server";
 import { deleteOpenAIKey } from "../settings.server";
 import type { ActionFunctionArgs } from "react-router";
 import { authenticate } from "../shopify.server";
@@ -23,6 +24,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       if (email) await deleteReports(shop, email);
       break;
     case "SHOP_REDACT":
+      await deleteScanHealth(shop);
       await deleteReports(shop);
       await deleteShopQuizzes(shop);
       await deleteShopSetup(shop);

@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';import {transform} from 'esbuild';import {DatabaseSync} from 'node:sqlite';
+const db=new DatabaseSync(':memory:');globalThis.healthTestDb=db;
+let source=(await readFile('app/scan-health.server.ts','utf8')).replace('import prisma from "./db.server";','const prisma={$executeRawUnsafe:async(sql,...args)=>globalThis.healthTestDb.prepare(sql).run(...args),$queryRawUnsafe:async(sql,...args)=>globalThis.healthTestDb.prepare(sql).all(...args)};');
+const compiled=await transform(source,{loader:'ts',format:'esm'});const api=await import('data:text/javascript;base64,'+Buffer.from(compiled.code).toString('base64'));
+await api.recordScanHealth('a','success',1000);await api.recordScanHealth('a','timeout',3000);await api.recordScanHealth('b','success',2000);
+const stats=await api.scanHealth('a');assert.equal(stats.total,2);assert.equal(stats.success,1);assert.equal(stats.failed,1);assert.equal(stats.averageMs,2000);assert.equal(stats.groups[0].category,'timeout');
+assert.equal(api.scanFailureCategory('The OpenAI API key is invalid.'),'provider_configuration');
+await api.deleteScanHealth('a');assert.equal((await api.scanHealth('a')).total,0);assert.equal((await api.scanHealth('b')).total,1);
+db.close();console.log('PASS: scanner health aggregates timing, isolates stores and deletes diagnostics.');

@@ -17,9 +17,6 @@ export function normalizeAppearance(value: unknown): ScanAppearance {
     if (input?.[key] !== undefined && !/^#[0-9a-f]{6}$/i.test(input[key]!)) throw new Error("Choose a valid color.");
     result[key] = input?.[key] || result[key];
   }
-  // "#4a2c21" was the previous built-in default for modal buttons, not a merchant choice.
-  // "#303030" was the default after that; both now become the black default.
-  if (["#4a2c21", "#303030"].includes(result.modalButtonColor.toLowerCase())) result.modalButtonColor = scanAppearanceDefaults.modalButtonColor;
   for (const key of ["radius", "offset"] as const) {
     const number = Number(input?.[key] ?? result[key]);
     if (!Number.isFinite(number) || number < 0 || number > 64) throw new Error("Spacing and corners must be between 0 and 64 pixels.");

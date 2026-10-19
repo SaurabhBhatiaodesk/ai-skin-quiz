@@ -5,18 +5,19 @@ const start=source.indexOf('    function finishScan(images) {');
 const end=source.indexOf('    function saveEmail()',start);
 assert.ok(start>=0&&end>start);
 for(const succeeded of [false,true]) {
- let overlayHidden=false, cleared=0;
+ let overlayHidden=false, cleared=0, submissions=0;
  const preview={style:{},removeAttribute(){cleared++;}};
  const file={value:'selected'};
  const zone={classList:{remove(){}}};
  const overlay={};
- const env={scanMode:'upload',scanPhoto:null,scanLandmarks:null,scanMirrored:false,captured:'photo',removed:false,
+ const env={scanPreparing:false,submitting:false,scanMode:'upload',scanPhoto:null,scanLandmarks:null,scanMirrored:false,captured:'photo',removed:false,
  stopCamera(){},startCamera(){},showAnalyzing(){},hideAnalyzing(){overlayHidden=true;},consentGiven:()=>true,
- checkPhoto:async()=>null,compactScanPhoto:async()=> 'photo',submit:async()=>succeeded,setTimeout(){},
+ checkPhoto:async()=>null,compactScanPhoto:async()=> 'photo',submit:async()=>{submissions++;return succeeded;},setTimeout(){},
  q:s=>s==='[data-analyzing]'?overlay:s==='[data-upload-preview]'?preview:s==='[data-file]'?file:s==='[data-upload-zone]'?zone:{}};
- new Function('env','with(env){'+source.slice(start,end)+';finishScan("photo");}')(env);
+ new Function('env','with(env){'+source.slice(start,end)+';finishScan("photo");finishScan("photo");}')(env);
  await new Promise(resolve=>setTimeout(resolve,0));
  assert.equal(overlayHidden,true);
+ assert.equal(submissions,1);assert.equal(env.scanPreparing,false);
  assert.equal(env.captured,succeeded?null:'photo');
  assert.equal(cleared,succeeded?1:0);
  assert.equal(file.value,succeeded?'':'selected');
