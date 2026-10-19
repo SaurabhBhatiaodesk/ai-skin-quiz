@@ -1039,7 +1039,7 @@ import { buildScanReport } from "./scan-report.js";
           });
           launcherImage.src = appearance.iconImage;
         }
-        launcher.style.bottom = (appearance.offset == null ? 24 : appearance.offset) + "px";
+        launcher.style.bottom = "max(" + (appearance.offset == null ? 24 : appearance.offset) + "px, env(safe-area-inset-bottom, 0px))";
         launcher.style[appearance.position === "left" ? "left" : "right"] = (appearance.offset == null ? 24 : appearance.offset) + "px";
         launcher.style[appearance.position === "left" ? "right" : "left"] = "auto";
         root.style.setProperty("--scan-offset", (appearance.offset == null ? 24 : appearance.offset) + "px");

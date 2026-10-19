@@ -29,5 +29,25 @@ assert.equal(quick.insight,"Detailed report");
 db.prepare("UPDATE QuizReport SET expires=0").run();
 await assert.rejects(api.unlockReport("test",stored.reportId,"test@example.com"));
 assert.equal(db.prepare("SELECT COUNT(*) AS count FROM QuizReport").get().count,0);
+const priorKey=process.env.KLAVIYO_PRIVATE_API_KEY, priorShop=process.env.KLAVIYO_SHOP, priorFetch=globalThis.fetch;
+try {
+ process.env.KLAVIYO_PRIVATE_API_KEY='test-placeholder';process.env.KLAVIYO_SHOP='delivery-test';
+ const report=await api.storeReport('delivery-test',result);
+ globalThis.fetch=async()=>({ok:false,status:503});
+ const failed=await api.unlockReport('delivery-test',report.reportId,'delivery@example.com');
+ assert.equal(failed.delivery,'failed');
+ assert.equal((await api.emailDeliverySummary('delivery-test')).failed,1);
+ globalThis.fetch=async()=>({ok:true,status:202});
+ const retry=await api.unlockReport('delivery-test',report.reportId,'delivery@example.com');
+ assert.equal(retry.delivery,'queued');
+ const summary=await api.emailDeliverySummary('delivery-test');assert.equal(summary.queued,1);assert.equal(summary.failed,0);
+ globalThis.fetch=async()=>{throw Error('Queued events must not send twice');};
+ assert.equal((await api.unlockReport('delivery-test',report.reportId,'delivery@example.com')).delivery,'queued');
+} finally {
+ globalThis.fetch=priorFetch;
+ if(priorKey===undefined)delete process.env.KLAVIYO_PRIVATE_API_KEY;else process.env.KLAVIYO_PRIVATE_API_KEY=priorKey;
+ if(priorShop===undefined)delete process.env.KLAVIYO_SHOP;else process.env.KLAVIYO_SHOP=priorShop;
+}
+console.log('PASS: delivery failures are visible, retry can queue successfully, queued events do not resend.');
 db.close();
 console.log("Passed: durable report storage, server email gate, store isolation, validation, quick ungated result and expiry cleanup.");

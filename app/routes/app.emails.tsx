@@ -2,13 +2,14 @@ import { useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { authenticate } from "../shopify.server";
-import { collectedEmails } from "../report.server";
+import { collectedEmails, emailDeliverySummary } from "../report.server";
 export async function loader({ request }: LoaderFunctionArgs) {
   const { session } = await authenticate.admin(request);
-  return { emails: await collectedEmails(session.shop) };
+  const [emails, delivery] = await Promise.all([collectedEmails(session.shop), emailDeliverySummary(session.shop)]);
+  return { emails, delivery };
 }
 export default function Emails() {
-  const { emails } = useLoaderData<typeof loader>();
+  const { emails, delivery } = useLoaderData<typeof loader>();
   const [query, setQuery] = useState("");
   const [period, setPeriod] = useState("all");
   const [sort, setSort] = useState("newest");
@@ -20,6 +21,14 @@ export default function Emails() {
   return <s-page heading="Collected emails" inlineSize="large">
     <s-link slot="breadcrumb-actions" href="/app">Home</s-link>
     <s-stack gap="base">
+    <s-section heading="Email delivery status">
+      <s-stack gap="base">
+        <s-badge tone={delivery.configured ? "success" : "warning"}>{delivery.configured ? "Klaviyo connected" : "Delivery not configured"}</s-badge>
+        <s-paragraph>{delivery.configured ? "Events are sent to Klaviyo. Configure a Klaviyo flow to send the report email; queued does not confirm inbox delivery." : "Email addresses are captured, but this store has no email delivery integration configured. Customers can still view their unlocked results."}</s-paragraph>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",gap:16}}>{[["Captured reports",delivery.captured],["Queued events",delivery.queued],["Failed delivery attempts",delivery.failed]].map(([label,count])=><div key={label} style={{padding:16,border:"1px solid #e3e6e3",borderRadius:12}}><s-text color="subdued">{label}</s-text><div style={{fontSize:24,fontWeight:600,marginTop:8}}>{count}</div></div>)}</div>
+        <s-text color="subdued">Counts cover retained reports from the last 7 days. Failures are recorded from this update onward.</s-text>
+      </s-stack>
+    </s-section>
     <s-section heading="Quiz email captures">
       <s-stack gap="base">
         <s-paragraph>Emails submitted with quiz results. Records expire 7 days after the result was created. Email capture does not automatically subscribe a customer to marketing or send an email.</s-paragraph>

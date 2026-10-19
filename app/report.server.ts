@@ -29,15 +29,20 @@ export async function unlockReport(shop: string, id: unknown, email: unknown) {
   const linked = await prisma.$executeRawUnsafe("UPDATE QuizReport SET email=? WHERE id=? AND shop=? AND expires>? AND (email IS NULL OR email=?)", address, id, shop, Date.now(), address);
   if (!linked) throw new Error("This report expired or was linked to another email. Please retake the quiz.");
   const result = JSON.parse(row.payload) as QuizResult;
-  let delivery = row.sent ? "queued" : "not_configured";
-  if (!row.sent && process.env.KLAVIYO_PRIVATE_API_KEY && process.env.KLAVIYO_SHOP === shop) {
+  const queued = Number(row.sent) === 1;
+  let delivery = queued ? "queued" : "not_configured";
+  if (!queued && process.env.KLAVIYO_PRIVATE_API_KEY && process.env.KLAVIYO_SHOP === shop) {
     const response = await fetch("https://a.klaviyo.com/api/events", {
       method: "POST", signal: AbortSignal.timeout(15000),
       headers: { Authorization: `Klaviyo-API-Key ${process.env.KLAVIYO_PRIVATE_API_KEY}`, "Content-Type": "application/json", revision: "2026-04-15" },
       body: JSON.stringify({ data: { type: "event", attributes: { unique_id: id, properties: { dosha: result.dosha, percentages: result.percentages, source: result.source, report: result.insight, products: result.products }, metric: { data: { type: "metric", attributes: { name: "Prakriti Report Unlocked" } } }, profile: { data: { type: "profile", attributes: { email: address } } } } } }),
     }).catch(() => null);
     if (response?.ok) { await prisma.$executeRawUnsafe("UPDATE QuizReport SET sent=1 WHERE id=? AND shop=?", id, shop); delivery = "queued"; }
-    else delivery = "failed";
+    else {
+      await prisma.$executeRawUnsafe("UPDATE QuizReport SET sent=-1 WHERE id=? AND shop=?", id, shop);
+      delivery = "failed";
+      console.error("Report delivery failed", { status: response?.status || "network_error" });
+    }
   }
   return { result: publicReport(result, id, true), delivery };
 }
@@ -71,4 +76,12 @@ export async function collectedEmails(shop: string) {
     "SELECT email, COUNT(*) AS total, CAST(MAX(expires) AS TEXT) AS latest FROM QuizReport WHERE shop=? AND email IS NOT NULL GROUP BY email ORDER BY latest DESC LIMIT 500", shop,
   );
   return rows.map(row => ({ email: row.email, results: Number(row.total), latestResultAt: Number(row.latest) - 7 * 86400000 }));
+}
+
+export async function emailDeliverySummary(shop: string) {
+  await prepare();
+  const rows = await prisma.$queryRawUnsafe<Array<{ queued: number | bigint | null; failed: number | bigint | null; captured: number | bigint | null }>>(
+    "SELECT SUM(CASE WHEN sent=1 THEN 1 ELSE 0 END) AS queued, SUM(CASE WHEN sent=-1 THEN 1 ELSE 0 END) AS failed, COUNT(*) AS captured FROM QuizReport WHERE shop=? AND email IS NOT NULL", shop,
+  );
+  return { configured: Boolean(process.env.KLAVIYO_PRIVATE_API_KEY && process.env.KLAVIYO_SHOP === shop), queued: Number(rows[0]?.queued || 0), failed: Number(rows[0]?.failed || 0), captured: Number(rows[0]?.captured || 0) };
 }

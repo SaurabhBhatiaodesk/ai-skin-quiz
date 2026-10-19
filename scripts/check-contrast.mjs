@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import {transform} from 'esbuild';
+const result=await transform(await readFile('app/color-contrast.ts','utf8'),{loader:'ts',format:'esm'});
+const {contrastRatio}=await import('data:text/javascript;base64,'+Buffer.from(result.code).toString('base64'));
+assert.equal(contrastRatio('#000000','#ffffff'),21);
+assert.equal(contrastRatio('#123456','#123456'),1);
+assert.equal(contrastRatio('bad','#ffffff'),null);
+assert.ok(contrastRatio('#ffffff','#450333')>4.5);
+console.log('PASS: contrast guidance detects unreadable text and tolerates incomplete color input.');

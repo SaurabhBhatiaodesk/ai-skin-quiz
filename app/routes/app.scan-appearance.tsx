@@ -1,5 +1,6 @@
 import { skinScanActivationUrl } from "../theme-activation.server";
 import { defaultScanIcon } from "../default-scan-icon.js";
+import { contrastRatio } from "../color-contrast";
 import UnsavedChangesBar from "../components/UnsavedChangesBar";
 import { useEffect, useRef, useState } from "react";
 import { useFetcher, useLoaderData } from "react-router";
@@ -12,7 +13,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 export async function action({ request }: ActionFunctionArgs) {
   const { session } = await authenticate.admin(request);
-  try { await saveScanAppearance(session.shop, await request.json()); return { ok: true, error: "" }; }
+  try { const appearance = await saveScanAppearance(session.shop, await request.json()); return { ok: true, error: "", appearance }; }
   catch (error) { return { ok: false, error: error instanceof Error ? error.message : "Could not save appearance." }; }
 }
 export default function ScanAppearanceSettings() {
@@ -21,28 +22,41 @@ export default function ScanAppearanceSettings() {
   const [savedValue, setSavedValue] = useState(defaults);
   const submittedValue = useRef(defaults);
   const [iconError, setIconError] = useState("");
+  const [mobilePreview, setMobilePreview] = useState(false);
+  const dirty = JSON.stringify(value) !== JSON.stringify(savedValue);
   const fetcher = useFetcher<typeof action>();
-  useEffect(() => { if (fetcher.data?.ok) setSavedValue(submittedValue.current); }, [fetcher.data]);
-  function save() { submittedValue.current = value; fetcher.submit(value, { method: "post", encType: "application/json" }); }
+  useEffect(() => {
+    if (fetcher.data?.ok && "appearance" in fetcher.data) {
+      const saved = fetcher.data.appearance!;
+      setSavedValue(saved);
+      setValue(current => JSON.stringify(current) === JSON.stringify(submittedValue.current) ? saved : current);
+    }
+  }, [fetcher.data]);
+  const contrastIssues = ([["Popup text", value.textColor, value.panelColor], ["Popup button text", value.modalButtonTextColor, value.modalButtonColor]] as const)
+    .filter(([, text, background]) => { const ratio = contrastRatio(text, background); return ratio !== null && ratio < 4.5; }).map(([label]) => label);
+  function save() { if (fetcher.state !== "idle") return; submittedValue.current = value; fetcher.submit(value, { method: "post", encType: "application/json" }); }
   return <s-page heading="Skin Scan appearance" inlineSize="large">
     <UnsavedChangesBar id="appearance-save-bar" dirty={JSON.stringify(value) !== JSON.stringify(savedValue)} pending={fetcher.state !== "idle"} onSave={save} onDiscard={() => { setValue(savedValue); setIconError(""); }} />
-    <s-button slot="primary-action" variant="primary" loading={fetcher.state !== "idle"} onClick={save}>Save appearance</s-button>
+    <s-button slot="primary-action" variant="primary" disabled={!dirty} loading={fetcher.state !== "idle"} onClick={save}>Save appearance</s-button>
     <s-button slot="secondary-actions" href="/app/settings">Global Settings</s-button>
     <s-link slot="breadcrumb-actions" href="/app/settings">Settings</s-link>
     <s-stack gap="base">
       {fetcher.state !== "idle" ? <s-stack gap="small-200"><s-text>Saving appearance</s-text><s-progress accessibilityLabel="Saving Skin Scan appearance" /></s-stack> : null}
-      {fetcher.data?.ok ? <s-banner tone="success" heading="Appearance saved">Refresh your storefront to see the changes.</s-banner> : null}
+      {fetcher.data?.ok && !dirty ? <s-banner tone="success" heading="Appearance saved">Refresh your storefront to see the changes.</s-banner> : null}
       {fetcher.data?.error ? <s-banner tone="critical" heading="Could not save appearance">{fetcher.data.error}</s-banner> : null}
       <s-banner tone="info" heading="Enable app in your store">Click Enable app in store, then Save in the theme editor once. The floating button appears automatically when Skin Scan is connected, without adding a quiz block.<s-button href={embedUrl} target="_top">Enable app in store</s-button></s-banner>
-      <s-section heading="Floating button"><s-icon slot="graphic" type="settings" />
+      <s-section heading="Floating button">
+        <style>{`.floating-setting-card{min-width:0;padding:16px;background:#fafbfa;border:1px solid #e3e6e3;border-radius:12px;display:grid;align-content:start;gap:12px;min-height:100px}.floating-setting-card input[type=range]{min-height:24px}.floating-setting-card output{font-size:12px;font-weight:600;white-space:nowrap;color:#405446;background:#edf1ed;padding:3px 8px;border-radius:6px}@media(max-width:600px){.floating-setting-card{padding:14px;min-height:0}}`}</style><s-icon slot="graphic" type="settings" />
         <s-stack gap="base">
           <s-paragraph>Applies to the Skin Scan button and popup across this store.</s-paragraph>
           <s-checkbox label="Show floating Skin Scan button" checked={value.enabled} onChange={event => setValue({ ...value, enabled: event.currentTarget.checked })} />
-          <s-text-field label="Button text" value={value.label} onInput={event => setValue({ ...value, label: event.currentTarget.value })} />
-          <s-select label="Position" value={value.position} onChange={event => setValue({ ...value, position: event.currentTarget.value })}><s-option value="right">Bottom right</s-option><s-option value="left">Bottom left</s-option></s-select>
-          <s-select label="Button shape" value={value.shape} onChange={event => setValue({ ...value, shape: event.currentTarget.value })}><s-option value="rounded">Rounded button with text</s-option><s-option value="circle">Circle with scan icon</s-option></s-select>
-          <label style={{ display: "grid", gap: 8 }}><span style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>Rounded corners<output>{value.radius} px</output></span><input type="range" disabled={value.shape === "circle"} min="0" max="64" step="1" value={value.radius} onChange={event => setValue({ ...value, radius: Number(event.target.value) })} style={{ width: "100%", margin: 0, accentColor: "#29845a", cursor: "pointer" }} /></label>
-          <label style={{ display: "grid", gap: 8 }}><span style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>Distance from edge<output>{value.offset} px</output></span><input type="range" min="0" max="64" step="1" value={value.offset} onChange={event => setValue({ ...value, offset: Number(event.target.value) })} style={{ width: "100%", margin: 0, accentColor: "#29845a", cursor: "pointer" }} /></label>
+          <div className="floating-button-settings-grid" style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,240px),1fr))",gap:"20px 24px",alignItems:"start"}}>
+          <div className="floating-setting-card">          <s-text-field label="Button text" value={value.label} onInput={event => setValue({ ...value, label: event.currentTarget.value })} /></div>
+          <div className="floating-setting-card">          <s-select label="Position" value={value.position} onChange={event => setValue({ ...value, position: event.currentTarget.value })}><s-option value="right">Bottom right</s-option><s-option value="left">Bottom left</s-option></s-select></div>
+          <div className="floating-setting-card">          <s-select label="Button shape" value={value.shape} onChange={event => setValue({ ...value, shape: event.currentTarget.value })}><s-option value="rounded">Rounded button with text</s-option><s-option value="circle">Circle with scan icon</s-option></s-select></div>
+          <div className="floating-setting-card">          <label style={{ display: "grid", gap: 8 }}><span style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>Rounded corners<output>{value.radius} px</output></span><input type="range" disabled={value.shape === "circle"} min="0" max="64" step="1" value={value.radius} onChange={event => setValue({ ...value, radius: Number(event.target.value) })} style={{ width: "100%", margin: 0, accentColor: "#29845a", cursor: "pointer" }} /></label></div>
+          <div className="floating-setting-card">          <label style={{ display: "grid", gap: 8 }}><span style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>Distance from edge<output>{value.offset} px</output></span><input type="range" min="0" max="64" step="1" value={value.offset} onChange={event => setValue({ ...value, offset: Number(event.target.value) })} style={{ width: "100%", margin: 0, accentColor: "#29845a", cursor: "pointer" }} /></label></div>
+          </div>
         </s-stack>
       </s-section>
       <s-section heading="Button icon">
@@ -98,6 +112,7 @@ export default function ScanAppearanceSettings() {
       </s-section>
       <s-section heading="Modal appearance">
         <s-stack gap="base">
+          {contrastIssues.length ? <s-banner tone="warning" heading="Some text may be hard to read">{contrastIssues.join(" and ")} has low contrast. Choose lighter text on a dark background, or darker text on a light background.</s-banner> : null}
           <s-paragraph>Customize the Skin Scan modal that opens from the floating button. Save appearance, then refresh your storefront to apply changes.</s-paragraph>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 16 }}>
             {([["panelColor", "Modal background"], ["textColor", "Modal text"], ["headingColor", "Modal headings"], ["modalButtonColor", "Modal buttons"], ["modalButtonTextColor", "Modal button text"], ["accentColor", "Modal highlights"]] as const).map(([key, label]) => <s-color-field key={key} label={label} required value={value[key]} onChange={event => { const color = event.currentTarget.value; setValue(current => ({...current,[key]:color})); }} />)}
@@ -118,7 +133,27 @@ export default function ScanAppearanceSettings() {
         </div>
         </div>
       </s-section>
-      <s-stack direction="inline"><s-button variant="primary" loading={fetcher.state !== "idle"} onClick={save}>Save appearance</s-button></s-stack>
+      <s-section heading="Popup design preview">
+        <s-stack gap="base">
+          <s-stack direction="inline" gap="small">
+            <s-button variant={!mobilePreview ? "primary" : "secondary"} onClick={() => setMobilePreview(false)}>Desktop</s-button>
+            <s-button variant={mobilePreview ? "primary" : "secondary"} onClick={() => setMobilePreview(true)}>Mobile</s-button>
+          </s-stack>
+          <s-paragraph color="subdued">Layout sample using your current colors and corners. Photo analysis is available on your storefront.</s-paragraph>
+          <div style={{background:"#f1f2f1",padding:20,borderRadius:12,overflow:"auto"}}>
+            <div style={{width:"100%",maxWidth:mobilePreview ? 375 : value.modalWidth,margin:"0 auto",boxSizing:"border-box",padding:24,background:value.panelColor,color:value.textColor,borderRadius:mobilePreview ? value.mobileModalRadius : value.modalRadius,fontSize:value.modalFontSize,lineHeight:1.5,boxShadow:"0 8px 24px #0002"}}>
+              <div style={{display:"flex",alignItems:"start",justifyContent:"space-between",gap:16}}><h2 style={{margin:0,color:value.headingColor,fontSize:26}}>Skin Insights</h2><span aria-hidden="true" style={{background:"#fff",color:"#222",borderRadius:"50%",width:32,height:32,display:"grid",placeItems:"center",flexShrink:0}}>×</span></div>
+              <p style={{margin:"8px 0 24px"}}>Discover your skin insights.</p>
+              <div style={{display:"flex",gap:8,justifyContent:"space-between",marginBottom:24}}>{["Consent","Photo","Results"].map((step,i)=><span key={step} style={{color:value.accentColor,fontWeight:600}}>{i+1}. {step}</span>)}</div>
+              <h3 style={{color:value.headingColor,margin:"0 0 8px"}}>Ready to scan?</h3>
+              <p style={{margin:"0 0 20px"}}>Confirm below, then take or upload a photo.</p>
+              <div style={{background:"#fff",color:"#222",border:"1px solid #ddd",borderRadius:12,padding:16,marginBottom:20}}>Photo analysis consent and age confirmation appear here.</div>
+              <div style={{background:value.modalButtonColor,color:value.modalButtonTextColor,padding:"12px 16px",borderRadius:8,textAlign:"center",fontWeight:600}}>Continue to photo →</div>
+            </div>
+          </div>
+        </s-stack>
+      </s-section>
+      <s-stack direction="inline"><s-button variant="primary" disabled={!dirty} loading={fetcher.state !== "idle"} onClick={save}>Save appearance</s-button><s-text color="subdued">{dirty ? "You have unsaved changes." : "All changes saved."}</s-text></s-stack>
     </s-stack>
   </s-page>;
 }
