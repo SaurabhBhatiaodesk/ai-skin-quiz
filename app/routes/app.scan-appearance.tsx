@@ -150,7 +150,7 @@ export default function ScanAppearanceSettings() {
           <PopupPreview assets={previewAssets} quiz={popupQuiz} appearance={value} mobile={mobilePreview} />
         </s-stack>
       </s-section>
-      <s-stack direction="inline"><s-button variant="primary" disabled={!dirty} loading={fetcher.state !== "idle"} onClick={save}>Save appearance</s-button><s-text color="subdued">{dirty ? "You have unsaved changes." : "All changes saved."}</s-text></s-stack>
+      <s-stack direction="inline" gap="base" alignItems="center"><s-button variant="primary" disabled={!dirty} loading={fetcher.state !== "idle"} onClick={save}>Save appearance</s-button><s-text color="subdued">{dirty ? "You have unsaved changes." : "All changes saved."}</s-text></s-stack>
     </s-stack>
   </s-page>;
 }
