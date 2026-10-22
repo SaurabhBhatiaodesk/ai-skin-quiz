@@ -267,3 +267,12 @@ console.log("PASS: SVG icon upload, save/reload, public API, unsafe URL/oversize
 
 await storefront("single", false, true);
 console.log("Passed: standalone inline embed startup without configuration fetch.");
+let unnecessaryCatalogCalls = 0;
+const noMappingResult = await api.buildQuizResult(
+  { code: "not-loaded-again", path: "quick", answers: [0] }, "test",
+  { graphql: async () => { unnecessaryCatalogCalls++; throw new Error("Catalog should not be requested"); } },
+  { ...loaded, resultMode: "products", mappings: [] },
+);
+assert.equal(unnecessaryCatalogCalls, 0);
+assert.deepEqual(noMappingResult.products, []);
+console.log("PASS: validated quiz is reused and unmapped product quizzes skip catalog requests.");

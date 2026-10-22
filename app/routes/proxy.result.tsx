@@ -30,8 +30,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     if (submission.intent === "unlock") return apiJson({ ok: true, ...await unlockReport(shop, submission.reportId, submission.email) });
     if (!(typeof submission.code === "string" && submission.code.trim()) && !(typeof submission.code === "number" && Number.isSafeInteger(submission.code) && submission.code > 0)) throw new Error("Provide this widget ID in code.");
     if (!["quick", "deep", "scan"].includes(submission.path)) throw new Error("Choose a valid quiz path.");
+    let validatedQuiz;
     if (submission.path !== "scan") {
       const quiz = await loadQuiz(shop, submission.code);
+      validatedQuiz = quiz;
       if (quiz.emailCapture?.enabled && !quiz.emailCapture.allowSkip && !submission.email) throw new Error("Enter your email to see your ritual.");
       if (submission.email && (typeof submission.email !== "string" || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(submission.email) || submission.email.length > 254)) throw new Error("Enter a valid email address.");
       const questions = submission.path === "deep" ? quiz.deep : quiz.quick;
@@ -48,7 +50,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         return !Number.isInteger(value) || value < 0 || value >= question.options.length;
       })) throw new Error("Please answer every question before submitting.");
     }
-    const result = await storeReport(shop, (submission.path === "scan" ? await scanResult(submission, shop, admin) : await buildQuizResult(submission, shop, admin)));
+    const result = await storeReport(shop, (submission.path === "scan" ? await scanResult(submission, shop, admin) : await buildQuizResult(submission, shop, admin, validatedQuiz)));
     if (submission.path === "scan") { await recordScanHealth(shop, "success", Date.now() - scanStarted); scanRecorded = true; }
     if (submission.email) { const unlocked = await unlockReport(shop, result.reportId, submission.email); return apiJson({ ok: true, result: unlocked.result, delivery: unlocked.delivery }); }
     return apiJson({ ok: true, result });

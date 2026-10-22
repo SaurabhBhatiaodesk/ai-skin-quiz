@@ -1035,8 +1035,9 @@ export async function buildQuizResult(
   submission: { path?: string; answers?: unknown; code?: unknown },
   shop: string,
   admin?: AdminGraphql,
+  validatedQuiz?: StoredQuiz,
 ): Promise<QuizResult> {
-  const quiz = await loadQuiz(shop, submission.code);
+  const quiz = validatedQuiz || await loadQuiz(shop, submission.code);
   assertHasQuestions(quiz);
   if (quiz.layout === "scan" && submission.path !== "scan") throw new Error("This block only supports Skin Scan.");
   if (quiz.enabledPaths && !quiz.enabledPaths.includes(submission.path as "quick" | "deep" | "scan")) throw new Error("This quiz path is not enabled.");
@@ -1067,7 +1068,7 @@ export async function buildQuizResult(
 
   const profile = profileFor(dosha, quiz.profiles);
   let products: QuizProduct[] = [];
-  if (admin) {
+  if (admin && (quiz.resultMode !== "products" || quiz.mappings.length > 0)) {
     try {
       const storeProducts = await cachedStoreProducts(shop, admin);
       const tags = chosenTags(quiz, submission);

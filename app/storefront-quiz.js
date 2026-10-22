@@ -252,6 +252,13 @@ import { buildScanReport, reportImage } from "./scan-report.js";
       submitting = state;
       var buttons = root.querySelectorAll("[data-quick-next], [data-deep-next]");
       for (var i = 0; i < buttons.length; i++) {
+        if (state) {
+          buttons[i].setAttribute("data-idle-label", buttons[i].textContent);
+          buttons[i].textContent = "Preparing your result…";
+        } else if (buttons[i].hasAttribute("data-idle-label")) {
+          buttons[i].textContent = buttons[i].getAttribute("data-idle-label");
+          buttons[i].removeAttribute("data-idle-label");
+        }
         buttons[i].setAttribute("aria-busy", state ? "true" : "false");
         buttons[i].classList.toggle("busy", state);
       }
@@ -300,7 +307,7 @@ import { buildScanReport, reportImage } from "./scan-report.js";
         paintResult(data);
         return true;
       }).catch(function (error) {
-        if (error.name === "AbortError") error = new Error("Analysis took too long. Check your connection and try again with a smaller photo.");
+        if (error.name === "AbortError") error = new Error(payload.path === "scan" ? "Analysis took too long. Check your connection and try again with a smaller photo." : "Your result took too long to load. Please try again.");
         var captureError = q('[data-screen="email-capture"].active [data-capture-error]');
         if (captureError) captureError.textContent = error.message;
         var status = q("[data-scan-status]");
@@ -913,17 +920,19 @@ import { buildScanReport, reportImage } from "./scan-report.js";
     function saveEmail() {
       var input = q("[data-email]");
       var confirm = q("[data-email-confirm]");
-      if (!input || !reportId) return;
+      if (!input || !confirm || !reportId) return;
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.value.trim())) { confirm.textContent = "Enter a valid email address."; confirm.setAttribute("data-delivery", "error"); confirm.classList.add("show"); return; }
       var button = q("[data-save-email]");
-      if (button.disabled) return;
+      if (!button || button.disabled) return;
       button.disabled = true;
       var email = input.value.trim();
-      fetch(PROXY + "/result", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ intent: "unlock", reportId: reportId, email: email }) })
-        .then(function (response) { return response.json().then(function (data) { if (!response.ok) throw new Error(data.error || "Could not save your email."); return data; }); })
-        .then(function (data) { paintResult(data); confirm.textContent = data.delivery === "queued" ? "✓ Email sent to " + email + ". Check your inbox." : data.delivery === "failed" ? "✓ Saved. We could not send the email right now; tap Send to try again." : "✓ Saved. Your full report is unlocked below."; confirm.classList.add("show"); confirm.setAttribute("data-delivery", data.delivery || "saved"); input.value = email; })
-        .catch(function (error) { confirm.textContent = error.message; confirm.setAttribute("data-delivery", "error"); confirm.classList.add("show"); })
-        .finally(function () { button.disabled = false; });
+      var controller = new AbortController();
+      var timer = setTimeout(function () { controller.abort(); }, 30000);
+      fetch(PROXY + "/result", { method: "POST", signal: controller.signal, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ intent: "unlock", reportId: reportId, email: email }) })
+        .then(function (response) { return response.json().then(function (data) { if (!response.ok || !data || !data.result) throw new Error((data && data.error) || "Could not save your email. Please try again."); return data; }); })
+        .then(function (data) { paintResult(data); confirm.textContent = data.delivery === "queued" ? "✓ Email queued for " + email + "." : data.delivery === "failed" ? "✓ Saved. We could not send the email right now; tap Send to try again." : "✓ Saved. Your full report is unlocked below."; confirm.classList.add("show"); confirm.setAttribute("data-delivery", data.delivery || "saved"); input.value = email; })
+        .catch(function (error) { confirm.textContent = error.name === "AbortError" ? "Saving your email took too long. Please try again." : error.message; confirm.setAttribute("data-delivery", "error"); confirm.classList.add("show"); })
+        .finally(function () { clearTimeout(timer); button.disabled = false; });
     }
     root.addEventListener("change", function (event) {
       if (event.target && event.target.matches && event.target.matches("[data-consent]") && !consentGiven()) stopCamera();
