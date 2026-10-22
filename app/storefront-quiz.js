@@ -232,7 +232,7 @@ import { buildScanReport, reportImage } from "./scan-report.js";
           var href = "/products/" + encodeURIComponent(product.handle || "") + (product.variantId ? "?variant=" + encodeURIComponent(String(product.variantId).split("/").pop()) : "");
           return '<div class="product-card"><div class="pc-img">' + img + '</div><div class="pc-body"><div class="pc-name">' + esc(product.title) + "</div>" + (product.why ? '<div class="pc-why">' + esc(product.why) + "</div>" : "") + '<div class="pc-bottom"><span class="pc-price">' + esc(product.price) + '</span><button class="btn-add" type="button" data-add-to-cart data-handle="' + esc(product.handle || "") + '"' + (product.variantId ? ' data-variant="' + esc(String(product.variantId)) + '"' : "") + '>Add to cart</button><a class="btn-shop" href="' + esc(href) + '" aria-label="Shop ' + esc(product.title) + '">Shop Now →</a></div></div></div>';
         }).join("");
-        if (!result.products || !result.products.length) box.textContent = "No matching products are available for this result yet.";
+        if (!result.products || !result.products.length) box.textContent = !isScanResult && quiz && (!quiz.mappings || !quiz.mappings.length) ? "No products are mapped to this quiz yet." : "No matching products are available for this result yet.";
       }
       // The quiz design paints result buttons inline; the scan report uses the scan accent instead.
       var sendButton = q("[data-save-email]");
@@ -715,7 +715,9 @@ import { buildScanReport, reportImage } from "./scan-report.js";
           quickStep++;
           renderQuick();
         } else {
-          submitWithEmail({ path: "quick", answers: quickAnswers });
+          var answers = [];
+          for (var n = 0; n < quiz.quick.length; n++) answers.push(quickAnswers[n]);
+          submitWithEmail({ path: "quick", answers: answers });
         }
         return;
       }

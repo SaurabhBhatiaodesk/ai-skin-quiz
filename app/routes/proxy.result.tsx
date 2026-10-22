@@ -35,6 +35,14 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       if (quiz.emailCapture?.enabled && !quiz.emailCapture.allowSkip && !submission.email) throw new Error("Enter your email to see your ritual.");
       if (submission.email && (typeof submission.email !== "string" || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(submission.email) || submission.email.length > 254)) throw new Error("Enter a valid email address.");
       const questions = submission.path === "deep" ? quiz.deep : quiz.quick;
+      // Older Quick Quiz widgets send an index-keyed object. Validate its exact
+      // shape before normalizing so cached widgets keep working after an update.
+      if (submission.path === "quick" && submission.answers && typeof submission.answers === "object" && !Array.isArray(submission.answers)) {
+        const answers = submission.answers;
+        if (Object.keys(answers).length === questions.length && questions.every((_, index) => Object.prototype.hasOwnProperty.call(answers, String(index)))) {
+          submission.answers = questions.map((_, index) => answers[String(index)]);
+        }
+      }
       if (!questions.length || !Array.isArray(submission.answers) || submission.answers.length !== questions.length || questions.some((question, index) => {
         const value = submission.answers[index];
         return !Number.isInteger(value) || value < 0 || value >= question.options.length;
