@@ -3676,6 +3676,7 @@
 .prana-quiz:not(.scan-chat-open) [data-screen="result"] :is(.result-hero,.product-card,.reading-card) { background:var(--quiz-card,#f3e5cc); border:1px solid #571c29; border-radius:12px; box-shadow:0 2px 5px #0002; }
 .prana-quiz:not(.scan-chat-open) [data-screen="result"] .result-hero { padding:28px; }
 .prana-quiz:not(.scan-chat-open) [data-screen="result"] :is(.btn-shop,.btn-upgrade) { background:var(--gold,#471326); color:var(--button-text,#fff); border-radius:6px; }
+.prana-quiz:not(.scan-chat-open) [data-screen="result"] :is(.eb-title,.un-title,.btn-eb,.btn-upgrade,.btn-retake) { font-weight:400; }
 .prana-quiz :where([data-screen="quick"],[data-screen="deep"]) .quiz-wrap { max-width:var(--layout-desktopWidth,960px); padding:var(--layout-desktopPadding,36px); }
 
 /* One spacing rhythm for compact desktop and mobile question cards. */
