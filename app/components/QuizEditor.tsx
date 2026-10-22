@@ -37,17 +37,17 @@ function tagsFor(option: { tags?: string[]; label: string }) {
   return slug ? [slug] : [];
 }
 
-function collectTags(quiz: StoredQuiz) {
+function collectTags(quiz: StoredQuiz, kind: Kind) {
   const tags = new Set<string>();
-  for (const question of [...quiz.quick, ...quiz.deep]) {
+  for (const question of kind === "scan" ? [] : quiz[kind]) {
     for (const option of question.options) tagsFor(option).forEach((tag) => tags.add(tag));
   }
   return [...tags];
 }
 
-function selectableTags(quiz: StoredQuiz, products: ShopProduct[]) {
-  const tags = new Set(collectTags(quiz));
-  products.forEach((product) => product.tags.forEach((tag) => {
+function selectableTags(quiz: StoredQuiz, products: ShopProduct[], kind: Kind) {
+  const tags = new Set(collectTags(quiz, kind));
+  if (kind === "scan") products.forEach((product) => product.tags.forEach((tag) => {
     const slug = slugTag(tag);
     if (slug) tags.add(slug);
   }));
@@ -307,7 +307,7 @@ export default function QuizEditor({
   const design = { ...recommendedQuizDesign, ...quiz.design };
   const showSidebar = (showQuestions && quiz.layout !== "scan" && !(tab === "edit" && questionOpen)) || tab === "content";
   const usedMappingTags = new Set(quiz.mappings.filter(mapping => mapping.id !== mappingDraft?.id).flatMap(mapping => mapping.tags));
-  const availableMappingTags = selectableTags(quiz, products).filter(tag => !usedMappingTags.has(tag) || mappingDraft?.tags.includes(tag));
+  const availableMappingTags = [...new Set([...selectableTags(quiz, products, kind), ...(mappingDraft?.tags || [])])].filter(tag => !usedMappingTags.has(tag) || mappingDraft?.tags.includes(tag));
 
   return (
     <s-page heading={`${quiz.name || "Quiz"} · ${editorTabs.find(item => item.id === tab)?.label || "Quiz editor"}`} inlineSize="large">
@@ -559,6 +559,11 @@ export default function QuizEditor({
               </s-stack>
             </s-section> : null}
             {tab === "products" ? <s-section>
+              <s-select label="Quiz flow" value={kind} disabled={!!mappingDraft} onChange={event => { setKind(event.currentTarget.value as Kind); setIndex(0); }}>
+                {(quiz.layout === "three" || enabledPaths.includes("quick")) ? <s-option value="quick">Quick Quiz ({quiz.quick.length} questions)</s-option> : null}
+                {(quiz.layout === "three" || enabledPaths.includes("deep")) ? <s-option value="deep">Deep Quiz ({quiz.deep.length} questions)</s-option> : null}
+                {(quiz.layout === "three" || enabledPaths.includes("scan")) ? <s-option value="scan">AI Skin Scan</s-option> : null}
+              </s-select>
               <s-stack direction="inline" gap="small" justifyContent="end">
                 {tab === "products" ? <>
                   <s-button commandFor="quiz-bulk-actions">Bulk actions</s-button>
