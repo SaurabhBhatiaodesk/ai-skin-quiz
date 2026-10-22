@@ -134,9 +134,8 @@ assert.equal(variantResult.products[0].price, "$12.00");
 loaded.mappings[0].tags = ["skin", "missing"];
 await api.saveQuiz("test", loaded, loaded.handle);
 const andResult = await api.buildQuizResult({ code: loaded.handle, path: "quick", answers: { 0: 0 } }, "test", admin);
-// No mapping matched, so the result falls back to keyword matches from the real catalog (never invented products).
-assert.equal(andResult.products[0].variantId, undefined);
-assert.equal(andResult.products[0].handle, "serum");
+// All tags are required by an AND mapping; unrelated catalog products stay out.
+assert.deepEqual(andResult.products, []);
 loaded.mappings[0].grouping = "or";
 await api.saveQuiz("test", loaded, loaded.handle);
 const orResult = await api.buildQuizResult({ code: loaded.handle, path: "quick", answers: { 0: 0 } }, "test", admin);
@@ -276,3 +275,20 @@ const noMappingResult = await api.buildQuizResult(
 assert.equal(unnecessaryCatalogCalls, 0);
 assert.deepEqual(noMappingResult.products, []);
 console.log("PASS: validated quiz is reused and unmapped product quizzes skip catalog requests.");
+
+// Exercise the real result builder for both question flows and result layouts.
+for (const path of ["quick", "deep"]) for (const resultMode of ["products", "personalized"]) for (const count of [1, 3, 40]) {
+  const baseQuestion = path === "quick" ? api.QUICK_QUESTIONS[0] : api.DEEP_QUESTIONS[0];
+  const questions = Array.from({length:count}, (_, i) => ({...baseQuestion, options: baseQuestion.options.map((option, j) => ({...option, tags:[`question_${i}_option_${j}`]}))}));
+  const sample = {...loaded, layout:"single", singleFlow:path, enabledPaths:[path], resultMode, quick:path === "quick" ? questions : [], deep:path === "deep" ? questions : [], mappings: Array.from({length:Math.min(2,count)}, (_, i) => ({id:`m${i}`,tags:[`question_${i}_option_0`],productHandle:`matched-${i}`}))};
+  const context = `path=${path}, mode=${resultMode}, count=${count}`;
+  const catalogAdmin = {graphql: async()=>({json:async()=>({data:{products:{nodes:[0,1,2].map(i=>({...product,handle:`matched-${i}`}))}}})})};
+  api.clearProductCache("mapping-matrix");
+  const matched = await api.buildQuizResult({path,answers:Array(count).fill(0)},"mapping-matrix",catalogAdmin,sample);
+  assert.deepEqual(matched.products.map(p=>p.handle),sample.mappings.map(m=>m.productHandle),context);
+  const notMatched = await api.buildQuizResult({path,answers:Array(count).fill(1)},"mapping-matrix",catalogAdmin,sample);
+  assert.deepEqual(notMatched.products,[],context+" must not fall back to unrelated products");
+  const noMappings = await api.buildQuizResult({path,answers:Array(count).fill(0)},"mapping-matrix",catalogAdmin,{...sample,mappings:[]});
+  assert.deepEqual(noMappings.products,[],context+" without mappings");
+}
+console.log("PASS: Quick/Deep and product/personalized results with 1/3/40 questions return only selected mapped products; absent/unmatched mappings return empty results.");

@@ -1068,7 +1068,7 @@ export async function buildQuizResult(
 
   const profile = profileFor(dosha, quiz.profiles);
   let products: QuizProduct[] = [];
-  if (admin && (quiz.resultMode !== "products" || quiz.mappings.length > 0)) {
+  if (admin && quiz.mappings.length > 0) {
     try {
       const storeProducts = await cachedStoreProducts(shop, admin);
       const tags = chosenTags(quiz, submission);
@@ -1076,8 +1076,6 @@ export async function buildQuizResult(
       // Result tags use the same slug format as mapping tags, plus each dosha in a dual result.
       tags.push(slugTag(dosha), ...dosha.split("-").filter((part) => part === "vata" || part === "pitta" || part === "kapha"));
       if (quiz.mappings.length) products = mappedProducts(tags, quiz.mappings, storeProducts);
-      if (quiz.resultMode !== "products" && !products.length) products = ritualProducts(quiz, submission, dosha, storeProducts);
-      if (quiz.resultMode !== "products" && !products.length) products = matchProducts(dosha, storeProducts, quiz.profiles);
     } catch (error) {
       console.error("Quiz product recommendations failed", shop, error);
       products = [];
