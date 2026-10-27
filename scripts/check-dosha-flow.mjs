@@ -76,6 +76,24 @@ const mappedResult = await api.buildQuizResult({ path: "deep", answers: letters(
 assert.deepEqual(mappedResult.products.map((product) => product.handle), ["prana-6"]);
 const productsMode = await api.buildQuizResult({ path: "deep", answers: letters(cases.vata) }, "flow-products", admin, { ...quiz, resultMode: "products" });
 assert.equal(productsMode.guide, undefined);
+const combinedQuiz = api.normalizeQuiz({
+  layout: "three",
+  enabledPaths: ["quick", "deep"],
+  resultMode: "personalized",
+  quick: api.QUICK_QUESTIONS,
+  deep: api.DEEP_QUESTIONS,
+});
+const quickResult = await api.buildQuizResult({ path: "quick", answers: [0, 0, 0] }, "flow-quick-products", admin, combinedQuiz);
+assert.equal(quickResult.resultMode, "products");
+assert.equal(quickResult.profile.name, "Your product matches");
+assert.equal(quickResult.insight, "");
+assert.equal(quickResult.percentages, undefined);
+assert.equal(quickResult.showUpgrade, false);
+assert.equal(quickResult.guide, undefined);
+const combinedDeepResult = await api.buildQuizResult({ path: "deep", answers: letters(cases.vata) }, "flow-combined-deep", admin, combinedQuiz);
+assert.equal(combinedDeepResult.resultMode, "personalized");
+assert.equal(combinedDeepResult.profile.name, "Vata");
+assert.ok(combinedDeepResult.guide);
 // A quiz with neutral answers (fewer counted points) still gets a result, never an error.
 const neutral = { ...quiz, deep: quiz.deep.map((question, at) => at < 9 ? question : { ...question, options: question.options.map((option) => ({ ...option, tag: "balanced", tags: ["balanced"], scores: {} })) }) };
 const partial = await api.buildQuizResult({ path: "deep", answers: letters("AAAAAAAAACCCCCCCCC") }, "flow-neutral", admin, neutral);

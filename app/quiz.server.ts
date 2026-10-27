@@ -66,7 +66,7 @@ const PROFILES: Record<string, QuizProfile> = {
     modal: "vata",
     essence: "Your skin carries the poetry of movement — alive, expressive, and deeply sensitive to the world around it.",
     insight: "Your skin is <em>Vata-dominant</em> — fine-pored, delicate, and expressive. It thrives with richness and consistency. When balanced, it has a translucent, almost porcelain quality. Your ritual is built around sustained nourishment and barrier protection.",
-    products: ["saffron-glow-serum", "saffron-radiance-moisturizer", "bakuchiol-night-serum", "rose-jasmine-cleanser"],
+    products: ["saffron-glow-serum", "saffron-radiance-moisturizer", "bakuchiol-night-serum", "rose-jasmine-milk-cleanser"],
   },
   pitta: {
     name: "Pitta",
@@ -75,7 +75,7 @@ const PROFILES: Record<string, QuizProfile> = {
     modal: "pitta",
     essence: "Luminous when calm, reactive when pushed — your skin reflects your inner fire with precision and immediacy.",
     insight: "Your skin is <em>Pitta-dominant</em> — warm, luminous, and intelligent. It responds quickly to stress and heat, showing redness, pigmentation, and sensitivity as signals. Your ritual is built around cooling, calming anti-inflammatory intelligence.",
-    products: ["rose-jasmine-cleanser", "rose-water-mist", "turmeric-sandalwood-mask", "bakuchiol-night-serum"],
+    products: ["rose-jasmine-milk-cleanser", "rose-water-toning-mist", "turmeric-sandalwood-mask", "bakuchiol-night-serum"],
   },
   kapha: {
     name: "Kapha",
@@ -84,34 +84,34 @@ const PROFILES: Record<string, QuizProfile> = {
     modal: "kapha",
     essence: "Built for the long game — Kapha skin ages slowly and beautifully when it's given clarity and movement.",
     insight: "Your skin is <em>Kapha-dominant</em> — thick, stable, and slow to age. The challenge is circulation: congestion, enlarged pores, and dullness. Your ritual is built around deep cleansing, clay, and brightening botanicals.",
-    products: ["rose-jasmine-cleanser", "turmeric-sandalwood-mask", "saffron-glow-serum", "rose-water-mist"],
+    products: ["rose-jasmine-milk-cleanser", "turmeric-sandalwood-mask", "saffron-glow-serum", "rose-water-toning-mist"],
   },
   "dual-vata-pitta": {
     name: "Vata–Pitta",
     sub: "Air, Space & Fire · The creative flame",
     heroClass: "rh-vata",
-    modal: "vata",
+    modal: "dual-vata-pitta",
     essence: "The artist's constitution — quick, radiant, reactive. Your skin is full of life and full of opinions.",
     insight: "Your skin is <em>Vata–Pitta dual dominant</em> — combining Vata's delicacy with Pitta's reactivity. Your ritual bridges both: soothing the fire while feeding the air.",
-    products: ["rose-jasmine-cleanser", "rose-water-mist", "bakuchiol-night-serum", "saffron-glow-serum"],
+    products: ["rose-jasmine-milk-cleanser", "rose-water-toning-mist", "bakuchiol-night-serum", "saffron-glow-serum"],
   },
   "dual-vata-kapha": {
     name: "Vata–Kapha",
     sub: "Air, Space & Earth · Grounded movement",
     heroClass: "rh-vata",
-    modal: "vata",
+    modal: "dual-vata-kapha",
     essence: "The nurturer's constitution — resilient and sensitive. Your skin alternates between thirst and congestion.",
     insight: "Your skin is <em>Vata–Kapha dual dominant</em> — sometimes dry and delicate, sometimes congested and dull. Your products need to do both without compromising either.",
-    products: ["rose-jasmine-cleanser", "turmeric-sandalwood-mask", "saffron-radiance-moisturizer", "saffron-glow-serum"],
+    products: ["rose-jasmine-milk-cleanser", "turmeric-sandalwood-mask", "saffron-radiance-moisturizer", "saffron-glow-serum"],
   },
   "dual-kapha-pitta": {
     name: "Kapha–Pitta",
     sub: "Earth, Water & Fire · Powerful radiance",
     heroClass: "rh-pitta",
-    modal: "pitta",
+    modal: "dual-kapha-pitta",
     essence: "Resilient and radiant — your skin has extraordinary capacity when it's working in harmony.",
     insight: "Your skin is <em>Kapha–Pitta dual dominant</em> — combining Kapha's structure with Pitta's intensity. Your ritual focuses on purifying clarity and cooling.",
-    products: ["rose-jasmine-cleanser", "turmeric-sandalwood-mask", "rose-water-mist", "saffron-glow-serum"],
+    products: ["rose-jasmine-milk-cleanser", "turmeric-sandalwood-mask", "rose-water-toning-mist", "saffron-glow-serum"],
   },
   balanced: {
     name: "Tridoshic",
@@ -120,7 +120,7 @@ const PROFILES: Record<string, QuizProfile> = {
     modal: "tridoshic",
     essence: "The rarest constitution — all three energies in relative harmony. Your ritual is about maintenance, not correction.",
     insight: "Your skin reads as <em>Tridoshic</em> — all three doshas in relative balance. This is the rarest and most resilient skin constitution. Your ritual focus is seasonal maintenance.",
-    products: ["rose-jasmine-cleanser", "rose-water-mist", "saffron-glow-serum", "bakuchiol-night-serum"],
+    products: ["rose-jasmine-milk-cleanser", "rose-water-toning-mist", "saffron-glow-serum", "bakuchiol-night-serum"],
   },
 };
 
@@ -1078,6 +1078,7 @@ export async function buildQuizResult(
     ? note.trim()
     : `${profile.insight}${note}`;
 
+  const productsOnly = quiz.resultMode === "products" || submission.path === "quick";
   const guide = submission.path === "deep" && quiz.resultMode !== "products" ? doshaGuide(dosha) : undefined;
-  return { ...(guide ? { guide } : {}), resultMode: quiz.resultMode, dosha, percentages: quiz.resultMode === "products" ? undefined : percentages, source, showUpgrade: quiz.resultMode === "products" ? false : showUpgrade, insight: quiz.resultMode === "products" ? "" : insight, profile: quiz.resultMode === "products" ? { ...profile, name: "Your product matches", sub: "Selected from your answers", essence: "", insight: "", products: [] } : profile, markers, products };
+  return { ...(guide ? { guide } : {}), resultMode: productsOnly ? "products" : quiz.resultMode, dosha, percentages: productsOnly ? undefined : percentages, source, showUpgrade: productsOnly ? false : showUpgrade, insight: productsOnly ? "" : insight, profile: productsOnly ? { ...profile, name: "Your product matches", sub: "Selected from your answers", essence: "", insight: "", products: [] } : profile, markers, products };
 }

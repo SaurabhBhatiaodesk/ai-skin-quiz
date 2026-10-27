@@ -1,3 +1,18 @@
+{% doc %}
+  Renders the quiz / skin scan widget shared by every app block.
+
+  @param {object} block - The app block rendering the widget
+  @param {string} [expected_layout] - three, single or scan
+  @param {boolean} [floating_embed] - True for the floating scan assistant
+
+  @example
+  {% render 'quiz-widget', block: block, expected_layout: 'single' %}
+{% enddoc %}
+{%- liquid
+  assign brand_name = block.settings.brand_name | default: shop.name
+  assign privacy_url = block.settings.privacy_url | default: shop.privacy_policy.url
+-%}
+{{ 'dosha-quiz-extra.css' | asset_url | stylesheet_tag }}
 <div
   class="prana-quiz"
   id="prana-quiz-{{ block.id }}"
@@ -82,6 +97,72 @@
     </div>
   </div>
 
+  <div class="modal-overlay" data-modal="dual-vata-pitta">
+    <div class="dosha-modal modal-vata" role="dialog" aria-modal="true" aria-labelledby="modal-vata-pitta-{{ block.id }}">
+      <div class="modal-handle"></div>
+      <button class="modal-close" type="button" data-close-modal aria-label="Close guide">✕</button>
+      <div class="modal-dosha-name vata-color" id="modal-vata-pitta-{{ block.id }}">Vata–Pitta</div>
+      <div class="modal-tagline">Air, Space & Fire — the creative flame</div>
+      <div class="modal-section">
+        <div class="modal-section-title vata-color">Your skin's signature</div>
+        <div class="modal-body">A reactive, expressive mix of Vata movement and Pitta intensity — quick to change, quick to show stress, and deeply responsive to ritual.</div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-title vata-color">Ingredient allies</div>
+        <div class="ingredient-tags">
+          <span class="ing-tag vata">Rose Damascena</span>
+          <span class="ing-tag vata">Bakuchiol</span>
+          <span class="ing-tag vata">Kashmir Saffron</span>
+          <span class="ing-tag vata">Shea Butter</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" data-modal="dual-vata-kapha">
+    <div class="dosha-modal modal-vata" role="dialog" aria-modal="true" aria-labelledby="modal-vata-kapha-{{ block.id }}">
+      <div class="modal-handle"></div>
+      <button class="modal-close" type="button" data-close-modal aria-label="Close guide">✕</button>
+      <div class="modal-dosha-name vata-color" id="modal-vata-kapha-{{ block.id }}">Vata–Kapha</div>
+      <div class="modal-tagline">Air, Space & Earth — grounded movement</div>
+      <div class="modal-section">
+        <div class="modal-section-title vata-color">Your skin's signature</div>
+        <div class="modal-body">Your skin swings between thirst and congestion — dry, delicate, yet prone to dullness and buildup when the balance slips.</div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-title vata-color">Ingredient allies</div>
+        <div class="ingredient-tags">
+          <span class="ing-tag vata">Kashmir Saffron</span>
+          <span class="ing-tag vata">Turmeric</span>
+          <span class="ing-tag vata">Rose Damascena</span>
+          <span class="ing-tag vata">Bakuchiol</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" data-modal="dual-kapha-pitta">
+    <div class="dosha-modal modal-pitta" role="dialog" aria-modal="true" aria-labelledby="modal-kapha-pitta-{{ block.id }}">
+      <div class="modal-handle"></div>
+      <button class="modal-close" type="button" data-close-modal aria-label="Close guide">✕</button>
+      <div class="modal-dosha-name pitta-color" id="modal-kapha-pitta-{{ block.id }}">Kapha–Pitta</div>
+      <div class="modal-tagline">Earth, Water & Fire — powerful radiance</div>
+      <div class="modal-section">
+        <div class="modal-section-title pitta-color">Your skin's signature</div>
+        <div class="modal-body">A resilient, radiant mix with structure and heat — the skin is strong, but it needs clarity, cooling, and a lighter hand when congestion rises.</div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-title pitta-color">Ingredient allies</div>
+        <div class="ingredient-tags">
+          <span class="ing-tag pitta">Saffron Safranal</span>
+          <span class="ing-tag pitta">Turmeric Curcumin</span>
+          <span class="ing-tag pitta">Sandalwood</span>
+          <span class="ing-tag pitta">Rose Damascena</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="modal-overlay" data-modal="kapha">
     <div class="dosha-modal modal-kapha" role="dialog" aria-modal="true" aria-labelledby="modal-kapha-{{ block.id }}">
       <div class="modal-handle"></div>
@@ -106,7 +187,7 @@
 
   <div class="screen active" data-screen="entry">
     <div class="hdr">
-      <div class="hdr-logo">{{ block.settings.brand_name | escape }}</div>
+      <div class="hdr-logo">{{ brand_name | escape }}</div>
       <h2 class="hdr-title">{{ block.settings.hero_title | escape }} <em>{{ block.settings.hero_accent | escape }}</em></h2>
       <div class="hdr-sub">{{ block.settings.hero_subtitle | escape }}</div>
     </div>
@@ -140,7 +221,7 @@
   <div class="screen" data-screen="scanner">
     
     <div class="hdr" style="padding-top:1rem">
-      <div class="hdr-logo">{{ block.settings.brand_name | escape }}</div>
+      <div class="hdr-logo">{{ brand_name | escape }}</div>
       <h2 class="hdr-title">Skin <em>Insights</em></h2>
       <div class="hdr-sub">Discover your skin insights. Not a medical diagnosis.</div>
     </div>
@@ -176,6 +257,9 @@
         </div>
       </div>
 
+      {%- if privacy_url != blank -%}
+        <p class="consent-privacy"><a href="{{ privacy_url | escape }}" target="_blank" rel="noopener">Privacy policy</a></p>
+      {%- endif -%}
       <div class="consent-error" data-consent-error role="alert">Please accept the required consents above before scanning.</div>
         <button class="btn-scan" type="button" data-scan-continue>Continue to photo &rarr;</button>
       </section>
@@ -270,7 +354,7 @@
 
   <div class="screen" data-screen="quick">
     <div class="hdr" style="padding-top:1rem">
-      <div class="hdr-logo">{{ block.settings.brand_name | escape }}</div>
+      <div class="hdr-logo">{{ brand_name | escape }}</div>
       <h2 class="hdr-title">Quick <em>Ritual Match</em></h2>
       <div class="hdr-sub" data-quick-sub>Your personal ritual.</div>
     </div>
@@ -290,7 +374,7 @@
 
   <div class="screen" data-screen="deep">
     <div class="hdr" style="padding-top:1rem">
-      <div class="hdr-logo">{{ block.settings.brand_name | escape }}</div>
+      <div class="hdr-logo">{{ brand_name | escape }}</div>
       <h2 class="hdr-title">Dosha <em>Diagnostic</em></h2>
       <div class="hdr-sub">Three layers · Constitution · Current state · Environment</div>
     </div>
@@ -356,6 +440,9 @@
           <input class="eb-input" id="email-{{ block.id }}" type="email" placeholder="your@email.com" data-email autocomplete="email" aria-describedby="email-status-{{ block.id }}">
           <button class="btn-eb" type="button" data-save-email>Send →</button>
         </div>
+        {%- if privacy_url != blank -%}
+          <p class="eb-privacy">By sending, you agree to our <a href="{{ privacy_url | escape }}" target="_blank" rel="noopener">privacy policy</a>.</p>
+        {%- endif -%}
         <div class="eb-confirm" data-email-confirm id="email-status-{{ block.id }}" aria-live="polite">✓ Your ritual guide is on its way</div>
       </div>
 
@@ -363,7 +450,7 @@
         <button class="btn-retake" type="button" data-goto="entry">Try another path</button>
         <button class="btn-retake" type="button" data-goto="deep">Deep Dosha Reading</button>
       </div>
-      <div class="result-footer">{{ block.settings.brand_name | escape }} · Ancient ritual. Living skin.</div>
+      <div class="result-footer">{{ brand_name | escape }} · Ancient ritual. Living skin.</div>
     </div>
   </div>
 </div>
