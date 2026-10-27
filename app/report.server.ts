@@ -31,13 +31,18 @@ export async function unlockReport(shop: string, id: unknown, email: unknown) {
   const linked = await prisma.$executeRawUnsafe("UPDATE QuizReport SET email=? WHERE id=? AND shop=? AND expires>? AND (email IS NULL OR email=?)", address, id, shop, Date.now(), address);
   if (!linked) throw new Error("This report expired or was linked to another email. Please retake the quiz.");
   const result = JSON.parse(row.payload) as QuizResult;
-  const queued = Number(row.sent) === 1;
+  const queued = Number(row.sent) === 1 || Number(row.sent) === 2;
   let delivery = queued ? "queued" : "not_configured";
   // Detailed report email through Resend when configured; Klaviyo stays available as before.
   if (!queued && reportEmailConfigured()) {
-    const sent = await sendReportEmail(address, result, shop);
-    await prisma.$executeRawUnsafe("UPDATE QuizReport SET sent=? WHERE id=? AND shop=?", sent ? 1 : -1, id, shop);
-    delivery = sent ? "queued" : "failed";
+    // Claim the send first (sent=2) so two simultaneous unlocks can never email the same report twice.
+    const claimed = await prisma.$executeRawUnsafe("UPDATE QuizReport SET sent=2 WHERE id=? AND shop=? AND (sent IS NULL OR sent<=0)", id, shop);
+    if (!claimed) delivery = "queued";
+    else {
+      const sent = await sendReportEmail(address, result, shop);
+      await prisma.$executeRawUnsafe("UPDATE QuizReport SET sent=? WHERE id=? AND shop=?", sent ? 1 : -1, id, shop);
+      delivery = sent ? "queued" : "failed";
+    }
   } else if (!queued && process.env.KLAVIYO_PRIVATE_API_KEY && process.env.KLAVIYO_SHOP === shop) {
     const response = await fetch("https://a.klaviyo.com/api/events", {
       method: "POST", signal: AbortSignal.timeout(15000),
@@ -90,5 +95,5 @@ export async function emailDeliverySummary(shop: string) {
   const rows = await prisma.$queryRawUnsafe<Array<{ queued: number | bigint | null; failed: number | bigint | null; captured: number | bigint | null }>>(
     "SELECT SUM(CASE WHEN sent=1 THEN 1 ELSE 0 END) AS queued, SUM(CASE WHEN sent=-1 THEN 1 ELSE 0 END) AS failed, COUNT(*) AS captured FROM QuizReport WHERE shop=? AND email IS NOT NULL", shop,
   );
-  return { configured: Boolean(process.env.KLAVIYO_PRIVATE_API_KEY && process.env.KLAVIYO_SHOP === shop), queued: Number(rows[0]?.queued || 0), failed: Number(rows[0]?.failed || 0), captured: Number(rows[0]?.captured || 0) };
+  return { configured: reportEmailConfigured() || Boolean(process.env.KLAVIYO_PRIVATE_API_KEY && process.env.KLAVIYO_SHOP === shop), queued: Number(rows[0]?.queued || 0), failed: Number(rows[0]?.failed || 0), captured: Number(rows[0]?.captured || 0) };
 }
