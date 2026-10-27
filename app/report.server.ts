@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { reportEmailConfigured, sendReportEmail } from "./report-email.server";
 import prisma from "./db.server";
 import type { QuizResult } from "./quiz.server";
 
@@ -10,7 +11,7 @@ async function prepare() {
 }
 export function publicReport(result: QuizResult, id: string, unlocked = false) {
   const locked = result.resultMode !== "products" && result.source === "Deep Dosha" && !unlocked;
-  return { ...result, reportId: id, locked, profile: locked ? { ...result.profile, essence: "Enter your email to unlock your full Prakriti analysis.", insight: "", products: [] } : result.profile, insight: locked ? "" : result.insight, products: locked ? [] : result.products };
+  return { ...result, reportId: id, locked, profile: locked ? { ...result.profile, essence: "Enter your email to unlock your full Prakriti analysis.", insight: "", products: [] } : result.profile, insight: locked ? "" : result.insight, products: locked ? [] : result.products, guide: locked ? undefined : result.guide };
 }
 export async function storeReport(shop: string, result: QuizResult) {
   await prepare();
@@ -32,11 +33,16 @@ export async function unlockReport(shop: string, id: unknown, email: unknown) {
   const result = JSON.parse(row.payload) as QuizResult;
   const queued = Number(row.sent) === 1;
   let delivery = queued ? "queued" : "not_configured";
-  if (!queued && process.env.KLAVIYO_PRIVATE_API_KEY && process.env.KLAVIYO_SHOP === shop) {
+  // Detailed report email through Resend when configured; Klaviyo stays available as before.
+  if (!queued && reportEmailConfigured()) {
+    const sent = await sendReportEmail(address, result, shop);
+    await prisma.$executeRawUnsafe("UPDATE QuizReport SET sent=? WHERE id=? AND shop=?", sent ? 1 : -1, id, shop);
+    delivery = sent ? "queued" : "failed";
+  } else if (!queued && process.env.KLAVIYO_PRIVATE_API_KEY && process.env.KLAVIYO_SHOP === shop) {
     const response = await fetch("https://a.klaviyo.com/api/events", {
       method: "POST", signal: AbortSignal.timeout(15000),
       headers: { Authorization: `Klaviyo-API-Key ${process.env.KLAVIYO_PRIVATE_API_KEY}`, "Content-Type": "application/json", revision: "2026-04-15" },
-      body: JSON.stringify({ data: { type: "event", attributes: { unique_id: id, properties: { dosha: result.dosha, percentages: result.percentages, source: result.source, report: result.insight, products: result.products }, metric: { data: { type: "metric", attributes: { name: "Prakriti Report Unlocked" } } }, profile: { data: { type: "profile", attributes: { email: address } } } } } }),
+      body: JSON.stringify({ data: { type: "event", attributes: { unique_id: id, properties: { dosha: result.dosha, percentages: result.percentages, source: result.source, report: result.insight, guide: result.guide, products: result.products }, metric: { data: { type: "metric", attributes: { name: "Prakriti Report Unlocked" } } }, profile: { data: { type: "profile", attributes: { email: address } } } } } }),
     }).catch(() => null);
     if (response?.ok) { await prisma.$executeRawUnsafe("UPDATE QuizReport SET sent=1 WHERE id=? AND shop=?", id, shop); delivery = "queued"; }
     else {

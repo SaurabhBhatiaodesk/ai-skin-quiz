@@ -225,6 +225,22 @@ import { buildScanReport, reportImage } from "./scan-report.js";
       var ritualSection = q("[data-ritual-section]");
       if (ritualSection) ritualSection.style.display = reportLocked ? "none" : "";
       if (ritualSection) { var ritualLabel = ritualSection.querySelector(".rs-label"); if (ritualLabel) ritualLabel.textContent = productsOnly ? "Recommended products" : "Your Ritual"; }
+      // Full Deep Dosha reading from the spec (shown once unlocked): allies, profile, signs, seasons, ritual, usage guide.
+      var wrapEl = q('[data-screen="result"] .result-wrap');
+      var oldGuide = q("[data-dosha-guide]");
+      if (oldGuide) oldGuide.remove();
+      if (result.guide && !reportLocked && wrapEl) {
+        var guideEl = document.createElement("section");
+        guideEl.className = "dosha-guide";
+        guideEl.setAttribute("data-dosha-guide", "");
+        guideEl.innerHTML = renderDoshaGuide(result.guide);
+        var guideAnchor = q("[data-ritual-section]");
+        wrapEl.insertBefore(guideEl, guideAnchor || null);
+      }
+      var learnButton = q("[data-open-modal]");
+      if (learnButton && result.guide && !reportLocked) learnButton.style.display = "none";
+      var guideRitualLabel = q("[data-ritual-section] .rs-label");
+      if (guideRitualLabel && result.guide) guideRitualLabel.textContent = "Your ritual products";
       var box = q("[data-products]");
       if (box) {
         box.innerHTML = (result.products || []).map(function (product) {
@@ -365,6 +381,27 @@ import { buildScanReport, reportImage } from "./scan-report.js";
     function phaseLabel(phase) {
       var text = String(phase || "").trim();
       return /^(new question|question)$/i.test(text) ? "" : text;
+    }
+
+    function renderDoshaGuide(guide) {
+      var list = function (items) { return (items || []).map(function (item) { return "<li>" + esc(item) + "</li>"; }).join(""); };
+      var card = function (title, body, extra) { return body ? '<div class="dg-card' + (extra ? " " + extra : "") + '"><h4 class="dg-title">' + esc(title) + "</h4>" + body + "</div>" : ""; };
+      var html = "";
+      if (guide.tagline) html += '<p class="dg-tagline">' + esc(guide.tagline) + "</p>";
+      if (guide.signature) html += card("Your skin's signature", '<p class="dg-text">' + esc(guide.signature) + "</p>");
+      if (guide.allies && guide.allies.length) html += card("Ingredient allies", '<div class="dg-allies">' + guide.allies.map(function (ally) { return '<span class="dg-ally">' + esc(ally) + "</span>"; }).join("") + "</div>");
+      if (guide.profile) html += card("Skin profile", '<p class="dg-text">' + esc(guide.profile) + "</p>");
+      var signs = "";
+      if (guide.balance && guide.balance.length) signs += '<div><h5 class="dg-sub dg-good">Signs of balance</h5><ul class="dg-list">' + list(guide.balance) + "</ul></div>";
+      if (guide.imbalance && guide.imbalance.length) signs += '<div><h5 class="dg-sub dg-warn">Signs of imbalance</h5><ul class="dg-list">' + list(guide.imbalance) + "</ul></div>";
+      if (signs) html += '<div class="dg-card"><div class="dg-signs">' + signs + "</div></div>";
+      if (guide.seasonal && guide.seasonal.length) html += card("Seasonal guidance", '<ul class="dg-list">' + list(guide.seasonal) + "</ul>");
+      if (guide.ritual) {
+        var steps = [["Morning", guide.ritual.morning], ["Night", guide.ritual.night], ["Weekly", guide.ritual.weekly]].filter(function (step) { return step[1]; });
+        html += card("Your ritual prescription", '<div class="dg-ritual">' + steps.map(function (step) { return '<div class="dg-step"><span class="dg-when">' + esc(step[0]) + "</span><p>" + esc(step[1]) + "</p></div>"; }).join("") + "</div>" + (guide.ritual.key ? '<p class="dg-key"><strong>Key:</strong> ' + esc(guide.ritual.key) + "</p>" : ""));
+      }
+      if (guide.usage && guide.usage.length) html += card("How to use your products", '<div class="dg-usage">' + guide.usage.map(function (row) { return '<details class="dg-use"><summary><span>' + esc(row.product) + '</span><span class="dg-use-when">' + esc(row.when) + "</span></summary><p>" + esc(row.how) + "</p></details>"; }).join("") + "</div>");
+      return html;
     }
 
     function esc(value) {
@@ -746,9 +783,9 @@ import { buildScanReport, reportImage } from "./scan-report.js";
         clearErrors();
         if (deepStep < quiz.deep.length - 1) { deepStep++; renderDeep(); }
         else {
-          var answers = [];
-          for (var n = 0; n < quiz.deep.length; n++) answers.push(deepAnswers[n]);
-          submitWithEmail({ path: "deep", answers: answers });
+          var deepSubmitAnswers = [];
+          for (var deepIndex = 0; deepIndex < quiz.deep.length; deepIndex++) deepSubmitAnswers.push(deepAnswers[deepIndex]);
+          submitWithEmail({ path: "deep", answers: deepSubmitAnswers });
         }
         return;
       }

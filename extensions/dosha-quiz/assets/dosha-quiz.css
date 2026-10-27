@@ -3976,3 +3976,35 @@
 .prana-quiz.prana-quiz .sr-products > li > .sr-product { flex: 0 0 auto; height: auto; }
 .prana-quiz.prana-quiz .sr-product-body { flex: 0 0 auto; }
 .prana-quiz.prana-quiz .sr-product-side { margin-top: 10px !important; padding-top: 0; }
+
+/* Deep Dosha detailed reading (spec content) on the result page. */
+.prana-quiz .dosha-guide { display: grid; gap: 14px; margin: 0 0 24px; text-align: left; }
+.prana-quiz .dosha-guide .dg-tagline { margin: 4px 0; font-size: 20px; font-style: italic; text-align: center; color: var(--gold, #561a24); }
+.prana-quiz .dosha-guide .dg-card { padding: 20px 22px; border-radius: 12px; background: var(--quiz-card, #fff9f0); border: 1px solid rgba(0, 0, 0, 0.08); }
+.prana-quiz .dosha-guide .dg-title { margin: 0 0 10px; font-size: 12px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gold, #561a24); }
+.prana-quiz .dosha-guide .dg-text { margin: 0; font-size: 15px; line-height: 1.65; }
+.prana-quiz .dosha-guide .dg-allies { display: flex; flex-wrap: wrap; gap: 8px; }
+.prana-quiz .dosha-guide .dg-ally { padding: 6px 12px; border-radius: 999px; background: rgba(0, 0, 0, 0.05); font-size: 13px; }
+.prana-quiz .dosha-guide .dg-signs { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; }
+.prana-quiz .dosha-guide .dg-sub { margin: 0 0 8px; font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
+.prana-quiz .dosha-guide .dg-good { color: #2f6b4a; } .prana-quiz .dosha-guide .dg-warn { color: #9a4a2a; }
+.prana-quiz .dosha-guide .dg-list { margin: 0; padding-left: 18px; font-size: 14.5px; line-height: 1.6; }
+.prana-quiz .dosha-guide .dg-list li + li { margin-top: 6px; }
+.prana-quiz .dosha-guide .dg-ritual { display: grid; gap: 12px; }
+.prana-quiz .dosha-guide .dg-step { display: grid; grid-template-columns: 90px 1fr; gap: 12px; align-items: start; }
+.prana-quiz .dosha-guide .dg-step p { margin: 0; font-size: 14.5px; line-height: 1.6; }
+.prana-quiz .dosha-guide .dg-when { padding: 4px 10px; border-radius: 999px; background: var(--gold, #561a24); color: #fff; font-size: 12px; font-weight: 600; text-align: center; }
+.prana-quiz .dosha-guide .dg-key { margin: 14px 0 0; padding: 12px 14px; border-radius: 10px; background: rgba(0, 0, 0, 0.04); font-size: 14px; line-height: 1.55; }
+.prana-quiz .dosha-guide .dg-usage { display: grid; gap: 8px; }
+.prana-quiz .dosha-guide .dg-use { border-radius: 10px; border: 1px solid rgba(0, 0, 0, 0.08); background: #fff; }
+.prana-quiz .dosha-guide .dg-use summary { display: flex; justify-content: space-between; gap: 12px; padding: 12px 14px; cursor: pointer; font-weight: 600; font-size: 14.5px; list-style: none; }
+.prana-quiz .dosha-guide .dg-use summary::-webkit-details-marker { display: none; }
+.prana-quiz .dosha-guide .dg-use-when { font-weight: 400; font-size: 13px; opacity: 0.75; text-align: right; }
+.prana-quiz .dosha-guide .dg-use p { margin: 0; padding: 0 14px 14px; font-size: 14px; line-height: 1.6; }
+@media (max-width: 600px) {
+  .prana-quiz .dosha-guide .dg-card { padding: 16px; }
+  .prana-quiz .dosha-guide .dg-step { grid-template-columns: 1fr; gap: 6px; }
+  .prana-quiz .dosha-guide .dg-when { justify-self: start; }
+  .prana-quiz .dosha-guide .dg-use summary { flex-direction: column; gap: 2px; }
+  .prana-quiz .dosha-guide .dg-use-when { text-align: left; }
+}

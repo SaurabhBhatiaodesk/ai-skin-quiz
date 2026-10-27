@@ -3,6 +3,7 @@ import UnsavedChangesBar from "./UnsavedChangesBar";
 import { useEffect, useRef, useState } from "react";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import MappingEditor from "./MappingEditor";
+import { DEEP_SPEC_QUESTIONS } from "../dosha-content";
 import WidgetPreview from "./WidgetPreview";
 import useQuizDraft from "./useQuizDraft";
 import type { WidgetPreviewAssets } from "../widget-preview.server";
@@ -351,6 +352,13 @@ export default function QuizEditor({
                   <s-stack direction="inline" gap="base" justifyContent="space-between" alignItems="center">
                     <s-text color="subdued">{kind === "scan" ? "Configure camera and photo upload for the scan block." : "Select a question to edit, or add a new one."}</s-text>
                     {tab === "edit" && kind !== "scan" ? <s-button icon="plus" variant="primary" onClick={() => addQuestion()} disabled={questions.length >= (kind === "deep" || quiz.layout === "single" ? 40 : 12)}>Add question</s-button> : null}
+                    {tab === "edit" && kind === "deep" ? <><s-button commandFor="spec-questions-modal" command="--show">Load PRANA questions</s-button>
+                      <s-modal id="spec-questions-modal" heading="Use the PRANA Deep Dosha questions?">
+                        <s-paragraph>The 18 Deep Dosha Diagnostic questions from the PRANA quiz document replace this quiz&apos;s deep questions: 6 Prakriti, 6 Vikriti and 6 Environment, each with A = Vata, B = Pitta, C = Kapha.</s-paragraph>
+                        <s-paragraph color="subdued">Results follow the document&apos;s scoring rules and show its full reading, ritual and product guide. Nothing is saved until you click Save quiz.</s-paragraph>
+                        <s-button slot="primary-action" variant="primary" commandFor="spec-questions-modal" command="--hide" onClick={() => { setQuiz(current => ({ ...current, deep: DEEP_SPEC_QUESTIONS.map(question => ({ ...question, options: question.options.map(option => { const tag = option.scores.V ? "vata" : option.scores.P ? "pitta" : "kapha"; return { ...option, tag, tags: [tag] }; }) })) as typeof current.deep })); setIndex(0); }}>Use PRANA questions</s-button>
+                        <s-button slot="secondary-actions" commandFor="spec-questions-modal" command="--hide">Cancel</s-button>
+                      </s-modal></> : null}
                   </s-stack>
                   {kind !== "scan" && !questions.length ? <s-banner tone="warning" heading="No questions yet">Click Add question to create the first question for this quiz, then Save.</s-banner> : null}
                   <s-grid gridTemplateColumns={tab === "tags" ? "minmax(0, 1fr)" : "repeat(auto-fit, minmax(220px, 1fr))"} gap="base">

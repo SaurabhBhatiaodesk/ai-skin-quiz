@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 // Regression checks use an in-memory database and a minimal storefront DOM.
 import { readFile } from "node:fs/promises";
 import { build, transform } from "esbuild";
+import { inlineLocalImports } from "./inline-local.mjs";
 import vm from "node:vm";
 import { DatabaseSync } from "node:sqlite";
 globalThis.quizTestDatabase = new DatabaseSync(":memory:");
@@ -23,7 +24,7 @@ source = source
   .replace('import deepCardIcon from "../public/images/onboarding/dosha.svg?raw";', 'const deepCardIcon = "<svg/>";')
   .replace('import quickCardIcon from "../public/images/onboarding/quiz.svg?raw";', 'const quickCardIcon = "<svg/>";');
 source = source.replace('from "./quiz-shared";', `from "data:text/javascript;base64,${Buffer.from(shared.code).toString("base64")}";`);
-const compiled = await transform(source, { loader: "ts", format: "esm" });
+const compiled = await transform(await inlineLocalImports(source), { loader: "ts", format: "esm" });
 const api = await import(`data:text/javascript;base64,${Buffer.from(compiled.code).toString("base64")}`);
 await Promise.all([api.ensureDefaultScanWidget("default-scan-test"), api.ensureDefaultScanWidget("default-scan-test")]);
 let defaults = await api.loadLibrary("default-scan-test");
@@ -64,7 +65,7 @@ assert.equal(api.normalizeQuiz({ quick: api.QUICK_QUESTIONS, deep: api.DEEP_QUES
 assert.equal(legacy.layout, "three");
 assert.ok(legacy.deep.length);
 assert.equal(legacy.deep.length, 18);
-assert.deepEqual([1, 2, 3].map(layer => legacy.deep.filter(question => question.layer === layer).length), [8, 6, 4]);
+assert.deepEqual([1, 2, 3].map(layer => legacy.deep.filter(question => question.layer === layer).length), [6, 6, 6]); // PRANA spec: Prakriti, Vikriti and Environment, six questions each
 for (const question of legacy.deep) {
   assert.ok(question.text && question.options.length >= 2);
   for (const option of question.options) assert.ok(option.label && option.tags.length);
@@ -202,9 +203,18 @@ assert.deepEqual((await api.publicQuiz("test", scanQuiz.handle)).design, scanQui
 assert.throws(() => api.normalizeQuiz({ ...scanQuiz, design: { ...scanQuiz.design, accent: "bad" } }), /hex color/);
 assert.throws(() => api.normalizeQuiz({ ...scanQuiz, design: { ...scanQuiz.design, questionSize: 100 } }), /Font sizes/);
 assert.throws(() => api.normalizeQuiz({ ...scanQuiz, scanner: { ...scanQuiz.scanner, upload: false } }), /Enable camera or photo upload/);
-const weighted = api.scoreDeep([0], [{ layer: 1, text: "Weighted", phase: "", sub: "", options: [{ label: "Blend", hint: "", tag: "vata", scores: { V: 6, P: 4 } }] }]);
-assert.deepEqual(weighted.percentages, { vata: 60, pitta: 40, kapha: 0 });
-assert.equal(weighted.dosha, "dual-vata-pitta");
+// PRANA spec scoring: each answer counts once for its dosha, then the five rules decide the result.
+const spec = (letters) => api.scoreDeep([...letters].map((letter) => "ABC".indexOf(letter)), api.DEEP_QUESTIONS);
+assert.equal(spec("AAAAAAAAAAAAABBBCC").dosha, "vata");
+assert.equal(spec("AAAAAAAAABBBBBBBCC").dosha, "dual-vata-pitta");
+assert.equal(spec("AAAAAABBBBBBCCCCCC").dosha, "balanced");
+assert.deepEqual(spec("AAAAAAAAABBBBBBBCC").percentages, { vata: 51, pitta: 38, kapha: 11 });
+const ritualCatalog = ["Rose Jasmine Milk Cleanser", "Pure Rose Water Toning Mist", "PRANA Saffron Glow Serum", "Bakuchiol Night Restorative Serum", "Saffron Radiance Moisturizer", "Turmeric & Sandalwood Purifying Clay Mask"].map((title, at) => ({ title, handle: "store-" + at, price: "$10.00", image: "", tags: [], productType: "", variants: [{ id: "gid://shopify/ProductVariant/" + (at + 1), title: "Default", price: "$10.00", image: "" }] }));
+const kaphaRitual = api.ritualProductsFor("kapha", ritualCatalog);
+assert.deepEqual(kaphaRitual.map((product) => product.title), ["Rose Jasmine Milk Cleanser", "Pure Rose Water Toning Mist", "PRANA Saffron Glow Serum", "Bakuchiol Night Restorative Serum", "Turmeric & Sandalwood Purifying Clay Mask", "Saffron Radiance Moisturizer"]);
+assert.equal(kaphaRitual[0].why, "Morning · Night");
+assert.equal(kaphaRitual[4].why, "1–2 times a week");
+assert.equal(kaphaRitual[5].why, "Optional, as needed");
 const catalog = ["Rose Jasmine Milk Cleanser", "Pure Rose Water Toning Mist", "Saffron Glow Serum", "Bakuchiol Night Restorative Serum", "Saffron Radiance Moisturizer", "Turmeric & Sandalwood Mask"].map((title, at) => ({ title, handle: "product-" + at, price: "$10.00", image: "", tags: [], productType: "" }));
 const ritualQuiz = api.normalizeQuiz({ quick: api.QUICK_QUESTIONS, deep: api.DEEP_QUESTIONS });
 const ritual = api.ritualProducts(ritualQuiz, { path: "quick", answers: { 0: 2, 1: 1, 2: 1 } }, "pitta", catalog);

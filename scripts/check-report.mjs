@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { inlineLocalImports } from "./inline-local.mjs";
 import { readFile } from "node:fs/promises";
 import { DatabaseSync } from "node:sqlite";
 import { transform } from "esbuild";
@@ -9,7 +10,7 @@ source = source.replace('import prisma from "./db.server";', `const prisma = {
   async $executeRawUnsafe(sql, ...args) { return globalThis.reportTestDb.prepare(sql).run(...args); },
   async $queryRawUnsafe(sql, ...args) { return globalThis.reportTestDb.prepare(sql).all(...args); }
 };`);
-const compiled = await transform(source, { loader: "ts", format: "esm" });
+const compiled = await transform(await inlineLocalImports(source), { loader: "ts", format: "esm" });
 const api = await import(`data:text/javascript;base64,${Buffer.from(compiled.code).toString("base64")}`);
 const result = { dosha:"vata", source:"Deep Dosha", percentages:{vata:60,pitta:40,kapha:0}, insight:"Detailed report", profile:{name:"Vata",insight:"Private guide",essence:"Details",products:["serum"]}, products:[{title:"Serum",handle:"serum"}] };
 const stored = await api.storeReport("test",result);

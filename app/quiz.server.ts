@@ -1,4 +1,5 @@
 import prisma from "./db.server";
+import { DEEP_SPEC_QUESTIONS, DOSHA_CONTENT, RITUAL_PRODUCTS, FREQUENCY_LABELS, doshaFromCounts, doshaGuide, type DoshaGuide, type DoshaResultKey } from "./dosha-content";
 import defaultWidgetCss from "../extensions/dosha-quiz/assets/dosha-quiz.css?raw";
 import scanCardIcon from "../public/images/onboarding/scan.svg?raw";
 import deepCardIcon from "../public/images/onboarding/dosha.svg?raw";
@@ -43,6 +44,8 @@ export type QuizProduct = {
   concerns?: string[];
 };
 export type QuizResult = {
+  // Deep Dosha results: the spec's full reading (signature, signs, ritual, usage guide).
+  guide?: DoshaGuide;
   resultMode?: "personalized" | "products";
   scanAreas?: Array<{concern: string; observation: string; regions: string[]; intensity: string}>;
   percentages?: Record<string, number>;
@@ -157,42 +160,8 @@ export const QUICK_QUESTIONS: QuickQuestion[] = [
   },
 ];
 
-function deep(
-  layer: number,
-  phase: string,
-  text: string,
-  sub: string,
-  options: Array<[string, string, Record<string, number>]>,
-): DeepQuestion {
-  return {
-    layer,
-    phase,
-    text,
-    sub,
-    options: options.map(([label, hint, scores]) => ({ label, hint, scores })),
-  };
-}
-
-export const DEEP_QUESTIONS: DeepQuestion[] = [
-  deep(1, "Prakriti · Your baseline nature", "Your body's natural relationship with temperature?", "Your default state — not how you feel today.", [["I run cold — always reaching for warmth", "Hands and feet often cold", { V: 3 }], ["I run warm — often the hottest in the room", "Intense body heat, flushes easily", { P: 3 }], ["Comfortable in most temperatures", "Rarely extreme cold or heat", { K: 3 }]]),
-  deep(1, "Prakriti · Your baseline nature", "Your skin without any products — describe it.", "Baseline skin, not during a breakout.", [["Thin, dry, dehydrated — tight without moisture", "Delicate texture, veins slightly visible", { V: 3 }], ["Combination or oily with redness or sensitivity", "Pores visible in T-zone, occasional flushing", { P: 3 }], ["Thick, smooth, naturally hydrated", "Porcelain quality, holds moisture well", { K: 3 }]]),
-  deep(1, "Prakriti · Your baseline nature", "How does stress show up in your body first?", "Your primary stress response.", [["Anxiety, racing thoughts, insomnia", "Mind goes faster than the body", { V: 3 }], ["Irritability, inflammation, anger", "Body temperature rises with stress", { P: 3 }], ["Withdrawal, heaviness, oversleeping", "Body slows down and holds on", { K: 3 }]]),
-  deep(1, "Prakriti · Your baseline nature", "Your natural appetite and digestion?", "When life is balanced — not when stressed.", [["Variable — sometimes hungry, sometimes not", "Irregular, easily disrupted", { V: 3 }], ["Strong, regular, irritable when delayed", "Sharp hunger on a schedule", { P: 3 }], ["Steady but slow — could skip meals easily", "Comfortable going long without eating", { K: 3 }]]),
-  deep(1, "Prakriti · Your baseline nature", "Your body's natural weight tendency?", "Without intervention — your set point.", [["Lean, hard to gain weight", "Slight build, lighter bones", { V: 3 }], ["Medium build, gains and loses relatively easily", "Athletic or medium frame", { P: 3 }], ["Heavier build, gains weight easily", "Rounder, solid frame", { K: 3 }]]),
-  deep(1, "Prakriti · Your baseline nature", "How do you process information and make decisions?", "Your natural cognitive style.", [["Quick to learn, quick to forget — scattered", "Ideas arrive fast, retention is harder", { V: 3 }], ["Sharp, analytical, decisive", "Cuts through complexity quickly", { P: 3 }], ["Slow and steady — strong long-term memory", "Takes time to process, remembers everything", { K: 3 }]]),
-  deep(1, "Prakriti · Your baseline nature", "Your hair at its natural baseline?", "Without products — its default texture.", [["Dry, fine, frizzy or wavy", "Prone to breakage, flies away", { V: 3 }], ["Medium, oily at roots, or prematurely greying", "Heat-sensitive, fine-to-medium", { P: 3 }], ["Thick, lustrous, slow to grey", "Dense, holds moisture naturally", { K: 3 }]]),
-  deep(1, "Prakriti · Your baseline nature", "Your energy across the day?", "Without caffeine or external stimulants.", [["Burst and crash — high energy then sudden fatigue", "Variable, hard to sustain", { V: 3 }], ["Moderate, purposeful — burns out when pushed too hard", "Efficient but finite", { P: 3 }], ["Slow to start, strong endurance once moving", "Steady long-burn energy", { K: 3 }]]),
-  deep(2, "Vikriti · Your current state", "How does your skin feel right now today?", "This week — what you're actually experiencing.", [["Dry, tight, flaky, or dehydrated", "Needs moisture urgently", { Vv: 3 }], ["Reactive, red, sensitised, or breaking out", "Inflamed or irritated", { Pv: 3 }], ["Congested, dull, or heavier than usual", "Feeling sluggish and clogged", { Kv: 3 }]]),
-  deep(2, "Vikriti · Your current state", "Your sleep quality recently?", "The last two to three weeks.", [["Disrupted, light, mind won't switch off", "Anxiety-driven poor sleep", { Vv: 3 }], ["Adequate but vivid dreams, wake feeling hot", "Intense sleep", { Pv: 3 }], ["Heavy, long, hard to wake — still feel tired", "Oversleeping without rest", { Kv: 3 }]]),
-  deep(2, "Vikriti · Your current state", "Your stress level right now?", "Honestly — this week.", [["High anxiety, overwhelm, scattered", "Hard to focus or settle", { Vv: 3 }], ["High pressure, frustration, intensity", "Driven but burning", { Pv: 3 }], ["Feeling stuck, heavy, unmotivated", "Slow and resistant", { Kv: 3 }]]),
-  deep(2, "Vikriti · Your current state", "Your diet recently?", "What you've actually been eating — honestly.", [["Irregular, cold foods, too much raw", "Skipping meals, erratic eating", { Vv: 3 }], ["Spicy, acidic, hot foods, caffeine or alcohol", "Stimulating diet", { Pv: 3 }], ["Heavy, sweet, processed, or dairy-rich", "Comfort eating or sluggish foods", { Kv: 3 }]]),
-  deep(2, "Vikriti · Your current state", "Your primary skin concern right now?", "What you'd fix first if you could.", [["Dehydration, fine lines appearing, dullness", "Skin feels depleted", { Vv: 3 }], ["Redness, sensitivity, hyperpigmentation, breakouts", "Skin is reactive", { Pv: 3 }], ["Congestion, enlarged pores, excess oil, flat texture", "Skin feels heavy", { Kv: 3 }]]),
-  deep(2, "Vikriti · Your current state", "How long have you felt this way?", "When did your skin last feel truly balanced?", [["Recently — last few weeks", "Acute, triggered by something", { Vv: 1, Pv: 1, Kv: 1 }], ["Several months", "Chronic pattern building", { Vv: 2, Pv: 2, Kv: 2 }], ["This is just how my skin is", "Long-standing imbalance", { Vv: 3, Pv: 3, Kv: 3 }]]),
-  deep(3, "Environment · Your external world", "Your climate right now?", "Where you live — current conditions.", [["Cold, dry, or windy", "Autumn/winter or arid", { V: 2 }], ["Hot, humid, or intense sun", "Summer or tropical", { P: 2 }], ["Cool, damp, or overcast", "Spring or temperate", { K: 2 }]]),
-  deep(3, "Environment · Your external world", "Your current season?", "Seasonally, where are you right now?", [["Autumn or early winter", "Vata season — dry and mobile", { V: 2 }], ["Late spring or summer", "Pitta season — hot and intense", { P: 2 }], ["Late winter or spring", "Kapha season — heavy and damp", { K: 2 }]]),
-  deep(3, "Environment · Your external world", "Your water quality at home?", "What your skin absorbs daily in the shower.", [["Hard water — mineral-heavy", "May strip or irritate the skin barrier", { Pv: 1, Vv: 1 }], ["Soft water or filtered", "Gentler on the skin", { K: 1 }], ["Unknown", "I've never thought about it", {}]]),
-  deep(3, "Environment · Your external world", "Your current skincare ritual consistency?", "Honestly — how often do you actually do it?", [["Minimal or irregular — maybe 3-4 times a week", "No established ritual yet", { Vv: 1 }], ["Daily but quick — under 5 minutes", "Functional routine", {}], ["Consistent and intentional — morning and night", "Committed practice", { K: 1 }]]),
-];
+// The PRANA spec's 18 questions (A = Vata, B = Pitta, C = Kapha).
+export const DEEP_QUESTIONS: DeepQuestion[] = DEEP_SPEC_QUESTIONS.map((question) => ({ ...question, options: question.options.map((option) => ({ ...option })) }));
 
 function clip(value: unknown, max: number) {
   return String(value ?? "").trim().slice(0, max);
@@ -754,34 +723,23 @@ export function scoreQuick(
 }
 
 export function scoreDeep(answers: number[], questions: DeepQuestion[] = DEEP_QUESTIONS) {
-  const scores: Record<string, number> = { V: 0, P: 0, K: 0, Vv: 0, Pv: 0, Kv: 0 };
-  const tags: string[] = [];
+  // Each answer counts once for the dosha it stands for (A = Vata, B = Pitta, C = Kapha in the spec); answers
+  // that point to no single dosha (neutral options) are not counted.
+  const counts = { vata: 0, pitta: 0, kapha: 0 };
   questions.forEach((question, index) => {
     const chosen = question.options[answers[index]];
     if (!chosen) return;
-    tags.push(chosen.tag || tagFromScores(chosen.scores));
-    Object.entries(chosen.scores).forEach(([key, value]) => {
-      scores[key] = (scores[key] || 0) + value;
-    });
+    const tag = asTag(chosen.tag, tagFromScores(chosen.scores || {}));
+    if (tag === "vata" || tag === "pitta" || tag === "kapha") counts[tag] += 1;
   });
-
-  const totals = { vata: scores.V + scores.Vv, pitta: scores.P + scores.Pv, kapha: scores.K + scores.Kv };
-  const total = Object.values(totals).reduce((sum, value) => sum + value, 0);
-  const ranking = Object.entries(totals).sort((a, b) => b[1] - a[1]);
-  const percentages = Object.fromEntries(Object.entries(totals).map(([key, value]) => [key, total ? Math.floor(value / total * 100) : 0]));
-  if (total) percentages[ranking[0][0]] += 100 - Object.values(percentages).reduce((sum, value) => sum + value, 0);
-  const dosha = !total ? "balanced" : ranking[2][1] >= ranking[0][1] * 0.8 ? "balanced" : ranking[1][1] >= ranking[0][1] * 0.5 ? resultFromTags([ranking[0][0], ranking[1][0]]) : ranking[0][0];
-
-  const vikVals = [scores.Vv, scores.Pv, scores.Kv];
-  const vikMax = Math.max(...vikVals);
-  const vikPrimary = ["Vv", "Pv", "Kv"][vikVals.indexOf(vikMax)];
-  let note = "";
-  if (vikMax > 6) {
-    if (vikPrimary === "Vv") note = " Currently, Vata is elevated — your skin needs extra grounding and hydration.";
-    else if (vikPrimary === "Pv") note = " Currently, Pitta is elevated — your skin needs cooling and anti-inflammatory support.";
-    else note = " Currently, Kapha is elevated — your skin needs clarifying and stimulating treatment.";
+  const total = counts.vata + counts.pitta + counts.kapha;
+  const percentages: Record<string, number> = Object.fromEntries(Object.entries(counts).map(([key, value]) => [key, total ? Math.floor(value / total * 100) : 0]));
+  if (total) {
+    const top = (Object.entries(counts).sort((first, second) => second[1] - first[1])[0][0]);
+    percentages[top] += 100 - Object.values(percentages).reduce((sum, value) => sum + value, 0);
   }
-  return { dosha, note, percentages };
+  const dosha: DoshaResultKey = doshaFromCounts(counts);
+  return { dosha, note: "", percentages, counts };
 }
 
 const KEYWORDS: Record<string, string[]> = {
@@ -1031,6 +989,35 @@ function cachedStoreProducts(shop: string, admin: AdminGraphql) {
   return products;
 }
 
+// The spec's ritual for a result as store products, in ritual order (morning, night, weekly, optional),
+// matched by handle first and then by product name. Each product says when it is used.
+const normalizeTitle = (value: string) => value.toLowerCase().replace(/^prana\s+/, "").replace(/[^a-z0-9]+/g, " ").trim();
+export function ritualProductsFor(dosha: string, catalog: ShopProduct[]): QuizProduct[] {
+  const content = DOSHA_CONTENT[dosha as DoshaResultKey];
+  if (!content) return [];
+  const { morning, night, optional, weekly } = content.products;
+  const order: string[] = [];
+  const when: Record<string, string[]> = {};
+  const add = (handle: string, label: string) => { if (!order.includes(handle)) order.push(handle); (when[handle] ||= []).includes(label) || when[handle].push(label); };
+  morning.forEach((handle) => add(handle, "Morning"));
+  night.forEach((handle) => add(handle, "Night"));
+  add(weekly.product, FREQUENCY_LABELS[weekly.frequency] || "Weekly");
+  optional.forEach((handle) => add(handle, "Optional, as needed"));
+  return order.flatMap((handle) => {
+    const name = normalizeTitle(RITUAL_PRODUCTS[handle] || handle);
+    const words = new Set(name.split(" "));
+    // Every word of the spec name appears in the product title (e.g. "...Purifying Mask" in "...Purifying Clay Mask"),
+    // or a product title of 3+ words is fully contained in the spec name; short generic titles never match.
+    const sameWords = (title: string) => { const other = new Set(normalizeTitle(title).split(" ")); return [...words].every((word) => other.has(word)) || (other.size >= 3 && [...other].every((word) => words.has(word))); };
+    const product = catalog.find((item) => item.handle === handle)
+      || catalog.find((item) => normalizeTitle(item.title) === name)
+      || catalog.find((item) => sameWords(item.title));
+    if (!product) return [];
+    const variant = product.variants?.[0];
+    return [{ title: product.title, handle: product.handle, price: variant?.price || product.price, image: variant?.image || product.image, ...(variant?.id ? { variantId: variant.id } : {}), why: when[handle].join(" · ") }];
+  });
+}
+
 export async function buildQuizResult(
   submission: { path?: string; answers?: unknown; code?: unknown },
   shop: string,
@@ -1081,10 +1068,16 @@ export async function buildQuizResult(
       products = [];
     }
   }
+  // Deep Dosha reports without matching merchant mappings get the spec ritual for the result, in ritual order.
+  if (!products.length && admin && submission.path === "deep" && quiz.resultMode !== "products" && DOSHA_CONTENT[dosha as DoshaResultKey]) {
+    try { products = ritualProductsFor(dosha, await cachedStoreProducts(shop, admin)); }
+    catch (error) { console.error("Dosha ritual products failed", shop, error); products = []; }
+  }
 
   const insight = submission.path === "scan"
     ? note.trim()
     : `${profile.insight}${note}`;
 
-  return { resultMode: quiz.resultMode, dosha, percentages: quiz.resultMode === "products" ? undefined : percentages, source, showUpgrade: quiz.resultMode === "products" ? false : showUpgrade, insight: quiz.resultMode === "products" ? "" : insight, profile: quiz.resultMode === "products" ? { ...profile, name: "Your product matches", sub: "Selected from your answers", essence: "", insight: "", products: [] } : profile, markers, products };
+  const guide = submission.path === "deep" && quiz.resultMode !== "products" ? doshaGuide(dosha) : undefined;
+  return { ...(guide ? { guide } : {}), resultMode: quiz.resultMode, dosha, percentages: quiz.resultMode === "products" ? undefined : percentages, source, showUpgrade: quiz.resultMode === "products" ? false : showUpgrade, insight: quiz.resultMode === "products" ? "" : insight, profile: quiz.resultMode === "products" ? { ...profile, name: "Your product matches", sub: "Selected from your answers", essence: "", insight: "", products: [] } : profile, markers, products };
 }

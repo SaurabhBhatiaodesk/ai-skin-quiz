@@ -6,12 +6,13 @@ import { join } from 'node:path';
 import { Buffer } from 'node:buffer';
 import { PrismaClient } from '@prisma/client';
 import { transform } from 'esbuild';
+import { inlineLocalImports } from './inline-local.mjs';
 const directory = await mkdtemp(join(tmpdir(), 'skin-timestamp-'));
 const prisma = new PrismaClient({datasources:{db:{url:'file:'+join(directory,'test.sqlite').replaceAll('\\','/')}}});
 globalThis.timestampTestDb = prisma;
 async function load(file) {
  const source=(await readFile(file,'utf8')).replace(/import prisma from .*?;/,'const prisma = globalThis.timestampTestDb;');
- const code=(await transform(source,{loader:'ts',format:'esm'})).code;
+ const code=(await transform(await inlineLocalImports(source),{loader:'ts',format:'esm'})).code;
  return import('data:text/javascript;base64,'+Buffer.from(code).toString('base64'));
 }
 try {
