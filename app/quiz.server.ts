@@ -819,7 +819,7 @@ export function ritualProducts(quiz: StoredQuiz, submission: { path?: string; an
     bakuchiol: ["bakuchiol night restorative serum", "bakuchiol night serum"],
     mask: ["turmeric sandalwood mask"],
   };
-  const normalize = (text: string) => text.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  const normalize = (text: string) => text.toLowerCase().replace(/^prana\s+/, "").replace(/[^a-z0-9]+/g, " ").trim();
   let sequence = ["cleanser", "toner", "saffron"];
   let anchors: string[] = [];
   if (submission.path === "deep") {
@@ -1067,6 +1067,11 @@ export async function buildQuizResult(
       console.error("Quiz product recommendations failed", shop, error);
       products = [];
     }
+  }
+  // Quick Quiz is a product-match flow; use its answer-based ritual when no merchant mapping matched.
+  if (!products.length && admin && submission.path === "quick") {
+    try { products = ritualProducts(quiz, submission, dosha, await cachedStoreProducts(shop, admin)); }
+    catch (error) { console.error("Quick quiz product recommendations failed", shop, error); products = []; }
   }
   // Deep Dosha reports without matching merchant mappings get the spec ritual for the result, in ritual order.
   if (!products.length && admin && submission.path === "deep" && quiz.resultMode !== "products" && DOSHA_CONTENT[dosha as DoshaResultKey]) {

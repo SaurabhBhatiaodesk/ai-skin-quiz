@@ -30,7 +30,7 @@ const emailCode = (await transform(await readFile("app/report-email.server.ts", 
 const email = await import(`data:text/javascript;base64,${Buffer.from(emailCode).toString("base64")}`);
 
 // A store catalog named like PRANA's (the mask is "Purifying Clay Mask" in the store, "Purifying Mask" in the spec).
-const titles = ["Rose Jasmine Milk Cleanser", "Pure Rose Water Toning Mist", "Saffron Glow Serum", "Bakuchiol Night Restorative Serum", "Saffron Radiance Moisturizer", "Turmeric & Sandalwood Purifying Clay Mask", "Gift Card"];
+const titles = ["Rose Jasmine Milk Cleanser", "Pure Rose Water Toning Mist", "PRANA Saffron Glow Serum", "Bakuchiol Night Restorative Serum", "Saffron Radiance Moisturizer", "Turmeric & Sandalwood Purifying Clay Mask", "Gift Card"];
 const nodes = titles.map((title, at) => ({ title, handle: "prana-" + at, tags: [], productType: "", featuredMedia: { preview: { image: { url: `https://cdn.example/${at}.jpg` } } }, variants: { nodes: [{ id: "gid://shopify/ProductVariant/" + (100 + at), title: "Default", price: "50.00", image: null }] } }));
 const admin = { graphql: async () => ({ json: async () => ({ data: { products: { nodes } } }) }) };
 
@@ -42,8 +42,8 @@ const cases = {
   "dual-vata-pitta": "AAAAAAAAABBBBBBBCC", "dual-vata-kapha": "AAAAAAABBBBCCCCCCC", "dual-kapha-pitta": "AABBBBBBBBCCCCCCCC",
 };
 const expectedRitual = {
-  vata: ["Rose Jasmine Milk Cleanser", "Pure Rose Water Toning Mist", "Saffron Glow Serum", "Saffron Radiance Moisturizer", "Bakuchiol Night Restorative Serum", "Turmeric & Sandalwood Purifying Clay Mask"],
-  kapha: ["Rose Jasmine Milk Cleanser", "Pure Rose Water Toning Mist", "Saffron Glow Serum", "Bakuchiol Night Restorative Serum", "Turmeric & Sandalwood Purifying Clay Mask", "Saffron Radiance Moisturizer"],
+  vata: ["Rose Jasmine Milk Cleanser", "Pure Rose Water Toning Mist", "PRANA Saffron Glow Serum", "Saffron Radiance Moisturizer", "Bakuchiol Night Restorative Serum", "Turmeric & Sandalwood Purifying Clay Mask"],
+  kapha: ["Rose Jasmine Milk Cleanser", "Pure Rose Water Toning Mist", "PRANA Saffron Glow Serum", "Bakuchiol Night Restorative Serum", "Turmeric & Sandalwood Purifying Clay Mask", "Saffron Radiance Moisturizer"],
 };
 for (const [dosha, pattern] of Object.entries(cases)) {
   api.clearProductCache?.("flow-" + dosha);
@@ -90,6 +90,19 @@ assert.equal(quickResult.insight, "");
 assert.equal(quickResult.percentages, undefined);
 assert.equal(quickResult.showUpgrade, false);
 assert.equal(quickResult.guide, undefined);
+assert.deepEqual(quickResult.products.map((product) => product.title), [
+  "Rose Jasmine Milk Cleanser",
+  "Pure Rose Water Toning Mist",
+  "PRANA Saffron Glow Serum",
+  "Saffron Radiance Moisturizer",
+]);
+const quickMappedQuiz = api.normalizeQuiz({
+  ...combinedQuiz,
+  mappings: [{ id: "quick-vata", tags: ["vata"], productHandle: "prana-6", grouping: "or" }],
+});
+api.clearProductCache?.("flow-quick-mapped");
+const quickMappedResult = await api.buildQuizResult({ path: "quick", answers: [0, 0, 0] }, "flow-quick-mapped", admin, quickMappedQuiz);
+assert.deepEqual(quickMappedResult.products.map((product) => product.handle), ["prana-6"]);
 const combinedDeepResult = await api.buildQuizResult({ path: "deep", answers: letters(cases.vata) }, "flow-combined-deep", admin, combinedQuiz);
 assert.equal(combinedDeepResult.resultMode, "personalized");
 assert.equal(combinedDeepResult.profile.name, "Vata");
