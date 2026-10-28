@@ -1,7 +1,7 @@
 import { defaultScanIcon } from "./default-scan-icon.js";
 import { checkPhoto, createFaceScan, warmUpFaceScan } from "./face-scan.js";
 import { buildFaceMap } from "./face-map.js";
-import { buildScanReport, reportImage } from "./scan-report.js";
+import { buildScanReport } from "./scan-report.js";
 (function () {
   var PROXY = "/apps/dosha-quiz";
 
@@ -144,7 +144,6 @@ import { buildScanReport, reportImage } from "./scan-report.js";
       }
       if (isScanResult && inPopup) {
         // Scan results use the premium report layout; the quiz hero, reading card and ritual list are hidden by CSS.
-        lastScanResult = result;
         var built = buildScanReport(result);
         setTimeout(function () { hidePicksInCart(built.report); }, 0);
         var wrap = q('[data-screen="result"] .result-wrap');
@@ -338,7 +337,6 @@ import { buildScanReport, reportImage } from "./scan-report.js";
     // Analysing screen: the captured photo with a moving scan line, rotating step text and a progress bar.
     var analyzingTimer = 0;
     // Live progress while the photos are analysed, area by area, so the wait feels shorter.
-    var lastScanResult = null;
     var ANALYZING_STEPS = ["Reading your photos", "Mapping your face", "Checking forehead and brows", "Checking under-eye area", "Checking left cheek", "Checking right cheek", "Looking at nose and pores", "Checking jawline and chin", "Reviewing tone and redness", "Matching products to your skin", "Preparing your report"];
     function showAnalyzing(overlay) {
       overlay.textContent = "";
@@ -714,39 +712,11 @@ import { buildScanReport, reportImage } from "./scan-report.js";
         setTimeout(function () { button.textContent = label; }, 2500);
       });
     }
-    // ---- Report share/save ----
-    function saveReport(button) {
-      var label = button.textContent;
-      var result = lastScanResult;
-      if (!result) return;
-      button.disabled = true; button.textContent = "Preparing\u2026";
-      reportImage(result, scanPhoto, scanMirrored, location.hostname).then(function (blob) {
-        if (!blob) throw new Error("image");
-        var file = typeof File === "function" ? new File([blob], "my-skin-report.png", { type: "image/png" }) : null;
-        if (file && navigator.canShare && navigator.canShare({ files: [file] })) return navigator.share({ files: [file], title: "My Skin Report" }).catch(function () {});
-        var url = URL.createObjectURL(blob); var link = document.createElement("a");
-        link.href = url; link.download = "my-skin-report.png"; document.body.appendChild(link); link.click(); link.remove();
-        setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
-      }).then(function () { button.textContent = "Saved \u2713"; }).catch(function () { button.textContent = "Could not save"; })
-        .finally(function () { button.disabled = false; setTimeout(function () { button.textContent = label; }, 2200); });
-    }
-    function copyReportLink(button) {
-      var label = button.textContent;
-      var url = location.origin + location.pathname;
-      var done = function () { button.textContent = "Link copied \u2713"; setTimeout(function () { button.textContent = label; }, 2200); };
-      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(done, function () { button.textContent = url; });
-      else { var field = document.createElement("textarea"); field.value = url; document.body.appendChild(field); field.select(); try { document.execCommand("copy"); done(); } catch (copyError) { button.textContent = url; } field.remove(); }
-    }
-
     root.addEventListener("click", function (event) {
       var origin = event.target.closest ? event.target : null;
       if (!origin) return;
       var addButton = origin.closest("[data-add-to-cart]");
       if (addButton) { event.preventDefault(); addToCart(addButton); return; }
-      var saveButton = origin.closest("[data-report-save]");
-      if (saveButton) { saveReport(saveButton); return; }
-      var linkButton = origin.closest("[data-report-link]");
-      if (linkButton) { copyReportLink(linkButton); return; }
       var goto = origin.closest("[data-goto]");
       if (goto) { go(goto.getAttribute("data-goto"), true); return; }
       if (origin.closest("[data-scan-continue]")) {

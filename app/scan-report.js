@@ -113,13 +113,7 @@ export function buildScanReport(result) {
   const again = el("button", "sr-again", "Scan again");
   again.type = "button";
   again.setAttribute("data-goto", "scanner");
-  const actions = el("div", "sr-actions");
-  const save = el("button", "sr-share", "Save report");
-  save.type = "button"; save.setAttribute("data-report-save", "");
-  const copy = el("button", "sr-share", "Copy link");
-  copy.type = "button"; copy.setAttribute("data-report-link", "");
-  actions.append(save, copy);
-  end.append(actions, again, el("p", "sr-disclaimer", "Cosmetic observations from one photo, not a medical diagnosis. Your photo is not saved. Follow product labels and avoid the eyes and lips."));
+  end.append(again, el("p", "sr-disclaimer", "Cosmetic observations from one photo, not a medical diagnosis. Your photo is not saved. Follow product labels and avoid the eyes and lips."));
   return { report, end, mapSlot: areas.length ? mapSlot : null };
 }
 
