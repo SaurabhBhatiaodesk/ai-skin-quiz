@@ -246,10 +246,12 @@ import { buildScanReport, reportImage } from "./scan-report.js";
         box.innerHTML = (result.products || []).map(function (product) {
           var img = product.image ? '<img src="' + esc(product.image) + '" alt="" loading="lazy">' : '<span class="no-img" aria-hidden="true">+</span>';
           var href = "/products/" + encodeURIComponent(product.handle || "") + (product.variantId ? "?variant=" + encodeURIComponent(String(product.variantId).split("/").pop()) : "");
-          return '<div class="product-card"><div class="pc-img">' + img + '</div><div class="pc-body"><div class="pc-name">' + esc(product.title) + "</div>" + (product.why ? '<div class="pc-why">' + esc(product.why) + "</div>" : "") + '<div class="pc-bottom"><span class="pc-price">' + esc(product.price) + '</span><button class="btn-add" type="button" data-add-to-cart data-handle="' + esc(product.handle || "") + '"' + (product.variantId ? ' data-variant="' + esc(String(product.variantId)) + '"' : "") + '>Add to cart</button><a class="btn-shop" href="' + esc(href) + '" aria-label="Shop ' + esc(product.title) + '">Shop Now →</a></div></div></div>';
+          return '<div class="product-card"><div class="pc-img">' + img + '</div><div class="pc-body"><div class="pc-name">' + esc(product.title) + "</div>" + (product.why ? '<div class="pc-why">' + esc(product.why) + "</div>" : "") + '<div class="pc-bottom"><span class="pc-price">' + "" + '</span><button class="btn-add" type="button" data-add-to-cart data-handle="' + esc(product.handle || "") + '"' + (product.variantId ? ' data-variant="' + esc(String(product.variantId)) + '"' : "") + '>Add to cart</button><a class="btn-shop" href="' + esc(href) + '" aria-label="Shop ' + esc(product.title) + '">Shop Now →</a></div></div></div>';
         }).join("");
         if (!result.products || !result.products.length) box.textContent = !isScanResult && quiz && (!quiz.mappings || !quiz.mappings.length) ? "No products are mapped to this quiz yet." : !isScanResult ? "No products match your selected answers." : "No matching products are available for this result yet.";
       }
+      // Resolve prices and availability in the shopper's market, never the Admin API shop currency.
+      if (box && result.products && result.products.length) localizeProductCards(box);
       // The quiz design paints result buttons inline; the scan report uses the scan accent instead.
       var sendButton = q("[data-save-email]");
       if (sendButton) {
@@ -628,6 +630,28 @@ import { buildScanReport, reportImage } from "./scan-report.js";
 
     // ---- Add to cart (results) ----
     function shopRoot() { return (window.Shopify && window.Shopify.routes && window.Shopify.routes.root) || "/"; }
+    function localizeProductCards(box) {
+      var cards = Array.from(box.querySelectorAll('.product-card'));
+      var currencyPromise = fetch(shopRoot() + 'cart.js', { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(15000) })
+        .then(function (r) { if (!r.ok) throw Error('currency'); return r.json(); }).then(function (cart) { return cart.currency; });
+      cards.forEach(function (card) {
+        var button = card.querySelector('[data-add-to-cart]');
+        if (!button) return;
+        button.disabled = true;
+        Promise.all([currencyPromise, fetch(shopRoot() + 'products/' + encodeURIComponent(button.getAttribute('data-handle')) + '.js', { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(15000) })
+          .then(function (r) { if (r.status === 404) { card.remove(); return null; } if (!r.ok) throw Error('product'); return r.json(); })])
+          .then(function (values) {
+            var product = values[1]; if (!product || !card.isConnected) return;
+            var id = (button.getAttribute('data-variant') || '').split('/').pop();
+            var variant = id ? product.variants.find(function (v) { return String(v.id) === id; }) : product.variants.find(function (v) { return v.available; }) || product.variants[0];
+            if (!variant) { card.remove(); return; }
+            card.querySelector('.pc-price').textContent = new Intl.NumberFormat(document.documentElement.lang || 'en', { style: 'currency', currency: values[0] }).format(variant.price / 100);
+            button.setAttribute('data-variant', String(variant.id));
+            button.disabled = !variant.available;
+            button.textContent = variant.available ? 'Add to cart' : 'Sold out';
+          }).catch(function () { if (card.isConnected) { button.disabled = true; button.textContent = 'View product'; } });
+      });
+    }
     function variantFor(button) {
       var gid = button.getAttribute("data-variant") || "";
       var numeric = gid.split("/").pop();

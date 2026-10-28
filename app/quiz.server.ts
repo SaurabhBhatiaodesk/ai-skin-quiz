@@ -804,7 +804,7 @@ function mappedProducts(tags: string[], mappings: ProductMapping[], products: Sh
       image: variant?.image || product.image,
       ...(variant ? { variantId: variant.id } : {}),
       handle: product.handle,
-      why: mapping.tags.filter((tag) => tags.includes(tag)).join(", "),
+      why: "Selected for your answers",
     });
   });
   return found.slice(0, 8);
@@ -815,9 +815,9 @@ export function ritualProducts(quiz: StoredQuiz, submission: { path?: string; an
     cleanser: ["rose jasmine milk cleanser", "rose jasmine cleanser"],
     toner: ["pure rose water toning mist", "pure rose water mist"],
     saffron: ["saffron glow serum"],
-    moisturizer: ["saffron radiance moisturizer"],
+    moisturizer: ["saffron radiance moisturizer", "saffron radiance moisturizer kumkumadi moisturizer"],
     bakuchiol: ["bakuchiol night restorative serum", "bakuchiol night serum"],
-    mask: ["turmeric sandalwood mask"],
+    mask: ["turmeric sandalwood mask", "turmeric sandalwood purifying mask", "turmeric sandalwood purifying clay mask", "turmeric and sandalwood face mask"],
   };
   const normalize = (text: string) => text.toLowerCase().replace(/^prana\s+/, "").replace(/[^a-z0-9]+/g, " ").trim();
   let sequence = ["cleanser", "toner", "saffron"];

@@ -233,7 +233,7 @@ await api.saveQuiz("test", dualQuiz, dualQuiz.handle);
 const dualAnswers = dualQuiz.deep.map((question, at) => at % 2);
 const dualResult = await api.buildQuizResult({ code: dualQuiz.handle, path: "deep", answers: dualAnswers }, "test", admin);
 assert.equal(dualResult.dosha, "dual-vata-pitta");
-assert.equal(dualResult.products[0].why, "dual_vata_pitta");
+assert.equal(dualResult.products[0].why, "Selected for your answers");
 console.log("Passed: layout creation, save/reload, legacy defaults, question validation, 40-question single flow, result restrictions, storefront startup, AND/OR mapping and variant recommendations.");
 
 const standaloneDeep = withQuestions(await api.createQuiz("test", "Standalone Deep", "single", ["deep"]));
