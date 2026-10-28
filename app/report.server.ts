@@ -13,11 +13,11 @@ export function publicReport(result: QuizResult, id: string, unlocked = false) {
   const locked = result.resultMode !== "products" && result.source === "Deep Dosha" && !unlocked;
   return { ...result, reportId: id, locked, profile: locked ? { ...result.profile, essence: "Enter your email to unlock your full Prakriti analysis.", insight: "", products: [] } : result.profile, insight: locked ? "" : result.insight, products: locked ? [] : result.products, guide: locked ? undefined : result.guide };
 }
-export async function storeReport(shop: string, result: QuizResult) {
+export async function storeReport(shop: string, result: QuizResult, allowWithoutEmail = false) {
   await prepare();
   const id = randomUUID();
   await prisma.$executeRawUnsafe("INSERT INTO QuizReport (id,shop,payload,expires) VALUES (?,?,?,?)", id, shop, JSON.stringify(result), Date.now() + 7 * 86400000);
-  return publicReport(result, id);
+  return publicReport(result, id, allowWithoutEmail);
 }
 export async function unlockReport(shop: string, id: unknown, email: unknown) {
   if (typeof email === "string") email = email.trim().toLowerCase();

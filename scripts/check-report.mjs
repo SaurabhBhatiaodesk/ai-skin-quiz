@@ -27,6 +27,11 @@ assert.equal(db.prepare("SELECT email FROM QuizReport").get().email,"test@exampl
 const quick = await api.storeReport("test",{...result,source:"Quick Quiz"});
 assert.equal(quick.locked,false);
 assert.equal(quick.insight,"Detailed report");
+const skipped = await api.storeReport("test", result, true);
+assert.equal(skipped.locked, false);
+assert.equal(skipped.insight, "Detailed report");
+assert.deepEqual(skipped.products, result.products);
+assert.equal(db.prepare("SELECT email FROM QuizReport WHERE id=?").get(skipped.reportId).email, null);
 db.prepare("UPDATE QuizReport SET expires=0").run();
 await assert.rejects(api.unlockReport("test",stored.reportId,"test@example.com"));
 assert.equal(db.prepare("SELECT COUNT(*) AS count FROM QuizReport").get().count,0);

@@ -50,7 +50,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         return !Number.isInteger(value) || value < 0 || value >= question.options.length;
       })) throw new Error("Please answer every question before submitting.");
     }
-    const result = await storeReport(shop, (submission.path === "scan" ? await scanResult(submission, shop, admin) : await buildQuizResult(submission, shop, admin, validatedQuiz)));
+    const result = await storeReport(shop, (submission.path === "scan" ? await scanResult(submission, shop, admin) : await buildQuizResult(submission, shop, admin, validatedQuiz)), validatedQuiz?.emailCapture?.enabled === true && validatedQuiz.emailCapture.allowSkip === true);
     if (submission.path === "scan") { await recordScanHealth(shop, "success", Date.now() - scanStarted); scanRecorded = true; }
     if (submission.email) { const unlocked = await unlockReport(shop, result.reportId, submission.email); return apiJson({ ok: true, result: unlocked.result, delivery: unlocked.delivery }); }
     return apiJson({ ok: true, result });

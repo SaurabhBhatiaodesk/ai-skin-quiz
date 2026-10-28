@@ -11,3 +11,14 @@ env.loadQuiz=async()=>({quick:Array.from({length:3},()=>({options:[{},{}]})),map
 submission={code:'123',path:'quick',answers:[0,1,0]};assert.equal((await call()).status,200);
 submission={code:'123',path:'quick',answers:[0,1]};assert.equal((await call()).status,422);
 console.log('PASS: result API accepts complete array/legacy indexed answers regardless of mapping count, rejects invalid or missing answers, and normalizes email.');
+
+let skipAllowed;
+env.storeReport=async(_shop,_result,allow)=>{skipAllowed=allow;return{reportId:'id'};};
+for(const settings of [{enabled:true,allowSkip:true},{enabled:false,allowSkip:true},{enabled:true,allowSkip:false}]){
+ env.loadQuiz=async()=>({deep:[{options:[{},{}]}],emailCapture:settings});
+ submission={code:'123',path:'deep',answers:[0]};
+ const response=await call();
+ if(settings.enabled&&!settings.allowSkip){assert.equal(response.status,422);continue;}
+ assert.equal(response.status,200);assert.equal(skipAllowed,settings.enabled&&settings.allowSkip);
+}
+console.log('PASS: only the saved optional-email setting bypasses the deep report gate.');
