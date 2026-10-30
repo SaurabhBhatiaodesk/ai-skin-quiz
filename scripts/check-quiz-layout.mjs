@@ -19,7 +19,7 @@ source = source.replace('import prisma from "./db.server";', `const prisma = {
   async $queryRawUnsafe(sql, ...args) { return globalThis.quizTestDatabase.prepare(sql).all(...args); }
 };`);
 source = source
-  .replace('import defaultWidgetCss from "../extensions/dosha-quiz/assets/dosha-quiz.css?raw";', 'const defaultWidgetCss = "";')
+  .replace('import defaultWidgetCss from "./storefront-quiz.css?raw";', 'const defaultWidgetCss = "";')
   .replace('import scanCardIcon from "../public/images/onboarding/scan.svg?raw";', 'const scanCardIcon = "<svg/>";')
   .replace('import deepCardIcon from "../public/images/onboarding/dosha.svg?raw";', 'const deepCardIcon = "<svg/>";')
   .replace('import quickCardIcon from "../public/images/onboarding/quiz.svg?raw";', 'const quickCardIcon = "<svg/>";');

@@ -15,7 +15,7 @@ const shared = await transform(await readFile("app/quiz-shared.ts", "utf8"), { l
 const sharedUrl = `data:text/javascript;base64,${Buffer.from(shared.code).toString("base64")}`;
 let quizSource = (await readFile("app/quiz.server.ts", "utf8"))
   .replace('import prisma from "./db.server";', prismaStub)
-  .replace('import defaultWidgetCss from "../extensions/dosha-quiz/assets/dosha-quiz.css?raw";', 'const defaultWidgetCss = "";')
+  .replace('import defaultWidgetCss from "./storefront-quiz.css?raw";', 'const defaultWidgetCss = "";')
   .replace('import scanCardIcon from "../public/images/onboarding/scan.svg?raw";', 'const scanCardIcon = "<svg/>";')
   .replace('import deepCardIcon from "../public/images/onboarding/dosha.svg?raw";', 'const deepCardIcon = "<svg/>";')
   .replace('import quickCardIcon from "../public/images/onboarding/quiz.svg?raw";', 'const quickCardIcon = "<svg/>";')

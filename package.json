@@ -18,7 +18,7 @@
     "graphql-codegen": "graphql-codegen",
     "vite": "vite",
     "typecheck": "react-router typegen && tsc --noEmit",
-    "build:widget": "esbuild app/storefront-quiz.js --bundle --minify --outfile=extensions/dosha-quiz/assets/dosha-quiz-runtime.js",
+    "build:widget": "esbuild app/storefront-quiz.js --bundle --minify --outfile=extensions/dosha-quiz/assets/dosha-quiz-runtime.js && node scripts/build-widget-css.mjs",
     "prebuild": "npm run build:widget",
     "postinstall": "node scripts/database-setup.mjs",
     "check": "node scripts/check-all.mjs",

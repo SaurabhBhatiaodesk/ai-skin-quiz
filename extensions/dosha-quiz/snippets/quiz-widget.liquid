@@ -10,7 +10,10 @@
 {% enddoc %}
 {%- liquid
   assign brand_name = block.settings.brand_name | default: shop.name
-  assign privacy_url = block.settings.privacy_url | default: shop.privacy_policy.url
+  assign privacy_url = block.settings.privacy_url
+  if privacy_url == blank or privacy_url == '/pages/privacy-policy'
+    assign privacy_url = shop.privacy_policy.url
+  endif
 -%}
 {{ 'dosha-quiz-extra.css' | asset_url | stylesheet_tag }}
 <div

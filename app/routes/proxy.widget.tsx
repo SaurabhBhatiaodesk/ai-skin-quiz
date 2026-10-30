@@ -1,8 +1,9 @@
 import type { LoaderFunctionArgs } from "react-router";
 import { authenticate } from "../shopify.server";
 import { loadLibrary, publicQuiz } from "../quiz.server";
+import { escapeHtml, renderWidgetTemplate } from "../widget-template.server";
 import template from "../../extensions/dosha-quiz/snippets/quiz-widget.liquid?raw";
-import stylesheet from "../../extensions/dosha-quiz/assets/dosha-quiz.css?raw";
+import stylesheet from "../storefront-quiz.css?raw";
 if (!stylesheet.includes(".prana-quiz") || stylesheet.length < 1000) {
   throw new Error("Widget stylesheet is missing. Restore the storefront CSS before deploying.");
 }
@@ -13,7 +14,6 @@ import widgetScript from "../../extensions/dosha-quiz/assets/dosha-quiz-runtime.
 import { loadScanAppearance } from "../scan-appearance.server";
 import { hasOpenAIKey, selectedProvider, PROVIDER_NAMES } from "../settings.server";
 
-const escapeHtml = (value: string) => value.replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]!);
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.public.appProxy(request);
   const params = new URL(request.url).searchParams;
@@ -28,14 +28,13 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     "expected_layout": quiz.layout || "three",
     "request.design_mode": "false",
     "block.settings.quiz_code": quiz.handle,
-    "block.settings.brand_name": quiz.name,
+    "brand_name": quiz.name,
     "block.settings.hero_title": "Find Your",
     "block.settings.hero_accent": "Skin Ritual",
     "block.settings.hero_subtitle": quiz.layout === "single" ? "Your personal skin ritual." : quiz.layout === "scan" ? "AI Skin Scan" : "Three paths. Your personal skin ritual.",
-    "block.settings.privacy_url": "/policies/privacy-policy",
+    "privacy_url": "/policies/privacy-policy",
   };
-  const markup = template.replace(/\{% if request.design_mode %\}[\s\S]*?\{% endif %\}/g, "")
-    .replace(/\{\{\s*([^}|]+)(?:\|[^}]+)?\}\}/g, (_, key: string) => escapeHtml(values[key.trim()] || ""));
+  const markup = renderWidgetTemplate(template, values);
   const provider = await selectedProvider(shop);
   let config;
   try {

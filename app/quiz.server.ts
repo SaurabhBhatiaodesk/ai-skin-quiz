@@ -1,6 +1,6 @@
 import prisma from "./db.server";
 import { DEEP_SPEC_QUESTIONS, DOSHA_CONTENT, RITUAL_PRODUCTS, FREQUENCY_LABELS, doshaFromCounts, doshaGuide, type DoshaGuide, type DoshaResultKey } from "./dosha-content";
-import defaultWidgetCss from "../extensions/dosha-quiz/assets/dosha-quiz.css?raw";
+import defaultWidgetCss from "./storefront-quiz.css?raw";
 import scanCardIcon from "../public/images/onboarding/scan.svg?raw";
 import deepCardIcon from "../public/images/onboarding/dosha.svg?raw";
 import quickCardIcon from "../public/images/onboarding/quiz.svg?raw";
