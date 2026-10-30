@@ -4,7 +4,7 @@ import { transform } from "esbuild";
 
 // The two shipped stylesheets are the source, minified and split in order: together they equal the whole source.
 const minify = async (css) => (await transform(css, { loader: "css", minify: true })).code;
-const strip = (css) => css.replace(/^\/\*![^]*?\*\/\n/, "");
+const strip = (css) => css.replace(/^\/\*![^]*?\*\/\r?\n/, "");
 const whole = await minify(await readFile("app/storefront-quiz.css", "utf8"));
 const parts = await Promise.all(["dosha-quiz.css", "dosha-quiz-extra.css"].map((name) => readFile(`extensions/dosha-quiz/assets/${name}`, "utf8")));
 for (const part of parts) assert.ok(part.length <= 100000, "stylesheet over 100 KB");
