@@ -1153,7 +1153,8 @@ import { buildScanReport } from "./scan-report.js";
       ["quick", "deep", "scan"].forEach(function (path) { if (enabledPaths.indexOf(path) === -1) { var links = root.querySelectorAll('[data-goto="' + pathNames[path] + '"]'); for (var at = 0; at < links.length; at++) links[at].style.display = "none"; } });
       if (data.layout === "scan") {
         root.setAttribute("data-quiz-layout", "scan");
-        var quizLinks = root.querySelectorAll('[data-goto="quick"], [data-goto="deep"], [data-upgrade]');
+        // A scan-only block has no entry screen, so its scanner "Back" would lead nowhere.
+        var quizLinks = root.querySelectorAll('[data-goto="quick"], [data-goto="deep"], [data-upgrade], .scanner-wrap > .back-nav[data-goto="entry"]');
         for (var scanIndex = 0; scanIndex < quizLinks.length; scanIndex++) quizLinks[scanIndex].style.display = "none";
         go("scanner");
       }
