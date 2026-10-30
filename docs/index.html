@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="hi-Latn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Skin Scan and Quiz Docs</title>
+<meta name="description" content="Skin Scan and Quiz Shopify app ki poori documentation, Hinglish mein: setup, theme blocks, Deep Dosha rules, email report, GitHub aur deploy.">
+<style>
+  :root {
+    --bg: #faf7f2; --panel: #ffffff; --ink: #1d1712; --muted: #6b6159; --line: #e8e0d6;
+    --accent: #561a24; --accent-soft: #f3e4cd; --code-bg: #f4efe8; --ok: #2f6b4a; --warn: #9a4a2a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #16120f; --panel: #1f1a16; --ink: #f1ebe4; --muted: #b3a89d; --line: #362e27;
+      --accent: #e7a9b3; --accent-soft: #3a2a22; --code-bg: #2a231d; --ok: #8fd1ab; --warn: #f0a585;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #16120f; --panel: #1f1a16; --ink: #f1ebe4; --muted: #b3a89d; --line: #362e27;
+    --accent: #e7a9b3; --accent-soft: #3a2a22; --code-bg: #2a231d; --ok: #8fd1ab; --warn: #f0a585;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.65 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  a { color: var(--accent); }
+  .wrap { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 40px; max-width: 1180px; margin: 0 auto; padding: 32px 24px 80px; }
+  nav.toc { position: sticky; top: 24px; align-self: start; font-size: 14px; }
+  nav.toc strong { display: block; margin-bottom: 8px; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  nav.toc ol { margin: 0; padding-left: 18px; }
+  nav.toc li { margin: 4px 0; }
+  nav.toc a { color: var(--ink); text-decoration: none; }
+  nav.toc a:hover { color: var(--accent); }
+  header.hero { margin-bottom: 32px; padding: 28px; border-radius: 16px; background: var(--accent-soft); }
+  header.hero p { margin: 6px 0 0; color: var(--muted); max-width: 70ch; }
+  h1 { margin: 0; font-size: 34px; line-height: 1.2; }
+  h2 { margin: 48px 0 12px; padding-top: 8px; font-size: 24px; border-top: 1px solid var(--line); }
+  h3 { margin: 24px 0 8px; font-size: 18px; }
+  p, li { max-width: 78ch; }
+  code { padding: 1px 6px; border-radius: 6px; background: var(--code-bg); font: 14px/1.5 ui-monospace, Consolas, monospace; }
+  pre { overflow-x: auto; padding: 14px 16px; border-radius: 10px; background: var(--code-bg); }
+  pre code { padding: 0; background: none; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 15px; }
+  .table { overflow-x: auto; }
+  th, td { padding: 9px 10px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+  th { font-size: 13px; letter-spacing: .04em; color: var(--muted); }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin: 16px 0; }
+  .card { padding: 16px 18px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+  .card h3 { margin-top: 0; }
+  .card p { margin: 0; color: var(--muted); font-size: 15px; }
+  .note { margin: 16px 0; padding: 12px 16px; border-left: 4px solid var(--accent); border-radius: 8px; background: var(--panel); }
+  .note.warn { border-color: var(--warn); }
+  .note.ok { border-color: var(--ok); }
+  .steps { counter-reset: step; list-style: none; padding: 0; }
+  .steps > li { position: relative; margin: 10px 0; padding-left: 40px; }
+  .steps > li::before { counter-increment: step; content: counter(step); position: absolute; left: 0; top: 0; width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: var(--bg); font-weight: 600; text-align: center; line-height: 28px; font-size: 14px; }
+  .theme-toggle { float: right; padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel); color: var(--ink); cursor: pointer; font: inherit; font-size: 13px; }
+  footer { margin-top: 56px; color: var(--muted); font-size: 14px; }
+  @media (max-width: 860px) {
+    .wrap { grid-template-columns: 1fr; gap: 16px; padding: 20px 16px 60px; }
+    nav.toc { position: static; padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+    h1 { font-size: 28px; }
+    header.hero { padding: 20px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav class="toc" aria-label="Is page par">
+    <strong>Is page par</strong>
+    <ol>
+      <li><a href="#overview">App kya hai</a></li>
+      <li><a href="#features">Features</a></li>
+      <li><a href="#setup">Store par setup</a></li>
+      <li><a href="#blocks">Theme blocks</a></li>
+      <li><a href="#admin">Admin pages</a></li>
+      <li><a href="#dosha">Deep Dosha rules</a></li>
+      <li><a href="#products">Product recommendations</a></li>
+      <li><a href="#email">Email report</a></li>
+      <li><a href="#code">Code structure</a></li>
+      <li><a href="#develop">Local development</a></li>
+      <li><a href="#github">GitHub workflow</a></li>
+      <li><a href="#deploy">Deploy</a></li>
+      <li><a href="#env">Environment variables</a></li>
+      <li><a href="#trouble">Problem aur solution</a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <header class="hero">
+      <button class="theme-toggle" type="button" id="theme-toggle">Light / Dark</button>
+      <h1>Skin Scan and Quiz: Documentation</h1>
+      <p>Shopify app jo store par AI Skin Scan, Quick Quiz aur Deep Dosha quiz chalata hai, aur har customer ko uske result ke hisaab se products aur ritual batata hai. Ye page Hinglish mein hai, merchant aur developer dono ke liye.</p>
+      <p>Code: <a href="https://github.com/SaurabhBhatiaodesk/ai-skin-quiz">github.com/SaurabhBhatiaodesk/ai-skin-quiz</a></p>
+    </header>
+
+    <section id="overview">
+      <h2>1. App kya hai</h2>
+      <p>App ka naam <strong>Skin Scan and Quiz</strong> hai. Ye Shopify ki embedded app hai: admin Shopify ke andar khulta hai aur storefront par widget <strong>theme app blocks</strong> se lagta hai. Customer ke answers aur scan server tak <strong>app proxy</strong> (<code>/apps/dosha-quiz</code>) se jaate hain.</p>
+      <ul>
+        <li><strong>Admin:</strong> React Router app, Heroku par (<code>prana-ai-skin-quiz</code>).</li>
+        <li><strong>Storefront:</strong> theme app extension <code>extensions/dosha-quiz</code>, jisme 4 blocks hain.</li>
+        <li><strong>Database:</strong> production mein Postgres (Heroku <code>DATABASE_URL</code>), local par SQLite (<code>prisma/dev.sqlite</code>).</li>
+        <li><strong>Permissions:</strong> sirf <code>read_products</code> aur <code>read_themes</code>.</li>
+      </ul>
+    </section>
+
+    <section id="features">
+      <h2>2. Features</h2>
+      <div class="cards">
+        <div class="card"><h3>AI Skin Scan</h3><p>Camera ya photo upload. Consent ke baad AI (OpenAI) photo dekh ke visible skin observations deta hai. Photo app store nahi karti. Result mein animated skin map aur product picks aate hain.</p></div>
+        <div class="card"><h3>Quick Quiz</h3><p>Kuch chhote sawal. Result mein sirf matching products aate hain, dosha nahi.</p></div>
+        <div class="card"><h3>Deep Dosha</h3><p>PRANA spec ke 18 sawal (A = Vata, B = Pitta, C = Kapha). 7 mein se ek result aata hai, saath mein poori reading, ritual aur products.</p></div>
+        <div class="card"><h3>Floating Skin Scan</h3><p>Har page par ek floating button (pulse animation ke saath). Click karne par scan popup khulta hai.</p></div>
+        <div class="card"><h3>Email report</h3><p>Email dene par report unlock hoti hai aur detailed report email par bhi jaati hai (Resend ya Klaviyo se).</p></div>
+        <div class="card"><h3>Add to cart</h3><p>Result se seedha cart mein product daal sakte hain. Jo product cart mein chala gaya, wo list se hat jaata hai.</p></div>
+      </div>
+    </section>
+
+    <section id="setup">
+      <h2>3. Store par setup (merchant ke liye)</h2>
+      <ol class="steps">
+        <li>App install karo. Admin mein <strong>Quizzes &amp; Skin Scan</strong> kholo.</li>
+        <li>Naya quiz banao (Combined, Single ya Only Skin Scan). Questions, products ki mapping, design aur texts set karke <strong>Save</strong> karo.</li>
+        <li>Deep Dosha quiz ke liye editor mein <strong>"Load PRANA questions"</strong> dabao, phir <strong>Save</strong> karo. Isse client ke doc wale 18 sawal aur sahi tags lag jaate hain.</li>
+        <li>All quizzes page se quiz ka <strong>widget code</strong> copy karo.</li>
+        <li>Online Store → Themes → Customize mein page kholo, <strong>Add block</strong> se app block lagao, aur widget code paste karo.</li>
+        <li>Floating button ke liye theme editor ke <strong>App embeds</strong> mein "Skin Scan and Quiz" on karo. Uska rang, label aur shape <strong>Skin Scan appearance</strong> page se badlo.</li>
+        <li>Skin Scan ke liye <strong>Global Settings</strong> mein OpenAI key daalo aur <strong>Scanner health</strong> page par check karo ki scan ready hai.</li>
+      </ol>
+      <div class="note warn"><strong>Dhyan do:</strong> agar Deep Dosha ke percentages ajeeb lagein (jaise 13 Vata answers par 84%), to iska matlab hai ki store par purane questions save hain. "Load PRANA questions" dabake Save karo.</div>
+    </section>
+
+    <section id="blocks">
+      <h2>4. Theme blocks</h2>
+      <p>Saare blocks ek hi snippet <code>snippets/quiz-widget.liquid</code> render karte hain. CSS do files mein aati hai: <code>dosha-quiz.css</code> (block ki stylesheet) aur <code>dosha-quiz-extra.css</code> (snippet se link). Dono 100 KB se chhoti hain.</p>
+      <div class="table"><table>
+        <thead><tr><th>Block</th><th>Kahan lagta hai</th><th>Kya dikhata hai</th><th>Settings</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Combined Quiz</strong><br><code>dosha-quiz.liquid</code></td><td>Kisi bhi section mein</td><td>Teeno raaste: Skin Scan, Quick Quiz, Deep Dosha</td><td>Brand name, Heading, Heading accent, Subtitle, Widget code, Privacy policy URL</td></tr>
+          <tr><td><strong>Single Quiz</strong><br><code>single-quiz.liquid</code></td><td>Kisi bhi section mein</td><td>Sirf ek quiz (Quick ya Deep)</td><td>Combined jaisi</td></tr>
+          <tr><td><strong>Only Skin Scan</strong><br><code>skin-scan.liquid</code></td><td>Kisi bhi section mein</td><td>Sirf scan, seedha consent step se</td><td>Combined jaisi; widget ID khaali ho to akela scan widget apne aap chunta hai</td></tr>
+          <tr><td><strong>Skin Scan and Quiz</strong><br><code>scan-assistant.liquid</code></td><td>App embed (body)</td><td>Floating button + scan popup</td><td>Skin Scan widget ID (khaali = pehla scan widget)</td></tr>
+        </tbody>
+      </table></div>
+      <ul>
+        <li><strong>Brand name</strong> khaali ho to store ka naam dikhta hai.</li>
+        <li><strong>Privacy policy URL</strong> khaali ho to store ki Shopify privacy policy ka link lagta hai. Link photo consent ke neeche aur email form ke neeche aata hai.</li>
+      </ul>
+    </section>
+
+    <section id="admin">
+      <h2>5. Admin pages</h2>
+      <div class="table"><table>
+        <thead><tr><th>Page</th><th>Kaam</th></tr></thead>
+        <tbody>
+          <tr><td>Home</td><td>Setup checklist aur shortcuts</td></tr>
+          <tr><td>Quizzes &amp; Skin Scan</td><td>Saare quiz, naya quiz, widget code, editor (questions, mapping, design, texts, live preview)</td></tr>
+          <tr><td>Collected emails</td><td>Jin customers ne email diya, aur report email gayi ya fail hui</td></tr>
+          <tr><td>Scanner health</td><td>Scan AI connected hai ya nahi</td></tr>
+          <tr><td>Global Settings</td><td>AI provider aur OpenAI key (encrypted save hoti hai)</td></tr>
+          <tr><td>Skin Scan appearance</td><td>Floating button aur popup ke rang, shape, pulse; real popup preview</td></tr>
+          <tr><td>Documentation</td><td>App ke andar merchant guide</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <section id="dosha">
+      <h2>6. Deep Dosha rules (PRANA spec)</h2>
+      <p>18 sawal hain. Har answer 1 point deta hai: A = Vata, B = Pitta, C = Kapha. Rules isi order mein check hote hain, aur jo pehle match ho wahi result hai:</p>
+      <div class="table"><table>
+        <thead><tr><th>#</th><th>Rule</th><th>Result</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>Kisi ek dosha ke 12 ya zyada points</td><td>Vata / Pitta / Kapha</td></tr>
+          <tr><td>2</td><td>Do doshas mein dono ke kam se kam 5 points, aur dono ka total 15 ya zyada (order: Vata-Pitta, Vata-Kapha, Pitta-Kapha)</td><td>Dual dosha</td></tr>
+          <tr><td>3</td><td>Teeno doshas 5 se 7 points ke beech</td><td>Tridoshic (balanced)</td></tr>
+          <tr><td>4</td><td>Baaki case mein sabse zyada points wala dosha</td><td>Single dosha</td></tr>
+          <tr><td>5</td><td>Upar tie ho to</td><td>Dual dosha</td></tr>
+        </tbody>
+      </table></div>
+      <p>Agar kuch answers kisi dosha ke nahi hain (neutral options), to thresholds total points ke hisaab se scale ho jaate hain. Har combination ka ek hi result aata hai. Test <code>scripts/check-dosha-rules.mjs</code> saare 190 combinations check karta hai.</p>
+      <p><strong>7 results:</strong> <code>vata</code>, <code>pitta</code>, <code>kapha</code>, <code>balanced</code> (Tridoshic), <code>dual-vata-pitta</code>, <code>dual-vata-kapha</code>, <code>dual-kapha-pitta</code>. Saara text <code>app/dosha-content.ts</code> mein hai.</p>
+    </section>
+
+    <section id="products">
+      <h2>7. Product recommendations</h2>
+      <ol>
+        <li><strong>Merchant mapping pehle:</strong> editor mein jo product mapping banayi hai, wahi pehle dikhegi.</li>
+        <li><strong>Ritual fallback:</strong> agar Deep Dosha (personalized mode) mein koi mapping nahi mili, to doc ke 6 ritual products dikhte hain. Store mein ye products handle se, phir title se, phir title ke words se dhoondhe jaate hain.</li>
+        <li><strong>Quick Quiz:</strong> sirf mapped products dikhte hain. Agar koi match na ho to saaf message aata hai.</li>
+      </ol>
+      <p>Har product ke saath "Morning · Night" ya "Once every 2 weeks" jaisa label aata hai, aur Add to cart button bhi.</p>
+    </section>
+
+    <section id="email">
+      <h2>8. Email report</h2>
+      <ul>
+        <li>Email dene se pehle Deep Dosha ki guide aur products <strong>locked</strong> rehte hain (agar quiz mein email capture on hai).</li>
+        <li><strong>Resend:</strong> server par <code>RESEND_API_KEY</code> aur <code>REPORT_FROM_EMAIL</code> set ho to poori report HTML email mein jaati hai. Pehle Resend mein sending domain verify karna hoga.</li>
+        <li><strong>Klaviyo:</strong> Resend set na ho aur <code>KLAVIYO_PRIVATE_API_KEY</code> + <code>KLAVIYO_SHOP</code> set ho to event Klaviyo par jaata hai, aur email Klaviyo flow bhejta hai.</li>
+        <li>Ek report ki ek hi email jaati hai, chahe customer do baar click kare. Email fail ho to dobara try karne par phir se bheji jaati hai.</li>
+        <li>Status <strong>Collected emails</strong> page par dikhta hai.</li>
+      </ul>
+    </section>
+
+    <section id="code">
+      <h2>9. Code structure</h2>
+      <div class="table"><table>
+        <thead><tr><th>Path</th><th>Kya hai</th></tr></thead>
+        <tbody>
+          <tr><td><code>app/routes/app.*.tsx</code></td><td>Admin pages</td></tr>
+          <tr><td><code>app/routes/proxy.*.tsx</code></td><td>Storefront API: <code>quiz</code> (config), <code>result</code> (score + products), <code>widget</code> (iframe embed)</td></tr>
+          <tr><td><code>app/quiz.server.ts</code></td><td>Quiz save/load, scoring, product matching</td></tr>
+          <tr><td><code>app/dosha-content.ts</code></td><td>PRANA ke 18 sawal, rules, 7 results ka text, ritual products</td></tr>
+          <tr><td><code>app/report.server.ts</code>, <code>app/report-email.server.ts</code></td><td>Report save/unlock aur email</td></tr>
+          <tr><td><code>app/scan.server.ts</code></td><td>Skin Scan AI call</td></tr>
+          <tr><td><code>app/storefront-quiz.js</code> + <code>app/storefront-quiz.css</code></td><td>Storefront widget ka <strong>source</strong></td></tr>
+          <tr><td><code>app/face-scan.js</code>, <code>face-map.js</code>, <code>scan-report.js</code></td><td>Camera scan, skin map, scan result</td></tr>
+          <tr><td><code>app/widget-template.server.ts</code></td><td>Admin preview aur iframe embed ke liye snippet render karta hai</td></tr>
+          <tr><td><code>extensions/dosha-quiz/</code></td><td>Theme app extension: blocks, snippet, assets</td></tr>
+          <tr><td><code>scripts/check-*.mjs</code></td><td>Tests</td></tr>
+        </tbody>
+      </table></div>
+      <div class="note warn"><strong>Zaroori:</strong> <code>extensions/dosha-quiz/assets/</code> ki files (<code>dosha-quiz-runtime.js</code>, <code>dosha-quiz.css</code>, <code>dosha-quiz-extra.css</code>) build se banti hain. Inhe haath se edit mat karo. Source (<code>app/storefront-quiz.js</code> / <code>.css</code>) badlo, phir <code>npm run build:widget</code> chalao.</div>
+    </section>
+
+    <section id="develop">
+      <h2>10. Local development</h2>
+      <pre><code>git pull
+npm install
+npm run dev            # Shopify CLI ke saath local app + tunnel
+npm run build:widget   # storefront JS + CSS build
+npm run check          # saare tests
+npm run typecheck      # TypeScript
+npm run lint</code></pre>
+      <p>Release se pehle ek command se sab check karo:</p>
+      <pre><code>npm run release:check</code></pre>
+    </section>
+
+    <section id="github">
+      <h2>11. GitHub workflow</h2>
+      <p>Repo: <a href="https://github.com/SaurabhBhatiaodesk/ai-skin-quiz">SaurabhBhatiaodesk/ai-skin-quiz</a>. Main branch: <code>main</code>.</p>
+      <ol class="steps">
+        <li>Kaam shuru karne se pehle hamesha <code>git pull</code> karo, taaki doosre logon ke changes aa jayein.</li>
+        <li>Code badlo. Widget badla ho to <code>npm run build:widget</code> zaroor chalao.</li>
+        <li><code>npm run check</code>, <code>npm run typecheck</code> aur <code>npm run lint</code> pass hone chahiye.</li>
+        <li>Commit karo aur push karo.</li>
+      </ol>
+      <pre><code>git add -A
+git commit -m "Kya badla, ek line mein"
+git push origin main</code></pre>
+      <div class="note warn"><strong>Dhyan do:</strong> adhoora kaam commit mat karo. Ek baar kisi tool ne adhoori snippet edit push kar di thi, jisse admin preview mein raw Liquid text dikhne laga tha.</div>
+      <h3>Ye docs page GitHub Pages par</h3>
+      <p>Ye file <code>docs/index.html</code> hai. GitHub par repo → <strong>Settings → Pages</strong> → Source: "Deploy from a branch" → Branch <code>main</code>, folder <code>/docs</code> → Save. Kuch minute baad page <code>https://saurabhbhatiaodesk.github.io/ai-skin-quiz/</code> par khulega. Repo private ho to Pages ke liye GitHub plan check karo.</p>
+    </section>
+
+    <section id="deploy">
+      <h2>12. Deploy</h2>
+      <p>Deploy do jagah hota hai: server (Heroku) aur Shopify extension. Jo badla hai, uske hisaab se dono ya ek karo.</p>
+      <div class="table"><table>
+        <thead><tr><th>Kya badla</th><th>Kya deploy karna hai</th></tr></thead>
+        <tbody>
+          <tr><td><code>app/</code> ka server code, admin pages, scoring, email</td><td>Heroku</td></tr>
+          <tr><td>Storefront widget, blocks, snippet, CSS</td><td>Shopify extension (aur Heroku bhi, kyunki admin preview aur iframe embed server se same files lete hain)</td></tr>
+        </tbody>
+      </table></div>
+      <h3>Heroku</h3>
+      <pre><code>heroku login
+git push heroku main</code></pre>
+      <p>Heroku build ke time <code>npm run build</code> chalta hai, jo pehle <code>build:widget</code> chalata hai. Start par <code>npm run setup</code> database migrate karta hai.</p>
+      <h3>Shopify extension</h3>
+      <pre><code>npx shopify app deploy --allow-updates --message "Kya badla"</code></pre>
+      <div class="note ok"><strong>Check:</strong> deploy ke baad store ka quiz page kholo aur ek baar quiz poora chala ke dekho. Admin mein Quiz editor aur Skin Scan appearance ka preview bhi kholo.</div>
+    </section>
+
+    <section id="env">
+      <h2>13. Environment variables (Heroku)</h2>
+      <div class="table"><table>
+        <thead><tr><th>Variable</th><th>Kaam</th><th>Zaroori?</th></tr></thead>
+        <tbody>
+          <tr><td><code>SHOPIFY_API_KEY</code>, <code>SHOPIFY_API_SECRET</code></td><td>Shopify app login</td><td>Haan</td></tr>
+          <tr><td><code>SHOPIFY_APP_URL</code>, <code>SCOPES</code></td><td>App URL aur permissions</td><td>Haan</td></tr>
+          <tr><td><code>DATABASE_URL</code></td><td>Postgres database</td><td>Haan (Heroku khud set karta hai)</td></tr>
+          <tr><td><code>SETTINGS_ENCRYPTION_KEY</code></td><td>Saved OpenAI key encrypt karne ke liye (na ho to API secret use hota hai)</td><td>Recommended</td></tr>
+          <tr><td><code>OPENAI_API_KEY</code>, <code>OPENAI_SHOP</code></td><td>Server-level OpenAI key, sirf <code>OPENAI_SHOP</code> wale store ke liye</td><td>Optional (admin se bhi key daal sakte hain)</td></tr>
+          <tr><td><code>OPENAI_SCAN_MODEL</code></td><td>Scan model (default <code>gpt-4.1-mini</code>)</td><td>Optional</td></tr>
+          <tr><td><code>RESEND_API_KEY</code>, <code>REPORT_FROM_EMAIL</code></td><td>Report email Resend se</td><td>Email ke liye</td></tr>
+          <tr><td><code>REPORT_STORE_DOMAIN</code></td><td>Email mein product links ka domain (jaise <code>pranabeauty.com</code>)</td><td>Optional</td></tr>
+          <tr><td><code>KLAVIYO_PRIVATE_API_KEY</code>, <code>KLAVIYO_SHOP</code></td><td>Report event Klaviyo par</td><td>Optional</td></tr>
+          <tr><td><code>SHOP_CUSTOM_DOMAIN</code></td><td>Custom shop domain support</td><td>Optional</td></tr>
+        </tbody>
+      </table></div>
+      <p>Set karne ke liye: <code>heroku config:set NAME=value -a prana-ai-skin-quiz</code></p>
+    </section>
+
+    <section id="trouble">
+      <h2>14. Problem aur solution</h2>
+      <div class="table"><table>
+        <thead><tr><th>Problem</th><th>Wajah</th><th>Solution</th></tr></thead>
+        <tbody>
+          <tr><td>Admin preview mein <code>{% doc %}</code> jaisa raw text dikhta hai</td><td>Heroku par purana server code chal raha hai</td><td><code>git push heroku main</code> karke latest code deploy karo</td></tr>
+          <tr><td><code>git push heroku</code> par "Authentication failed"</td><td>Heroku login expire ho gaya</td><td><code>heroku login</code>, phir dobara push</td></tr>
+          <tr><td>Heroku CLI Node 25 par crash hoti hai</td><td>CLI ka auto-update</td><td>Command se pehle <code>HEROKU_SKIP_AUTOUPDATE=1</code> lagao</td></tr>
+          <tr><td>Deep Dosha ka result ya percentage galat lagta hai</td><td>Store par purane questions save hain</td><td>Editor mein "Load PRANA questions" dabao, phir Save karo</td></tr>
+          <tr><td>Report email nahi jaati</td><td>Resend/Klaviyo set nahi hai, ya domain verify nahi hai</td><td>Env vars set karo, Resend domain verify karo, "Collected emails" page dekho</td></tr>
+          <tr><td>Skin Scan block store par nahi dikhta</td><td>AI key nahi hai</td><td>Global Settings mein key daalo, Scanner health check karo</td></tr>
+          <tr><td>Theme editor mein "paste widget code" message</td><td>Block mein widget code nahi hai ya galat hai</td><td>All quizzes page se sahi code copy karke block mein daalo</td></tr>
+          <tr><td>Store par naya design ya fix nahi dikhta</td><td>Shopify extension deploy nahi hua, ya build nahi chala</td><td><code>npm run build:widget</code>, commit, phir <code>npx shopify app deploy</code></td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <footer>Skin Scan and Quiz · Base2Brand · Ye page <code>docs/index.html</code> se banta hai. Badlav ke baad GitHub par push karo.</footer>
+  </main>
+</div>
+<script>
+  (function () {
+    var root = document.documentElement;
+    try { var saved = localStorage.getItem("docs-theme"); if (saved) root.setAttribute("data-theme", saved); } catch (error) {}
+    document.getElementById("theme-toggle").addEventListener("click", function () {
+      var dark = root.getAttribute("data-theme") ? root.getAttribute("data-theme") === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+      var next = dark ? "light" : "dark";
+      root.setAttribute("data-theme", next);
+      try { localStorage.setItem("docs-theme", next); } catch (error) {}
+    });
+  })();
+</script>
+</body>
+</html>
